@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "cg_userdefine.h": "c",
+        "cg_sci.h": "c",
+        "cg_wdt.h": "c",
+        "cg_tma.h": "c",
+        "bat32g137.h": "c",
+        "cg_cgc.h": "c",
+        "boot_core.h": "c",
+        "communication_protocol.h": "c",
+        "serial_port_config.h": "c",
+        "base_time_system.h": "c",
+        "tea.h": "c",
+        "flash_operate.h": "c",
+        "userdefine.h": "c"
+    }
+}
