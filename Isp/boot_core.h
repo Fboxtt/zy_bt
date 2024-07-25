@@ -80,7 +80,7 @@ extern uint32_t NewBaud;							 //新波特率存储
 extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
 extern boot_bool_t ResetFlag;
 extern void BootCheckReset(void);		//检测是否有复位信号
-extern uint8_t CheckUID();
+extern uint8_t CheckUID(void);
 void BootInit(void);
 boot_cmd_t BootCmdRun(boot_cmd_t cmd);
 

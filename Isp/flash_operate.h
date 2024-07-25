@@ -53,7 +53,7 @@ extern void IAP_Reset(void);			 		                    //复位启动
 extern void IAP_Erase_ALL(uint8_t area);						    //将目标区域全擦
 extern void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（512B）
 extern void IAP_FlagWrite(uint8_t flag);
-extern uint8_t IAP_CheckAPP();
+extern uint8_t IAP_CheckAPP(void);
 extern void IAP_ReadEncUID(uint8_t* buff);
-extern void IAP_Remap();//将缓存区的代码装载如运行区
+extern void IAP_Remap(void);//将缓存区的代码装载如运行区
 #endif

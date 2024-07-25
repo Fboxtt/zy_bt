@@ -31,6 +31,6 @@ extern commu_length_t CmmuSendLength;		            //接收数据长度
 void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data);    
 uint8_t AnalysisData(void);
 void ClearCommu(void);
-void UartReceData();
+void UartReceData(void);
 #endif
 

@@ -221,7 +221,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         case NO_CMD://ÎÞ²Ù×÷
         {
             return BOOT_BOOL_FALSE;
-        }break;        
+        }
         case READ_FLASH:
         {            
 			//ReadFlashAddr = CommuData[6]*256+CommuData[7];
