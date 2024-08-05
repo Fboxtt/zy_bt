@@ -31,6 +31,10 @@
 #define Edition                 "BAT32G13701"	//BOOT代码的版本号
 #define EditionLength           11				//版本号长度
 
+//私有协议新增内容
+#define TYPE_FAIL 0xDE//主机命令类型错误
+#define CHECK_FAIL 0xDF //校验错误
+
 //主站发送来的控制码类型
 #define ENTER_BOOTMODE 			0x01		//进入更新模式，即握手信号
 #define ENTER_APPMODE			0x0f		//跳转执行用户程序

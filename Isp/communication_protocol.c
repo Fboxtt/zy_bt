@@ -34,28 +34,31 @@ void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 	UartSendOneByte(check_sum);						//发送校验位低8位
 	UartSendOneByte(CommunicationCommandEnd);		//发送帧尾   
 }
-
+#define TYPE_TO_SHAKE_LENTH 4
 uint8_t AnalysisData()//分析接收帧的数据
 {
 	uint8_t cmd = NO_CMD;
     uint8_t data_len;
 	uint8_t i;
 	uint8_t check_sum = 0;
-	data_len = CommuData[3];
-	for(i=0;i<(data_len+4);i++)
+	data_len = CommuData[1] * 0x100 + CommuData[2];
+
+	cmd = CommuData[3];
+	//计算单板类型到数据位的校验和
+	for(i=3; i<data_len; i++)
 	{
 	   check_sum+=CommuData[i];
 	}
+	if((CommuData[3]&0x80) != 0) {
+		cmd = TYPE_FAIL;
+	}
 	//校验成功,提取控制码
-	if((check_sum==(CommuData[data_len+4]))&&(CommuData[3]<=64))
+	if(check_sum!=(CommuData[3 + data_len]))
 	{
-		cmd = CommuData[1];		
-		CmmuLength=CommuData[3];//取长度		
+        cmd = ERROR_CHECK_FAIL;
 	}
-	else
-	{
-        cmd = DEAL_FAIL;
-	}
+	CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
+
     return cmd;
 }
 
