@@ -48,12 +48,15 @@ void UartReceData()//接收数据帧
 		{
 			CmmuReadNumber++;
 		}
-		if(CmmuReadNumber>=(6+CommuData[3]))
-		{
-			/* 开启看门狗和清狗 */
-			UartReceFlag = 1;	  //表示接收到一帧数据
+		if(CmmuReadNumber >= 3) {
+			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //数据数量超过256的话需要修改CmmuReadNumber类型
+			{
+				/* 开启看门狗和清狗 */
+				UartReceFlag = 1;	  //表示接收到一帧数据
+			}
 		}
-	}    
+
+	}
 }
 
 //void UART_Work() 
