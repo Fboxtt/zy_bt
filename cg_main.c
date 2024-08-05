@@ -84,10 +84,10 @@ int main(void)
             if(result_cmd!=BOOT_BOOL_FALSE)
             {
                 CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData);
-                if(CMDBuff==SET_BAUD)//设置新的波特率
-                {
-                    UartInit(NewBaud);
-                }
+//                if(CMDBuff==SET_BAUD)//设置新的波特率
+//                {
+//                    UartInit(NewBaud);
+//                }
                 result_cmd = BOOT_BOOL_FALSE;
             } 
             CMDBuff = 0; 

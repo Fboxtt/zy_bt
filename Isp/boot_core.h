@@ -35,16 +35,27 @@
 #define TYPE_FAIL 0xDE//主机命令类型错误
 #define CHECK_FAIL 0xDF //校验错误
 
-//主站发送来的控制码类型
-#define ENTER_BOOTMODE 			0x01		//进入更新模式，即握手信号
-#define ENTER_APPMODE			0x0f		//跳转执行用户程序
-#define WRITE_FLASH				0x22		//更新程序命令
-#define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
-#define	SET_BAUD				0x25		//设置波特率
-#define	READ_IC_INF				0x03		//读取芯片型号
-#define	READ_BOOT_CODE_INF		0x04		//读取Boot代码版本号
-#define EARSE_ALL				0x06		//擦除所有APROM
-#define READ_FLASH              0x23        //读FLASH指定地址
+// //主站发送来的控制码类型
+// #define ENTER_BOOTMODE 			0x01		//进入更新模式，即握手信号
+// #define ENTER_APPMODE			0x0f		//跳转执行用户程序
+// #define WRITE_FLASH				0x22		//更新程序命令
+// #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
+// #define	SET_BAUD				0x25		//设置波特率
+// #define	READ_IC_INF				0x03		//读取芯片型号
+// #define	READ_BOOT_CODE_INF		0x04		//读取Boot代码版本号
+// #define EARSE_ALL				0x06		//擦除所有APROM
+// #define READ_FLASH              0x23        //读FLASH指定地址
+//主站发送来的控制码类型 私有协议修改内容
+#define	READ_BOOT_CODE_INF		0x10		//读取Boot代码版本号
+#define ENTER_BOOTMODE 			0x51		//进入更新模式，即握手信号
+// #define ENTER_APPMODE			0x0f		//跳转执行用户程序
+#define HEX_INFO                0x52        //HEX文件信息
+// #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
+// #define	SET_BAUD				0x25		//设置波特率
+#define EARSE_ALL				0x53		//擦除所有APROM
+#define WRITE_FLASH				0x54		//更新程序命令
+#define READ_FLASH              0x55        //读FLASH指定地址
+#define	READ_IC_INF				0x56		//读取芯片型号
 //从站回应控制码类型
 #define DEAL_SUCCESS 			0X9F		//回应操作成功
 #define DEAL_FAIL				0xDF		//回应操作失败

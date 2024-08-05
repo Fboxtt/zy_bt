@@ -139,11 +139,11 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             }
             cmd_buff = DEAL_SUCCESS;
         }break;
-        case SET_BAUD:
-        {
-            cmd_buff = DEAL_SUCCESS;
-			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
-        }break;
+//        case SET_BAUD:
+//        {
+//            cmd_buff = DEAL_SUCCESS;
+//			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
+//        }break;
         case READ_BOOT_CODE_INF:
         {
             cmd_buff = RETURN_BOOT_CODE_INF;
@@ -153,24 +153,24 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             }
             CmmuSendLength = EditionLength;
         }break;
-        case SET_ADDRESS://设置基地址配置命令
-        {
-            //BeginAddr = CommuData[6]*256+CommuData[7];
-			BeginAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
-            //if((CommuData[4])==RETURN_FLASH_UID)
-            if(BeginAddr==UID_ENC_ADRESS)
-            {
-                temp = UID_ENC_AREA;
-            }
-            else
-            {
-                temp = APROM_AREA;
-                #ifdef FLASH_BUFF_ENABLE
-                BeginAddr = APP_BUFF_ADDR;//将代码传到缓存区去
-                #endif		
-            }            			
-            cmd_buff = DEAL_SUCCESS;			
-        }break;
+//        case SET_ADDRESS://设置基地址配置命令
+//        {
+//            //BeginAddr = CommuData[6]*256+CommuData[7];
+//			BeginAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
+//            //if((CommuData[4])==RETURN_FLASH_UID)
+//            if(BeginAddr==UID_ENC_ADRESS)
+//            {
+//                temp = UID_ENC_AREA;
+//            }
+//            else
+//            {
+//                temp = APROM_AREA;
+//                #ifdef FLASH_BUFF_ENABLE
+//                BeginAddr = APP_BUFF_ADDR;//将代码传到缓存区去
+//                #endif		
+//            }            			
+//            cmd_buff = DEAL_SUCCESS;			
+//        }break;
         case EARSE_ALL:	//擦除APROM所有内容
         {
 			#ifdef FLASH_BUFF_ENABLE
@@ -210,14 +210,14 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
             BeginAddr = BeginAddr+CmmuLength;
         }break;        
-        case ENTER_APPMODE: //运行用户代码
-        {
-            cmd_buff = DEAL_SUCCESS; //回应退出了Bootloader 
-            #ifdef FLASH_BUFF_ENABLE            
-			CurrState = 2;//表示代码缓存已下载完成
-            #endif
-            ResetFlag = 1;
-        }break;        
+//        case ENTER_APPMODE: //运行用户代码
+//        {
+//            cmd_buff = DEAL_SUCCESS; //回应退出了Bootloader 
+//            #ifdef FLASH_BUFF_ENABLE            
+//			CurrState = 2;//表示代码缓存已下载完成
+//            #endif
+//            ResetFlag = 1;
+//        }break;        
         case NO_CMD://无操作
         {
             return BOOT_BOOL_FALSE;
