@@ -38,13 +38,13 @@ void UartSendOneByte(uint8_t input_data)
 //        ;
 //    }
 }
-
+#define SLAVE_ADDRESS 0x01//设备地址
 void UartReceData()//接收数据帧
 {
 	if(!UartReceFlag)
 	{		
         CommuData[CmmuReadNumber] = SCI0->RXD0;		//将接收数据载入缓存
-		if(CommuData[0]==CommunicationCommandHeader)
+		if(CommuData[0] == SLAVE_ADDRESS)
 		{
 			CmmuReadNumber++;
 		}
