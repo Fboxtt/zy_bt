@@ -64,9 +64,9 @@ uint8_t AnalysisData()//分析接收帧的数据
 
 void ClearCommu()
 {
-    CommuData[0] = 0;
-    CmmuReadNumber = 0;
-    UartReceFlag = 0;
+    CommuData[0] = 0; //清除缓冲区数据头，准备下次串口数据到来
+    CmmuReadNumber = 0; //重新计数，准备下次串口数据到来
+    UartReceFlag = 0; //清除传输完成标志
 }
 
 
