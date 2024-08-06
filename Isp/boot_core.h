@@ -28,9 +28,11 @@
 //#define ENCRYPT_UID_ENABLE					    //使能UID加密功能，使能后会在跳转至APP前进行一次UID解密判断，若不一致就拒绝跳转到APP工作
 //#define FLASH_BUFF_ENABLE						//Flash缓存功能开关，使能后会在FLASH区域开辟一个代码缓存区用于存储传输到来的新代码数据
 
+#define IC_EDITION              "BAT32G13701"
+#define IC_EDITION_LENTH              11
+
 #define Edition                 "BAT32G13701"	//BOOT代码的版本号
 #define EditionLength           11				//版本号长度
-
 //私有协议新增内容
 #define TYPE_FAIL 0xDE//主机命令类型错误
 #define CHECK_FAIL 0xDF //校验错误
@@ -48,8 +50,8 @@
 //主站发送来的控制码类型 私有协议修改内容
 #define	READ_BOOT_CODE_INF		0x10		//读取Boot代码版本号
 #define	READ_IC_INF				0x51		//读取芯片型号
-#define HEX_INFO                0x53        //HEX文件信息
-#define ENTER_BOOTMODE 			0x52		//进入更新模式，即握手信号
+#define HEX_INFO                0x52        //接收HEX文件信息
+#define ENTER_BOOTMODE 			0x53		//进入更新模式，即握手信号
 // #define ENTER_APPMODE			0x0f		//跳转执行用户程序
 
 // #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址

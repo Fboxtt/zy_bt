@@ -1,36 +1,37 @@
 //************************************************************
-//  Copyright (c) ÖĞÎ¢°ëµ¼Ìå£¨ÉîÛÚ£©¹É·İÓĞÏŞ¹«Ë¾
-//	ÎÄ¼şÃû³Æ	: boot_core.c
-//	Ä£¿é¹¦ÄÜ	: BootLoaderºËĞÄ
-//  ¸üÕıÈÕÆÚ	: 2022/1/10
-// 	°æ±¾		: V1.0
+//  Copyright (c) ä¸­å¾®åŠå¯¼ä½“ï¼ˆæ·±åœ³ï¼‰è‚¡ä»½æœ‰é™å…¬å¸
+//	æ–‡ä»¶åç§°	: boot_core.c
+//	æ¨¡å—åŠŸèƒ½	: BootLoaderæ ¸å¿ƒ
+//  æ›´æ­£æ—¥æœŸ	: 2022/1/10
+// 	ç‰ˆæœ¬		: V1.0
 //************************************************************
 
 #include "boot_core.h"
 
-uint8_t HandShakeValue;	                            //ÎÕÊÖ´ÎÊı´æ´¢±äÁ¿
-uint8_t ResetFlag = 0;								//±íÊ¾¸´Î»Ìõ¼ş´ï³É
-uint8_t CurrState = 0;								//µ±Ç°Ğ¾Æ¬µÄ×´Ì¬
-uint32_t ReadFlashLength = 0;                       //¶ÁFlashµÄ³¤¶È        
-uint32_t ReadFlashAddr = 0;							//¶ÁFlashµÄÆğÊ¼µØÖ·
-const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//°æ±¾ºÅ´æ´¢
-boot_addr_t BeginAddr = APP_ADDR;				    //ÆğÊ¼µØÖ·´æ´¢
-uint32_t NewBaud = UartBaud;						//´æ´¢ĞÂ²¨ÌØÂÊµÄ±äÁ¿
+uint8_t HandShakeValue;	                            //æ¡æ‰‹æ¬¡æ•°å­˜å‚¨å˜é‡
+uint8_t ResetFlag = 0;								//è¡¨ç¤ºå¤ä½æ¡ä»¶è¾¾æˆ
+uint8_t CurrState = 0;								//å½“å‰èŠ¯ç‰‡çš„çŠ¶æ€
+uint32_t ReadFlashLength = 0;                       //è¯»Flashçš„é•¿åº¦        
+uint32_t ReadFlashAddr = 0;							//è¯»Flashçš„èµ·å§‹åœ°å€
+const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//ç‰ˆæœ¬å·å­˜å‚¨
+const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // èŠ¯ç‰‡å‹å·å­˜å‚¨
+boot_addr_t BeginAddr = APP_ADDR;				    //èµ·å§‹åœ°å€å­˜å‚¨
+uint32_t NewBaud = UartBaud;						//å­˜å‚¨æ–°æ³¢ç‰¹ç‡çš„å˜é‡
 
-/* boot³õÊ¼»¯¹³×Óº¯Êı£¬Çë½«³õÊ¼»¯´úÂëĞ´Èë¸Ãº¯Êı */
+/* bootåˆå§‹åŒ–é’©å­å‡½æ•°ï¼Œè¯·å°†åˆå§‹åŒ–ä»£ç å†™å…¥è¯¥å‡½æ•° */
 void BootInit()
 {
 	UartInit(UartBaud);
 	CurrState = IAP_CheckAPP();
-    if(CurrState==1)//ÅĞ¶ÏAPPÊÇ·ñÍêÕû£¬ÍêÕûÔò¿ªÆô¶¨Ê±
+    if(CurrState==1)//åˆ¤æ–­APPæ˜¯å¦å®Œæ•´ï¼Œå®Œæ•´åˆ™å¼€å¯å®šæ—¶
     {
         BaseTimeSystemInit(BOOT_ENABLE);
     }
 	#ifdef FLASH_BUFF_ENABLE
-	else if(CurrState==2)//½«»º´æÇø¼ÓÔØµ½ÔËĞĞÇøºóÖ±½ÓÔËĞĞAPP
+	else if(CurrState==2)//å°†ç¼“å­˜åŒºåŠ è½½åˆ°è¿è¡ŒåŒºåç›´æ¥è¿è¡ŒAPP
 	{
-		IAP_Remap();//½«´úÂë»º´æÇøµÄÄÚÈİ¼ÓÔØÈë³ÌĞòÔËĞĞÇø
-		IAP_FlagWrite(1);//ÉèÖÃÎªAPP¿ÉÔËĞĞÌ¬
+		IAP_Remap();//å°†ä»£ç ç¼“å­˜åŒºçš„å†…å®¹åŠ è½½å…¥ç¨‹åºè¿è¡ŒåŒº
+		IAP_FlagWrite(1);//è®¾ç½®ä¸ºAPPå¯è¿è¡Œæ€
         IAP_Reset();
 	}
 	#endif
@@ -51,7 +52,7 @@ void Decrypt_Fun(uint8_t* buff)
 	{
 		return;
 	}
-    //ARMÎªĞ¡¶ËÄ£Ê½ĞèÒª½«Ã¿¸ö×ÖµÄ¸ßÎ»ºÍµÍÎ»¶Ôµ÷
+    //ARMä¸ºå°ç«¯æ¨¡å¼éœ€è¦å°†æ¯ä¸ªå­—çš„é«˜ä½å’Œä½ä½å¯¹è°ƒ
     for(i=0;i<(CmmuLength/4);i=i+1)
 	{		
         for(k=0;k<4;k++)
@@ -97,23 +98,23 @@ void BootCheckReset()
     if(ResetFlag==1)
     {
         ResetFlag = 0;	
-        BaseTimeSystemInit(BOOT_DISABLE);//¹Ø±Õ¶¨Ê±Æ÷
+        BaseTimeSystemInit(BOOT_DISABLE);//å…³é—­å®šæ—¶å™¨
 
 		#ifdef FLASH_BUFF_ENABLE
 		if(CurrState == 2)
 		{
-			IAP_FlagWrite(2);//´úÂë»º´æÇø¾ÍĞ÷±êÖ¾
+			IAP_FlagWrite(2);//ä»£ç ç¼“å­˜åŒºå°±ç»ªæ ‡å¿—
 			//IAP_Remap();
 		}
 		if(CurrState == 0)
 		{
-			IAP_FlagWrite(2);//APP¿ÉÕı³£ÔËĞĞ±êÖ¾
+			IAP_FlagWrite(2);//APPå¯æ­£å¸¸è¿è¡Œæ ‡å¿—
 		}
 		#else
-        IAP_FlagWrite(1);//APP¿ÉÕı³£ÔËĞĞ±êÖ¾
+        IAP_FlagWrite(1);//APPå¯æ­£å¸¸è¿è¡Œæ ‡å¿—
 		#endif	
 					
-        IAP_Reset();//¸´Î»½øÈëAPP
+        IAP_Reset();//å¤ä½è¿›å…¥APP
     }
 }
 
@@ -122,9 +123,9 @@ uint8_t temp = 0;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
     uint8_t i;	
-    boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//ÃüÁîÖ´ĞĞ½á¹û»º´æ
+    boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//å‘½ä»¤æ‰§è¡Œç»“æœç¼“å­˜
     CmmuSendLength = 0;	
-    switch(cmd)//¸ù¾İÃüÁîÖ´ĞĞÏàÓ¦µÄ¶¯×÷
+    switch(cmd)//æ ¹æ®å‘½ä»¤æ‰§è¡Œç›¸åº”çš„åŠ¨ä½œ
     {
         case READ_BOOT_CODE_INF:
         {
@@ -135,24 +136,6 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             }
             CmmuSendLength = EditionLength;
         }break;
-        case ENTER_BOOTMODE:
-        {
-            HandShakeValue++;
-            if(HandShakeValue>=HandShakes)
-            {
-               /* ¹Ø±ÕÊ±ÖÓ */
-               BaseTimeSystemInit(BOOT_DISABLE);
-			   #ifndef FLASH_BUFF_ENABLE
-               IAP_FlagWrite(0);//½«APPÍê³É±êÖ¾È¥µô£¬Èç¹û¸üĞÂ¹ı³ÌÊ§°ÜÔòÏÂ´ÎÉÏµçÒ»Ö±Î¬³ÖÔÚBOOTµÈ´ı¸üĞÂ
-			   #endif
-            }
-            cmd_buff = DEAL_SUCCESS;
-        }break;
-//        case SET_BAUD:
-//        {
-//            cmd_buff = DEAL_SUCCESS;
-//			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
-//        }break;
         case READ_IC_INF:
         {
             cmd_buff = READ_IC_INF;
@@ -162,7 +145,31 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             }
             CmmuSendLength = EditionLength;
         }break;
-//        case SET_ADDRESS://ÉèÖÃ»ùµØÖ·ÅäÖÃÃüÁî
+        case HEX_INFO:
+        {
+            cmd_buff = HEX_INFO;
+
+        }break;
+        case ENTER_BOOTMODE:
+        {
+            HandShakeValue++;
+            if(HandShakeValue>=HandShakes)
+            {
+               /* å…³é—­æ—¶é’Ÿ */
+               BaseTimeSystemInit(BOOT_DISABLE);
+			   #ifndef FLASH_BUFF_ENABLE
+               IAP_FlagWrite(0);//å°†APPå®Œæˆæ ‡å¿—å»æ‰ï¼Œå¦‚æœæ›´æ–°è¿‡ç¨‹å¤±è´¥åˆ™ä¸‹æ¬¡ä¸Šç”µä¸€ç›´ç»´æŒåœ¨BOOTç­‰å¾…æ›´æ–°
+			   #endif
+            }
+            cmd_buff = DEAL_SUCCESS;
+        }break;
+//        case SET_BAUD:
+//        {
+//            cmd_buff = DEAL_SUCCESS;
+//			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
+//        }break;
+
+//        case SET_ADDRESS://è®¾ç½®åŸºåœ°å€é…ç½®å‘½ä»¤
 //        {
 //            //BeginAddr = CommuData[6]*256+CommuData[7];
 //			BeginAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
@@ -175,12 +182,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //            {
 //                temp = APROM_AREA;
 //                #ifdef FLASH_BUFF_ENABLE
-//                BeginAddr = APP_BUFF_ADDR;//½«´úÂë´«µ½»º´æÇøÈ¥
+//                BeginAddr = APP_BUFF_ADDR;//å°†ä»£ç ä¼ åˆ°ç¼“å­˜åŒºå»
 //                #endif		
 //            }            			
 //            cmd_buff = DEAL_SUCCESS;			
 //        }break;
-        case EARSE_ALL:	//²Á³ıAPROMËùÓĞÄÚÈİ
+        case EARSE_ALL:	//æ“¦é™¤APROMæ‰€æœ‰å†…å®¹
         {
 			#ifdef FLASH_BUFF_ENABLE
 			if(temp==APROM_AREA)
@@ -196,7 +203,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			#endif
             cmd_buff = DEAL_SUCCESS;
         }break;
-        case WRITE_FLASH://IAPĞ´Èë²Ù×÷³É¹¦
+        case WRITE_FLASH://IAPå†™å…¥æ“ä½œæˆåŠŸ
         {
             #ifdef ENCRYPT_ENABLE
 			if(temp==UID_ENC_AREA)
@@ -219,15 +226,15 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
             BeginAddr = BeginAddr+CmmuLength;
         }break;        
-//        case ENTER_APPMODE: //ÔËĞĞÓÃ»§´úÂë
+//        case ENTER_APPMODE: //è¿è¡Œç”¨æˆ·ä»£ç 
 //        {
-//            cmd_buff = DEAL_SUCCESS; //»ØÓ¦ÍË³öÁËBootloader 
+//            cmd_buff = DEAL_SUCCESS; //å›åº”é€€å‡ºäº†Bootloader 
 //            #ifdef FLASH_BUFF_ENABLE            
-//			CurrState = 2;//±íÊ¾´úÂë»º´æÒÑÏÂÔØÍê³É
+//			CurrState = 2;//è¡¨ç¤ºä»£ç ç¼“å­˜å·²ä¸‹è½½å®Œæˆ
 //            #endif
 //            ResetFlag = 1;
 //        }break;        
-        case NO_CMD://ÎŞ²Ù×÷
+        case NO_CMD://æ— æ“ä½œ
         {
             return BOOT_BOOL_FALSE;
         }
