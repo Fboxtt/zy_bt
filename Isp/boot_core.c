@@ -126,6 +126,15 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
     CmmuSendLength = 0;	
     switch(cmd)//根据命令执行相应的动作
     {
+        case READ_BOOT_CODE_INF:
+        {
+            cmd_buff = RETURN_BOOT_CODE_INF;
+            for(i=0;i<EditionLength;i++)
+            {
+                CmdSendData[i] = Boot_Inf_Buff[i];                
+            }
+            CmmuSendLength = EditionLength;
+        }break;
         case ENTER_BOOTMODE:
         {
             HandShakeValue++;
@@ -144,9 +153,9 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //            cmd_buff = DEAL_SUCCESS;
 //			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
 //        }break;
-        case READ_BOOT_CODE_INF:
+        case READ_IC_INF:
         {
-            cmd_buff = RETURN_BOOT_CODE_INF;
+            cmd_buff = READ_IC_INF;
             for(i=0;i<EditionLength;i++)
             {
                 CmdSendData[i] = Boot_Inf_Buff[i];                

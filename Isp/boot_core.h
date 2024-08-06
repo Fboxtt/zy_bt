@@ -47,15 +47,17 @@
 // #define READ_FLASH              0x23        //读FLASH指定地址
 //主站发送来的控制码类型 私有协议修改内容
 #define	READ_BOOT_CODE_INF		0x10		//读取Boot代码版本号
-#define ENTER_BOOTMODE 			0x51		//进入更新模式，即握手信号
+#define	READ_IC_INF				0x51		//读取芯片型号
+#define HEX_INFO                0x53        //HEX文件信息
+#define ENTER_BOOTMODE 			0x52		//进入更新模式，即握手信号
 // #define ENTER_APPMODE			0x0f		//跳转执行用户程序
-#define HEX_INFO                0x52        //HEX文件信息
+
 // #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
 // #define	SET_BAUD				0x25		//设置波特率
-#define EARSE_ALL				0x53		//擦除所有APROM
-#define WRITE_FLASH				0x54		//更新程序命令
-#define READ_FLASH              0x55        //读FLASH指定地址
-#define	READ_IC_INF				0x56		//读取芯片型号
+#define EARSE_ALL				0x54		//擦除所有APROM
+#define WRITE_FLASH				0x55		//更新程序命令
+#define READ_FLASH              0x56        //读FLASH指定地址
+
 //从站回应控制码类型
 #define DEAL_SUCCESS 			0X9F		//回应操作成功
 #define DEAL_FAIL				0xDF		//回应操作失败
