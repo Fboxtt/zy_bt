@@ -14,9 +14,13 @@ uint8_t CurrState = 0;								//当前芯片的状态
 uint32_t ReadFlashLength = 0;                       //读Flash的长度        
 uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
-const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
+
+
+const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
+volatile uint8_t ACK = 0x00;
+
 
 /* boot初始化钩子函数，请将初始化代码写入该函数 */
 void BootInit()
@@ -123,32 +127,32 @@ uint8_t temp = 0;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
     uint8_t i;	
-    boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
+    // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
     CmmuSendLength = 0;	
+    ACK = ERR_NO;
     switch(cmd)//根据命令执行相应的动作
     {
         case READ_BOOT_CODE_INF:
         {
-            cmd_buff = RETURN_BOOT_CODE_INF;
             for(i=0;i<EditionLength;i++)
             {
                 CmdSendData[i] = Boot_Inf_Buff[i];                
             }
             CmmuSendLength = EditionLength;
+            ACK = ERR_NO;
         }break;
         case READ_IC_INF:
         {
-            cmd_buff = READ_IC_INF;
             for(i=0;i<EditionLength;i++)
             {
                 CmdSendData[i] = Boot_Inf_Buff[i];                
             }
             CmmuSendLength = EditionLength;
+            ACK = ERR_NO;
         }break;
         case HEX_INFO:
         {
-            cmd_buff = HEX_INFO;
-
+            ACK = ERR_NO;
         }break;
         case ENTER_BOOTMODE:
         {
@@ -161,7 +165,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
                IAP_FlagWrite(0);//将APP完成标志去掉，如果更新过程失败则下次上电一直维持在BOOT等待更新
 			   #endif
             }
-            cmd_buff = DEAL_SUCCESS;
+            ACK = ERR_NO;
         }break;
 //        case SET_BAUD:
 //        {
@@ -201,7 +205,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			#else
 			IAP_Erase_ALL(temp);
 			#endif
-            cmd_buff = DEAL_SUCCESS;
+            ACK = ERR_NO;
         }break;
         case WRITE_FLASH://IAP写入操作成功
         {
@@ -218,13 +222,14 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			
 			if(IAP_WriteMultiByte(BeginAddr,CommuData,CmmuLength,temp))
 			{
-				cmd_buff = DEAL_SUCCESS;
-			}				
+                BeginAddr = BeginAddr+CmmuLength;
+                ACK = ERR_NO;
+			}
             else
 			{
-				cmd_buff = DEAL_FAIL;
+                ACK = ERR_OPERATE;
 			}
-            BeginAddr = BeginAddr+CmmuLength;
+
         }break;        
 //        case ENTER_APPMODE: //运行用户代码
 //        {
@@ -236,8 +241,8 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //        }break;        
         case NO_CMD://无操作
         {
-            return BOOT_BOOL_FALSE;
-        }
+            ACK = ERR_CMD_ID;
+        }break;
         case READ_FLASH:
         {            
 			//ReadFlashAddr = CommuData[6]*256+CommuData[7];
@@ -252,18 +257,21 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
                 temp = APROM_AREA;
             }
 			IAP_ReadMultiByte(ReadFlashAddr,CmdSendData,ReadFlashLength,temp);								
-            cmd_buff = RETURN_FLASH;
+
             CmmuSendLength = ReadFlashLength;
-			 			
-        }break;      
+        }break;
         default:
         {
-            cmd_buff = DEAL_FAIL;
             CmdSendData[0] = ERROR_CMD_FAIL;
             CmmuSendLength = 1;
+            ACK = ERR_CMD_ID;
         }
         break;
     }
-    return cmd_buff;
+    if(ACK != ERR_CMD_ID) {
+        return (cmd | 0x80);
+    } else {
+        return cmd;
+    }
 }
 
