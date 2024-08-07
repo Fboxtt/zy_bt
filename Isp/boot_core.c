@@ -263,7 +263,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         default:
         {
             CmdSendData[0] = ERROR_CMD_FAIL;
-            CmmuSendLength = 1;
+            CmmuSendLength = 0;
             ACK = ERR_CMD_ID;
         }
         break;

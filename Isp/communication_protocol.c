@@ -28,11 +28,14 @@ void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 	uint8_t check_sum = 0;
 	UartSendOneByte(SEND_ADDRESS);	//发送帧头
 	
-	UartSendOneByte(Data_len >> 8);		 				 		//发送数据域长度高8位
-	UartSendOneByte(Data_len);		 			 	//发送数据域长度低8位
+	UartSendOneByte((Data_len + 5) >> 8);		 				 		//发送数据域长度高8位
+	UartSendOneByte(Data_len + 5);		 			 	//发送数据域长度低8位
 	UartSendOneByte(SEND_BMS_TYPE);					//发送单板类型码
 	UartSendOneByte(Command);					 	//发送控制码
-	check_sum = Data_len >> 8 + Data_len  + SEND_BMS_TYPE + Command + SEND_SHAKE_1 + SEND_SHAKE_2 + ACK;
+	UartSendOneByte(SEND_SHAKE_1);					//握手字1
+	UartSendOneByte(SEND_SHAKE_2);					//握手字1
+	UartSendOneByte(ACK);							//发送应答码
+	check_sum = ((Data_len + 5) >> 8) + (Data_len + 5) + SEND_BMS_TYPE + Command + SEND_SHAKE_1 + SEND_SHAKE_2 + ACK;
 	for(i=0;i<Data_len;i++)	  					 	//发送数据域
 	{
 		UartSendOneByte(*(Data+i));
@@ -50,14 +53,14 @@ uint8_t AnalysisData()//分析接收帧的数据
 	uint8_t check_sum = 0;
 	data_len = CommuData[1] * 0x100 + CommuData[2];
 
-	cmd = CommuData[3];
+	cmd = CommuData[4];
 	//计算单板类型到数据位的校验和
-	for(i=3; i<data_len; i++)
+	for(i=1; i<data_len + 3; i++)
 	{
 	   check_sum+=CommuData[i];
 	}
-	if((CommuData[3]&0x80) != 0) {
-		cmd = TYPE_FAIL;
+	if((cmd&0x80) != 0) {
+		ACK = ERR_CMD_ID;
 	}
 	//校验成功,提取控制码
 	if(check_sum!=(CommuData[3 + data_len]))
