@@ -57,7 +57,7 @@ static void uart0_interrupt_receive(void)
     {
         uart0_callback_error(err_type);
     }
-    
+    togol();
     rx_data = SCI0->RXD0;
     if (g_uart0_rx_length > g_uart0_rx_count)
     {

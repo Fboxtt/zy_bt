@@ -69,11 +69,19 @@ void HardFault_Handler()
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
+void togol(void)
+{
+	PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
+	PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
+}
+
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
     system_tick_init();
     BootInit();
+		PORT_Init();
+	togol();
     while (1U)
     {
         if(UartReceFlag)
