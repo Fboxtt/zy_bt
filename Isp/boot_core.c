@@ -145,9 +145,9 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         {
             for(i=0;i<EditionLength;i++)
             {
-                CmdSendData[i] = Boot_Inf_Buff[i];                
+                CmdSendData[i] = IC_INF_BUFF[i];                
             }
-            CmmuSendLength = EditionLength;
+            CmmuSendLength = IC_EDITION_LENTH;
             ACK = ERR_NO;
         }break;
         case HEX_INFO:
