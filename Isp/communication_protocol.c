@@ -47,13 +47,14 @@ void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 #define TYPE_TO_SHAKE_LENTH 4
 uint8_t AnalysisData()//分析接收帧的数据
 {
-	uint8_t cmd = NO_CMD;
+	volatile uint8_t cmd = NO_CMD;
     uint8_t data_len;
 	uint8_t i;
 	uint8_t check_sum = 0;
 	data_len = CommuData[1] * 0x100 + CommuData[2];
-
 	cmd = CommuData[4];
+
+	ACK = ERR_NO;
 	//计算单板类型到数据位的校验和
 	for(i=1; i<data_len + 3; i++)
 	{
@@ -62,10 +63,13 @@ uint8_t AnalysisData()//分析接收帧的数据
 	if((cmd&0x80) != 0) {
 		ACK = ERR_CMD_ID;
 	}
+	if(cmd != WRITE_FLASH && CmmuReadNumber != 8) {
+		ACK = ERR_CMD_LEN;
+	}
 	//校验成功,提取控制码
 	if(check_sum!=(CommuData[3 + data_len]))
 	{
-        cmd = ERROR_CHECK_FAIL;
+        ACK = ERROR_CHECK_FAIL;
 	}
 	CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
 

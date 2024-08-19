@@ -14,7 +14,7 @@
 /**************************************************************************/
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
-#define CommunicationLength1        (64+7)
+#define CommunicationLength1        (64+2+8)
 
 /* 依据芯片特性设计合适的数据类型 */
 #define commu_bool_t uint8_t                //bool型数据类型

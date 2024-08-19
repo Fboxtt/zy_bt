@@ -17,6 +17,7 @@ const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
 
+uint16_t PacketNumber = 0;
 
 const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
 volatile uint8_t ACK = 0x00;
@@ -219,9 +220,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				Decrypt_Fun(CommuData+4);
 			}
 			#endif
-			
+			if((CommuData[8] + CommuData[9] * 0x100) != (PacketNumber + 1)) {
+                ACK = ERR_PACKET_NUMBER;
+            }
 			if(IAP_WriteMultiByte(BeginAddr,CommuData,CmmuLength,temp))
 			{
+                
                 BeginAddr = BeginAddr+CmmuLength;
                 ACK = ERR_NO;
 			}

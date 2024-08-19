@@ -30,9 +30,9 @@ Pragma directive
 /*
     P50->RX0
     P51->TX0
-    ³õÊ¼²¨ÌØÂÊ->9600
-    ÏµÍ³Ö÷Æµ->48M
-    RST->Ê¹ÄÜ
+    åˆå§‹æ³¢ç‰¹çŽ‡->9600
+    ç³»ç»Ÿä¸»é¢‘->48M
+    RST->ä½¿èƒ½
 */
 /* End user code. Do not edit comment generated here */
 
@@ -42,6 +42,7 @@ Global variables and functions
 /* Start user code for global. Do not edit comment generated here */
 volatile uint32_t g_ticks;
 uint8_t result_cmd;
+extern volatile uint8_t ACK;
 void delay_ms(uint32_t n)
 {
     g_ticks = n;
@@ -80,16 +81,17 @@ int main(void)
         {
             CMDBuff = AnalysisData();           
             ClearCommu();
-            result_cmd = BootCmdRun(CMDBuff);            
-            if(result_cmd!=BOOT_BOOL_FALSE)
-            {
-                CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData);
-//                if(CMDBuff==SET_BAUD)//ÉèÖÃÐÂµÄ²¨ÌØÂÊ
+            if (ACK == ERR_NO) {
+							result_cmd = BootCmdRun(CMDBuff); 
+            }
+
+            CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData);
+//                if(CMDBuff==SET_BAUD)//è®¾ç½®æ–°çš„æ³¢ç‰¹çŽ‡
 //                {
 //                    UartInit(NewBaud);
 //                }
-                result_cmd = BOOT_BOOL_FALSE;
-            } 
+            result_cmd = BOOT_BOOL_FALSE;
+
             CMDBuff = 0; 
         }
         BootCheckReset();

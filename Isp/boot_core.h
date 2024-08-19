@@ -98,7 +98,7 @@
 #define BOOT_DISABLE       0
 
 /*     此处为通讯相关接口，需要在通讯协议文件中定义此部分内容      */
-#define CommunicationLength1    (64+7)
+#define CommunicationLength1    (64+2+8)
 extern boot_length_t CmmuLength;		             //接收数据长度
 extern boot_cmd_t CMDBuff;		                     //命令存储缓存
 extern boot_data_t CommuData[CommunicationLength1];	 //通讯接收缓存
