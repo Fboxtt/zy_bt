@@ -12,7 +12,7 @@
 #include "boot_core.h"
 
 #define APP_ADDR                0X2000				//APP的起始位置
-#define APP_SIZE                (0x10000-0X2000)	//APP代码最大长度
+#define APP_SIZE                (0x10000 - 0X2000)	//APP代码最大长度
 
 #define LDROM_ADDR				0X0000				//LDROM的起始位置
 #define LDROM_SIZE				0x2000				//LDROM的大小

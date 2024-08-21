@@ -82,7 +82,7 @@ int main(void)
             CMDBuff = AnalysisData();           
             ClearCommu();
             if (ACK == ERR_NO) {
-							result_cmd = BootCmdRun(CMDBuff); 
+                result_cmd = BootCmdRun(CMDBuff); 
             }
 
             CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData);

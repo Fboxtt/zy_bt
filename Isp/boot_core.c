@@ -16,7 +16,7 @@ uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
-
+extern commu_data_t CmdSendData[CommunicationLength1];
 uint16_t PacketNumber = 0;
 
 const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
@@ -124,7 +124,7 @@ void BootCheckReset()
 }
 
 
-uint8_t temp = 0;
+uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
     uint8_t i;	
@@ -208,9 +208,9 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			#endif
             ACK = ERR_NO;
         }break;
-        case WRITE_FLASH://IAP写入操作成功
-        {
-            #ifdef ENCRYPT_ENABLE
+		case WRITE_FLASH://IAP写入操作成功
+		{
+			#ifdef ENCRYPT_ENABLE
 			if(temp==UID_ENC_AREA)
 			{
 				temp = UID_ENC_AREA_AREA;
@@ -220,21 +220,23 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				Decrypt_Fun(CommuData+4);
 			}
 			#endif
-			if((CommuData[8] + CommuData[9] * 0x100) != (PacketNumber + 1)) {
-                ACK = ERR_PACKET_NUMBER;
-            }
-			if(IAP_WriteMultiByte(BeginAddr,CommuData,CmmuLength,temp))
-			{
-                
-                BeginAddr = BeginAddr+CmmuLength;
-                ACK = ERR_NO;
+			if((CommuData[7] + CommuData[8] * 0x100) != (PacketNumber)) {
+				ACK = ERR_PACKET_NUMBER;
 			}
-            else
+			if(IAP_WriteMultiByte(BeginAddr,(CommuData+9),64,temp))
 			{
-                ACK = ERR_OPERATE;
+				BeginAddr = BeginAddr+CmmuLength;
+				PacketNumber++;
+				ACK = ERR_NO;
 			}
-
-        }break;        
+			else
+			{
+				ACK = ERR_OPERATE;
+			}
+			CmmuSendLength = 2;
+			CmdSendData[0] = CommuData[7];
+			CmdSendData[1] = CommuData[8];
+		}break;        
 //        case ENTER_APPMODE: //运行用户代码
 //        {
 //            cmd_buff = DEAL_SUCCESS; //回应退出了Bootloader 
