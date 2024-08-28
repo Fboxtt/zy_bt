@@ -11,8 +11,8 @@
 uint8_t CommunicationCheckNumber;			//校验位
 commu_length_t CmmuLength;						//接收数据长度
 uint8_t CMDBuff;								//命令存储缓存
-commu_data_t CommuData[CommunicationLength1];	//通讯接收缓存
-commu_data_t CmdSendData[CommunicationLength1];	//发送缓存
+commu_data_t CommuData[ReceiveLength1];	//通讯接收缓存
+commu_data_t CmdSendData[SendLength1];	//发送缓存
 commu_length_t CmmuSendLength;		            //发送数据长度
 uint8_t CRCchecksum[4];
 
@@ -48,8 +48,8 @@ void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 uint8_t AnalysisData()//分析接收帧的数据
 {
 	volatile uint8_t cmd = NO_CMD;
-    uint8_t data_len;
-	uint8_t i;
+    uint32_t data_len;
+	uint32_t i;
 	uint8_t check_sum = 0;
 	data_len = CommuData[1] * 0x100 + CommuData[2];
 	cmd = CommuData[4];
@@ -69,7 +69,7 @@ uint8_t AnalysisData()//分析接收帧的数据
 	//校验成功,提取控制码
 	if(check_sum!=(CommuData[3 + data_len]))
 	{
-        ACK = ERROR_CHECK_FAIL;
+        ACK = ERR_CHECK;
 	}
 	CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
 

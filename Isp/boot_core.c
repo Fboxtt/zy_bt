@@ -16,8 +16,8 @@ uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
-extern commu_data_t CmdSendData[CommunicationLength1];
-uint16_t PacketNumber = 0;
+extern commu_data_t CmdSendData[SendLength1];
+uint32_t PacketNumber = 0;
 
 const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
 volatile uint8_t ACK = 0x00;
@@ -220,14 +220,22 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				Decrypt_Fun(CommuData+4);
 			}
 			#endif
-			if((CommuData[7] + CommuData[8] * 0x100) != (PacketNumber)) {
+			if((CommuData[7] + (uint32_t)CommuData[8] * 0x100) != (PacketNumber)) {
 				ACK = ERR_PACKET_NUMBER;
 			}
-			if(IAP_WriteMultiByte(BeginAddr,(CommuData+9),64,temp))
+			if(IAP_WriteMultiByte(BeginAddr,(CommuData+11),PACKET_SIZE,temp))
 			{
 				BeginAddr = BeginAddr+CmmuLength;
 				PacketNumber++;
 				ACK = ERR_NO;
+				if(CommuData[7] == CommuData[9] \
+				&& CommuData[8] == CommuData[10] \
+				&& CommuData[9] > 0) {
+					#ifdef FLASH_BUFF_ENABLE            
+					CurrState = 2;//表示代码缓存已下载完成
+					#endif
+					ResetFlag = 1;
+				}
 			}
 			else
 			{
@@ -256,7 +264,8 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			ReadFlashLength = (CommuData[8]<<24)+(CommuData[9]<<16)+(CommuData[10]<<8)+CommuData[11];            
             if((CommuData[4])==RETURN_FLASH_UID)
             {
-                temp = APROM_AREA;ReadFlashAddr = UID_BASE;
+                temp = APROM_AREA;
+				ReadFlashAddr = UID_BASE;
             }
             else
             {
@@ -268,7 +277,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         }break;
         default:
         {
-            CmdSendData[0] = ERROR_CMD_FAIL;
+            CmdSendData[0] = ERR_CHECK;
             CmmuSendLength = 0;
             ACK = ERR_CMD_ID;
         }

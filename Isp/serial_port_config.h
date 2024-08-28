@@ -18,7 +18,7 @@
 //**********************UART通讯接口**********************************
 extern uint8_t UartReceFlag;		  			//UART0接收完一帧标志位
 extern uint8_t UartSendFlag;		  			//UART0发送完一Byte标志位
-extern uint8_t CmmuReadNumber;
+extern uint32_t CmmuReadNumber;
 //*********************************************************************
 void UartInit(uint32_t baud);
 void UartSendOneByte(uint8_t input_data);

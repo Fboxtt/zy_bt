@@ -14,7 +14,9 @@
 /**************************************************************************/
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
-#define CommunicationLength1        (64+2+8)
+#define SendLength1                (64+2+8)
+#define PACKET_SIZE                 512
+#define ReceiveLength1             (PACKET_SIZE+2+2+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容
 
 /* 依据芯片特性设计合适的数据类型 */
 #define commu_bool_t uint8_t                //bool型数据类型
@@ -25,8 +27,8 @@
 
 extern commu_length_t CmmuLength;		                //接收数据长度
 extern commu_cmd_t CMDBuff;		                        //命令存储缓存
-extern commu_data_t CommuData[CommunicationLength1];	//通讯接收缓存
-extern commu_data_t CmdSendData[CommunicationLength1];  //发送缓存
+extern commu_data_t CommuData[ReceiveLength1];	//通讯接收缓存
+extern commu_data_t CmdSendData[SendLength1];  //发送缓存
 extern commu_length_t CmmuSendLength;		            //接收数据长度
 void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data);    
 uint8_t AnalysisData(void);

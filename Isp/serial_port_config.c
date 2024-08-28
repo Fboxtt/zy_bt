@@ -7,7 +7,7 @@
 //************************************************************
 #include "communication_protocol.h"
 
-uint8_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
+uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位
 uint8_t UartSendFlag;				//UART0发送完一Byte标志位
 

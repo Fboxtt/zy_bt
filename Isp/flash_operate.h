@@ -14,6 +14,9 @@
 #define APP_ADDR                0X2000				//APP的起始位置
 #define APP_SIZE                (0x10000 - 0X2000)	//APP代码最大长度
 
+//#define VECTOR_OFFSET           0x1c
+#define APP_VECTOR_ADDR         APP_ADDR
+
 #define LDROM_ADDR				0X0000				//LDROM的起始位置
 #define LDROM_SIZE				0x2000				//LDROM的大小
 
@@ -46,7 +49,7 @@
 
 extern uint8_t IAP_IapLength;	        //用于IAP操作数据长度缓存
 
-extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area);//写多字节IAP操作
+extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area);//写多字节IAP操作
 extern void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area); //读多字节IAP操作
 extern uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area);  //读单字节IAP操作
 extern void IAP_Reset(void);			 		                    //复位启动								

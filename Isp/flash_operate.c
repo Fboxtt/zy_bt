@@ -108,6 +108,12 @@ void IAP_Erase_ALL(uint8_t area)
 		IAP_Erase_512B(i*ONE_PAGE_SIZE+begin_addr,area);
     }
 }
+
+void __set_VECTOR_ADDR(uint32_t addr)
+{
+	SCB->VTOR = addr;
+}
+
 void IAP_Reset()
 {	
     #ifdef ENCRYPT_UID_ENABLE		
@@ -119,6 +125,7 @@ void IAP_Reset()
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
+	__set_VECTOR_ADDR(APP_VECTOR_ADDR);
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
     ((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
     
@@ -126,9 +133,9 @@ void IAP_Reset()
     while(1);
 }
 
-uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area)	//写多字节IAP操作
+uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area)	//写多字节IAP操作
 {
-	uint8_t i;
+	uint32_t i;
 	uint8_t Write_IAP_IapData;
 	for(i=0;i<len;i++)
 	{
@@ -137,6 +144,7 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint
 		{
 			return 0;
 		}			
+		toggle();
 	}
 	return 1;
 }

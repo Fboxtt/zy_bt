@@ -76,9 +76,9 @@
 #define	RETURN_BOOT_CODE_INF	0XA4		//回应BOOT程序版本号
 #define RETURN_FLASH            0xA5        //回应读出的FLASH信息
 //错误类型
-#define	ERROR_CHECK_FAIL		0x01		//表示通讯校验失败
-#define	ERROR_BURN_FAIL			0x02		//表示烧写校验错误
-#define	ERROR_CMD_FAIL			0x04		//表示命令错误
+// #define	ERROR_CHECK_FAIL		0x01		//表示通讯校验失败
+// #define	ERROR_BURN_FAIL			0x02		//表示烧写校验错误
+// #define	ERROR_CMD_FAIL			0x04		//表示命令错误
 //空闲
 #define NO_CMD					0x00		//表示无命令
 
@@ -98,11 +98,11 @@
 #define BOOT_DISABLE       0
 
 /*     此处为通讯相关接口，需要在通讯协议文件中定义此部分内容      */
-#define CommunicationLength1    (64+2+8)
+// #define CommunicationLength1    (64+2+8)
 extern boot_length_t CmmuLength;		             //接收数据长度
 extern boot_cmd_t CMDBuff;		                     //命令存储缓存
-extern boot_data_t CommuData[CommunicationLength1];	 //通讯接收缓存
-extern boot_data_t CmdSendData[CommunicationLength1];//发送缓存
+extern boot_data_t CommuData[ReceiveLength1];	 //通讯接收缓存
+extern boot_data_t CmdSendData[SendLength1];//发送缓存
 extern boot_length_t CmmuSendLength;		         //接收数据长度
 extern uint32_t NewBaud;							 //新波特率存储													
 extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
