@@ -14,10 +14,15 @@
 /**************************************************************************/
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
-#define SendLength1                (64+2+8)
-#define PACKET_SIZE                 512
-#define ReceiveLength1             (PACKET_SIZE+2+2+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容
+#define SEND_PACKET_LENTH           2
+#define SendLength1                (64+SEND_PACKET_LENTH+8)
 
+#define RECEIVE_PACKET_LENTH        (2+2)
+#define DATA_OFFSET					(7+RECEIVE_PACKET_LENTH)
+#define PACKET_SIZE                 512
+#define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容
+#define TYPE_TO_SHAKE_LENTH         4
+#define TYPE_TO_DATA_LENTH          (TYPE_TO_SHAKE_LENTH + RECEIVE_PACKET_LENTH)
 /* 依据芯片特性设计合适的数据类型 */
 #define commu_bool_t uint8_t                //bool型数据类型
 #define commu_data_t uint8_t           //数据对应的数据类型

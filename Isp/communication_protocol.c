@@ -44,7 +44,7 @@ void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 	UartSendOneByte(check_sum);						//发送校验位低8位
 	// UartSendOneByte(CommunicationCommandEnd);		//发送帧尾   
 }
-#define TYPE_TO_SHAKE_LENTH 4
+
 uint8_t AnalysisData()//分析接收帧的数据
 {
 	volatile uint8_t cmd = NO_CMD;
@@ -71,7 +71,12 @@ uint8_t AnalysisData()//分析接收帧的数据
 	{
         ACK = ERR_CHECK;
 	}
-	CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
+	if(cmd == WRITE_FLASH) {
+		CmmuLength = data_len - TYPE_TO_DATA_LENTH;//取长度
+	} else {
+		CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
+	}
+	
 
     return cmd;
 }

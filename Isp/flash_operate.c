@@ -125,7 +125,7 @@ void IAP_Reset()
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR);
+//	__set_VECTOR_ADDR(APP_VECTOR_ADDR);
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
     ((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
     
@@ -139,7 +139,7 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint
 	uint8_t Write_IAP_IapData;
 	for(i=0;i<len;i++)
 	{
-		Write_IAP_IapData = buff[i+4];
+		Write_IAP_IapData = buff[i];
         if(IAP_WriteOneByte(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//判断写入是否正确
 		{
 			return 0;

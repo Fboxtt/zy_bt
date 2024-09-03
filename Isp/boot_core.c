@@ -223,7 +223,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			if((CommuData[7] + (uint32_t)CommuData[8] * 0x100) != (PacketNumber)) {
 				ACK = ERR_PACKET_NUMBER;
 			}
-			if(IAP_WriteMultiByte(BeginAddr,(CommuData+11),PACKET_SIZE,temp))
+			if(IAP_WriteMultiByte(BeginAddr,(CommuData+DATA_OFFSET),PACKET_SIZE,temp))
 			{
 				BeginAddr = BeginAddr+CmmuLength;
 				PacketNumber++;

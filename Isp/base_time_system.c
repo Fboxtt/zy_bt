@@ -29,7 +29,7 @@ void BaseTimeSystemInit(uint8_t enable_disable)
 void BaseTimeSystemScan()
 {
     Time_10ms_count++;
-    if(Time_10ms_count>=TIME_CHECK_BOOT_10MS)
-        ResetFlag=1;
+//    if(Time_10ms_count>=TIME_CHECK_BOOT_10MS)
+//        ResetFlag=1;
 }
 
