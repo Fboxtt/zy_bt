@@ -70,11 +70,115 @@ void HardFault_Handler()
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
+typedef enum {
+	PORT0 = 0,
+	PORT1,
+	PORT2,
+	PORT3,
+	PORT4,
+	PORT5,
+	PORT6,
+	PORT7,
+	PORT8,
+	PORT9,
+	PORT10,
+	PORT11,
+	PORT12,
+	PORT13,
+	PORT14,
+	
+}PORT_TypeDef;
+
+typedef enum {
+	PIN0 = 0,
+	PIN1,
+	PIN2,
+	PIN3,
+	PIN4,
+	PIN5,
+	PIN6,
+	PIN7,
+	
+}PIN_TypeDef;
+
+typedef enum {
+	INPUT = 0,
+	PULLUP_INPUT,
+	TTL_INPUT,
+	ANALOG_INPUT,
+	OUTPUT,
+	OPENDRAIN_OUTPUT,
+	
+}PIN_ModeDef;
+typedef struct 
+{
+	PORT_TypeDef	emGPIOx;		//refer to PORT_TypeDef
+	PIN_TypeDef 	emPin;			//refer to PIN_TypeDef
+	PIN_ModeDef		emMode;			//refer to PIN_ModeDef
+	uint8_t 		value;			//output TRUE: high, FALSE: low
+}TGPIO;
+TGPIO PIN_VBCTL = {PORT1,PIN5,OUTPUT};		//ok
+void PORT_SetBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
+{
+	uint8_t pos = 1<<PINx;
+	*((volatile uint8_t*)(&PORT->P0+PORTx)) |= pos;
+}
+#define  	VB_ON		(PORT_SetBit(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin))	 
+#define		VB_OFF		(PORT_ClrBit(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin))
+#define 	IS_VB_ON	(PORT_GetBit(PIN_VBCTL.emGPIOx,PIN_VBCTL.emPin))
+void P_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
+{
+  	uint8_t mode = MODEx;
+	uint8_t pos = 1<<PINx;
+	
+	switch(mode)
+	{
+		case INPUT:
+			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PM0+PORTx)) |= pos;
+			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PU0+PORTx)) &= ~pos;
+			break;
+		case PULLUP_INPUT:
+			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PM0+PORTx)) |= pos;
+			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PU0+PORTx)) |= pos;
+			break;
+		case TTL_INPUT:
+			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PM0+PORTx)) |= pos;
+			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) |= pos;
+			*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PU0+PORTx)) &= ~pos;
+			break;
+		case ANALOG_INPUT:
+			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) |= pos;
+			break;
+		case OUTPUT:
+			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
+			break;
+		case OPENDRAIN_OUTPUT:
+			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) &= ~pos;
+			*((volatile uint8_t*)(&PORT->POM0+PORTx)) |= pos;
+			break;
+	}
+}
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
     system_tick_init();
     BootInit();
+	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode);
+	P_Init(PORT2,PIN3,OUTPUT);
+	VB_ON;
     while (1U)
     {
         if(UartReceFlag)
