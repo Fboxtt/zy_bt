@@ -12,6 +12,12 @@
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
+typedef enum {
+    UART0,
+    UART1,
+    UART2,
+}uartId;
+
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
 #define SEND_PACKET_LENTH           2
@@ -38,6 +44,7 @@ extern commu_length_t CmmuSendLength;		            //接收数据长度
 void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data);    
 uint8_t AnalysisData(void);
 void ClearCommu(void);
-void UartReceData(void);
+void UartReceData(uartId id);
+//static void interrupt_receive(uartId id);
 #endif
 

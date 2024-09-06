@@ -144,7 +144,7 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint
 		{
 			return 0;
 		}			
-		toggle();
+//		toggle();
 	}
 	return 1;
 }

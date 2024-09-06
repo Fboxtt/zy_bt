@@ -22,6 +22,10 @@ Pragma directive
 ***********************************************************************************************************************/
 void IRQ10_Handler(void) __attribute__((alias("uart0_interrupt_send")));
 void IRQ11_Handler(void) __attribute__((alias("uart0_interrupt_receive")));
+
+
+//void IRQ11_Handler(void) __attribute__((alias("uart1_interrupt_receive")));
+//void IRQ11_Handler(void) __attribute__((alias("uart2_interrupt_receive")));
 /* Start user code for pragma. Do not edit comment generated here */
 
 /* End user code. Do not edit comment generated here */
@@ -44,36 +48,38 @@ uint8_t uart_send_flag = 0;
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
+
+
 static void uart0_interrupt_receive(void)
 {
     INTC_ClearPendingIRQ(SR0_IRQn); /* clear INTSR0 interrupt flag */
-    volatile uint8_t rx_data;
+    uartId id = UART0;
+	// interrupt_receive(UART0);
+
+        volatile uint8_t rx_data;
     volatile uint8_t err_type;
     
-    err_type = (uint8_t)(SCI0->SSR01 & 0x0007U);
-    SCI0->SIR01 = (uint16_t)err_type;
-
-    if (err_type != 0U)
-    {
-        uart0_callback_error(err_type);
+    if(id == UART0) {
+        err_type = (uint8_t)(SCI0->SSR01 & 0x0007U);
+        SCI0->SIR01 = (uint16_t)err_type;
+        rx_data = SCI0->RXD0;
+    } else if(id == UART1) {
+        err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
+        SCI0->SIR03 = (uint16_t)err_type;
+        rx_data = SCI0->RXD1;
+    } else if(id == UART2) {
+        err_type = (uint8_t)(SCI1->SSR11 & 0x0007U);
+        SCI1->SIR11 = (uint16_t)err_type;
+        rx_data = SCI1->RXD2;
     }
+
+    // if (err_type != 0U)
+    // {
+    //     uart0_callback_error(err_type);
+    // }
     
-    rx_data = SCI0->RXD0;
-    if (g_uart0_rx_length > g_uart0_rx_count)
-    {
-        *gp_uart0_rx_address = rx_data;
-        gp_uart0_rx_address++;
-        g_uart0_rx_count++;
 
-        if (g_uart0_rx_length == g_uart0_rx_count)
-        {
-            uart0_callback_receiveend();
-        }
-    }
-    else
-    {
-        uart0_callback_softwareoverrun(rx_data);
-    }
+    UartReceData(id);
 }
 /***********************************************************************************************************************
 * Function Name: uart0_interrupt_send
@@ -104,7 +110,7 @@ static void uart0_interrupt_send(void)
 static void uart0_callback_receiveend(void)
 {
     /* Start user code. Do not edit comment generated here */
-     UartReceData();
+     
     /* End user code. Do not edit comment generated here */
 }
 /***********************************************************************************************************************
@@ -117,7 +123,7 @@ static void uart0_callback_receiveend(void)
 static void uart0_callback_softwareoverrun(uint16_t rx_data)
 {
     /* Start user code. Do not edit comment generated here */
-     UartReceData();
+//     UartReceData();
     /* End user code. Do not edit comment generated here */
 }
 /***********************************************************************************************************************

@@ -50,6 +50,21 @@ void SCI0_Init(void)
     SCI0->SPS0 = _0040_SCI_CK01_fCLK_4 | _0004_SCI_CK00_fCLK_4;
     UART0_Init();
 }
+
+/* ToDo: You can allocate the TXD0 to P51, P17, P40 or P12 with PIOR35, PIOR43 and PIOR01 register */
+#define TXD0_PORT_SETTING() do{ \
+        PORT->PIOR0 |=  (1 << 1);    /* allocate TXD0 to P17 */ \
+        PORT->P1    |=  (1 << 7);    /* P17 output high level */ \
+        PORT->PM1   &= ~(1 << 7);    /* P17 is used as TXD0 output */ \
+        PORT->POM1  &= ~(1 << 7);    /* P17 is push-pull output mode */ \
+}while(0)
+
+/* ToDo: You can allocate the RXD0 to P50, P16, P137 or P11 with PIOR35, PIOR43 and PIOR01 register */
+#define RXD0_PORT_SETTING() do{ \
+        PORT->PIOR0 |=  (1 << 1);    /* allocate RXD0 to P16 */ \
+        PORT->PM1   |=  (1 << 6);    /* P16 is used as RXD0 input */ \
+}while(0)
+
 /***********************************************************************************************************************
 * Function Name: UART0_Init
 * Description  : This function initializes the UART0 module.
@@ -79,10 +94,15 @@ void UART0_Init(void)
     SCI0->SOL0 &= (uint16_t)~_0001_SCI_CHANNEL0_INVERTED;
     SCI0->SOE0 |= _0001_SCI_CH0_OUTPUT_ENABLE;
     /* Set RxD0 pin */
-    PORT->PM5 |= 0x01U;
-    /* Set TxD0 pin */
-    PORT->P5 |= 0x02U;
-    PORT->PM5 &= 0xFDU;
+//    PORT->PM1 |= 0x40U;
+//    PORT->PIOR0 |= (1 << 1);    /* allocate RXD0 to P50 */ \
+//	PORT->PIOR3 = 0;
+//    /* Set TxD0 pin */
+//    PORT->P1 |= 0x80U;
+//    PORT->PM1 &= 0x7FU;
+	RXD0_PORT_SETTING();
+	TXD0_PORT_SETTING();
+
 }
 /***********************************************************************************************************************
 * Function Name: UART0_Start
