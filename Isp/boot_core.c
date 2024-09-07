@@ -133,7 +133,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
     ACK = ERR_NO;
     switch(cmd)//根据命令执行相应的动作
     {
-        case READ_BOOT_CODE_INF:
+        case READ_BOOT_CODE_INF: // 读取版本号
         {
             for(i=0;i<EditionLength;i++)
             {
@@ -142,7 +142,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             CmmuSendLength = EditionLength;
             ACK = ERR_NO;
         }break;
-        case READ_IC_INF:
+        case READ_IC_INF: // 读取芯片型号
         {
             for(i=0;i<EditionLength;i++)
             {
@@ -155,7 +155,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         {
             ACK = ERR_NO;
         }break;
-        case ENTER_BOOTMODE:
+        case ENTER_BOOTMODE: // 握手三次即可开始烧录
         {
             HandShakeValue++;
             if(HandShakeValue>=HandShakes)
@@ -208,7 +208,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			#endif
             ACK = ERR_NO;
         }break;
-		case WRITE_FLASH://IAP写入操作成功
+		case WRITE_FLASH:// 写入app，成功后进入app
 		{
 			#ifdef ENCRYPT_ENABLE
 			if(temp==UID_ENC_AREA)
@@ -257,7 +257,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         {
             ACK = ERR_CMD_ID;
         }break;
-        case READ_FLASH:
+        case READ_FLASH: // 读取flash，暂未使用此功能
         {            
 			//ReadFlashAddr = CommuData[6]*256+CommuData[7];
             ReadFlashAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);

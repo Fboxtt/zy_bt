@@ -176,20 +176,20 @@ int main(void)
     /* Start user code. Do not edit comment generated here */
     system_tick_init();
     BootInit();
-	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode);
-	P_Init(PORT2,PIN3,OUTPUT);
-	VB_ON;
+	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // 配置p16 p17
+	P_Init(PORT2,PIN3,OUTPUT); // 配置P23引脚
+	VB_ON; // 打开VB是能RS485
     while (1U)
     {
         if(UartReceFlag)
         {
-            CMDBuff = AnalysisData();           
+            CMDBuff = AnalysisData();  // 分析从中断函数总获取的数据包， 返回cmd       
             ClearCommu();
             if (ACK == ERR_NO) {
-                result_cmd = BootCmdRun(CMDBuff); 
+                result_cmd = BootCmdRun(CMDBuff);  // 根据cmd运行响应函数
             }
 
-            CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData);
+            CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
 //                if(CMDBuff==SET_BAUD)//设置新的波特率
 //                {
 //                    UartInit(NewBaud);
@@ -198,7 +198,7 @@ int main(void)
 
             CMDBuff = 0; 
         }
-        BootCheckReset();
+        BootCheckReset(); // 跳转函数，条件满足即可跳转入app
     }
     /* End user code. Do not edit comment generated here */
 }

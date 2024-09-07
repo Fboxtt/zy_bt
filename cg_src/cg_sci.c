@@ -94,15 +94,8 @@ void UART0_Init(void)
     SCI0->SOL0 &= (uint16_t)~_0001_SCI_CHANNEL0_INVERTED;
     SCI0->SOE0 |= _0001_SCI_CH0_OUTPUT_ENABLE;
     /* Set RxD0 pin */
-//    PORT->PM1 |= 0x40U;
-//    PORT->PIOR0 |= (1 << 1);    /* allocate RXD0 to P50 */ \
-//	PORT->PIOR3 = 0;
-//    /* Set TxD0 pin */
-//    PORT->P1 |= 0x80U;
-//    PORT->PM1 &= 0x7FU;
 	RXD0_PORT_SETTING();
 	TXD0_PORT_SETTING();
-
 }
 /***********************************************************************************************************************
 * Function Name: UART0_Start
