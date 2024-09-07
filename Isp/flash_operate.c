@@ -1,15 +1,15 @@
 //************************************************************
-//  Copyright (c) ÖĞÎ¢°ëµ¼Ìå£¨ÉîÛÚ£©¹É·İÓĞÏŞ¹«Ë¾
-//	ÎÄ¼şÃû³Æ	: flash_operate.c
-//	Ä£¿é¹¦ÄÜ	: BootLoader IAP²Ù×÷Ô´ÎÄ¼ş
-//  ¸üÕıÈÕÆÚ	: 2022/1/10
-// 	°æ±¾		: V1.0
+//  Copyright (c) ä¸­å¾®åŠå¯¼ä½“ï¼ˆæ·±åœ³ï¼‰è‚¡ä»½æœ‰é™å…¬å¸
+//	æ–‡ä»¶åç§°	: flash_operate.c
+//	æ¨¡å—åŠŸèƒ½	: BootLoader IAPæ“ä½œæºæ–‡ä»¶
+//  æ›´æ­£æ—¥æœŸ	: 2022/1/10
+// 	ç‰ˆæœ¬		: V1.0
 //************************************************************
 #include "flash_operate.h"
 
-#define EraseFlash()	  //²Á³ı²Ù×÷
-#define WriteFlash()	   //Ğ´Èë²Ù×÷
-#define ReadFlash()		   //¶Á³ö²Ù×÷
+#define EraseFlash()	  //æ“¦é™¤æ“ä½œ
+#define WriteFlash()	   //å†™å…¥æ“ä½œ
+#define ReadFlash()		   //è¯»å‡ºæ“ä½œ
 
 #define BIT0	0x01
 #define BIT1	0x02
@@ -20,9 +20,9 @@
 #define BIT6	0x40
 #define BIT7	0x80
 
-const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP¿ÉÕı³£ÔËĞĞ×´Ì¬¡£
-const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//´úÂë»º´æÇø´úÂë¾ÍĞ÷×´Ì¬¡£
-uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//Ğ´µ¥×Ö½ÚIAP²Ù×÷
+const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APPå¯æ­£å¸¸è¿è¡ŒçŠ¶æ€ã€‚
+const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//ä»£ç ç¼“å­˜åŒºä»£ç å°±ç»ªçŠ¶æ€ã€‚
+uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//å†™å•å­—èŠ‚IAPæ“ä½œ
 {
     uint8_t *ptr;
     
@@ -41,16 +41,16 @@ uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t 
 	
     if(IAP_ReadOneByte(IAP_IapAddr,area) == Write_IAP_IapData)
     {
-        return 1;	//Ğ´Èë×¼È·
+        return 1;	//å†™å…¥å‡†ç¡®
     }
     else
     {
-        return 0;	//Ğ´ÈëÓĞÎó
+        return 0;	//å†™å…¥æœ‰è¯¯
     }
 }
 
 
-void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//²Á³ıÒ»¸ö¿é£¨512B£©
+void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//æ“¦é™¤ä¸€ä¸ªå—ï¼ˆ512Bï¼‰
 {
     FMC->FLERMD = 0x10;
     FMC->FLPROT = 0xF1;
@@ -125,7 +125,7 @@ void IAP_Reset()
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
-//	__set_VECTOR_ADDR(APP_VECTOR_ADDR);
+	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // éœ€è¦é…ç½®å‘é‡è¡¨ï¼Œå› ä¸ºå®æµ‹å‘ç°appå‘ç”Ÿä¸­æ–­ä¾ç„¶ä¼šè·³åˆ°btçš„systick
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
     ((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
     
@@ -133,14 +133,14 @@ void IAP_Reset()
     while(1);
 }
 
-uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area)	//Ğ´¶à×Ö½ÚIAP²Ù×÷
+uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area)	//å†™å¤šå­—èŠ‚IAPæ“ä½œ
 {
 	uint32_t i;
 	uint8_t Write_IAP_IapData;
 	for(i=0;i<len;i++)
 	{
 		Write_IAP_IapData = buff[i];
-        if(IAP_WriteOneByte(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//ÅĞ¶ÏĞ´ÈëÊÇ·ñÕıÈ·
+        if(IAP_WriteOneByte(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//åˆ¤æ–­å†™å…¥æ˜¯å¦æ­£ç¡®
 		{
 			return 0;
 		}			
@@ -149,7 +149,7 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint
 	return 1;
 }
 
-uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area)	//¶Áµ¥×Ö½ÚIAP²Ù×÷
+uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area)	//è¯»å•å­—èŠ‚IAPæ“ä½œ
 {   
     uint8_t IAP_IapData; 
     IAP_IapData = *(uint32_t *)IAP_IapAddr;
@@ -225,10 +225,10 @@ void IAP_ReadEncUID(uint8_t* buff)
 	}
 }			
 #ifdef FLASH_BUFF_ENABLE
-void IAP_Remap()//½«»º´æÇøµÄ´úÂë×°ÔØÈçÔËĞĞÇø
+void IAP_Remap()//å°†ç¼“å­˜åŒºçš„ä»£ç è£…è½½å¦‚è¿è¡ŒåŒº
 {
 	uint16_t i;
-	IAP_Erase_ALL(APROM_AREA);//²Á³ıAPPÔËĞĞÇø´úÂë
+	IAP_Erase_ALL(APROM_AREA);//æ“¦é™¤APPè¿è¡ŒåŒºä»£ç 
 	for(i=0;i<APP_BUFF_SIZE;i++)
 	{
 		 IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA);
