@@ -23,7 +23,8 @@ typedef enum {
 #define SEND_PACKET_LENTH           2
 #define SendLength1                (64+SEND_PACKET_LENTH+8)
 
-#define RECEIVE_PACKET_LENTH        (2+2)
+#define PACKET_ID_LENTH            2
+#define RECEIVE_PACKET_LENTH        (PACKET_ID_LENTH+PACKET_ID_LENTH)
 #define DATA_OFFSET					(7+RECEIVE_PACKET_LENTH)
 #define PACKET_SIZE                 512
 #define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容

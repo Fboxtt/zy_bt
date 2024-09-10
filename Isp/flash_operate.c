@@ -184,6 +184,7 @@ void IAP_FlagWrite(uint8_t flag)
         }
 	}
 }
+
 uint8_t IAP_CheckAPP()
 {
     unsigned char i;

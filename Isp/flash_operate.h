@@ -25,10 +25,13 @@
 
 #define ONE_PAGE_SIZE           512                 //一页的长度
 
-#define IAP_CHECK_ADRESS 		0x1FC00     		//更新成功数字码存储的起始地址
+#define IAP_CHECK_ADRESS 		0x1C00     		//更新成功数字码存储的起始地址
 #define IAP_CHECK_LENGTH		4		  			//更新成功数字码长度,最大14Byte
 #define IAP_CHECK_AREA			APROM_AREA			//标志所处区域
 #define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA //表示APP代码区程序正常的数字码，最大14Byte
+
+#define TOTAL_CHECKSUM_ADRESS     0x1C04     		//上位机发送校验和存储地址
+#define TOTAL_CHECKSUM_LENGTH        2
 
 #define APP_BUFF_ADDR           0X10000		        //APP缓存区的起始位置
 #define APP_BUFF_SIZE           (0x10000-0X2000)	//APP缓存区最大长度
@@ -59,4 +62,5 @@ extern void IAP_FlagWrite(uint8_t flag);
 extern uint8_t IAP_CheckAPP(void);
 extern void IAP_ReadEncUID(uint8_t* buff);
 extern void IAP_Remap(void);//将缓存区的代码装载如运行区
+extern uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area);//写单字节IAP操作
 #endif

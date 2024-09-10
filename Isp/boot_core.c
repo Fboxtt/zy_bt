@@ -13,11 +13,15 @@ uint8_t ResetFlag = 0;								//表示复位条件达成
 uint8_t CurrState = 0;								//当前芯片的状态
 uint32_t ReadFlashLength = 0;                       //读Flash的长度        
 uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
+
+uint32_t PacketTotalNum = 0;								//烧录文件数据包的数量
+
+uint8_t CheckSum[2] = {0x0, 0x0};
 const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
 extern commu_data_t CmdSendData[SendLength1];
-uint32_t PacketNumber = 0;
+uint32_t NextPacketNumber = 0;
 
 const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
 volatile uint8_t ACK = 0x00;
@@ -79,6 +83,48 @@ void Decrypt_Fun(uint8_t* buff)
         }
 	}
 }
+
+void All_CheckSum_Write(uint8_t* checkSum)
+{
+    unsigned char i;
+    IAP_Erase_512B(IAP_CHECK_ADRESS,IAP_CHECK_AREA);
+	for(i=0;i<TOTAL_CHECKSUM_LENGTH;i++)
+	{
+		IAP_WriteOneByte(TOTAL_CHECKSUM_ADRESS+i,checkSum[i],IAP_CHECK_AREA);
+	}
+}
+
+uint8_t All_CheckSum_Read(uint8_t* checkSum)
+{
+    unsigned char i;
+	volatile uint8_t temp = 1;
+    for(i=0;i<IAP_CHECK_LENGTH;i++)
+    {
+        if(IAP_ReadOneByte(TOTAL_CHECKSUM_ADRESS+i,IAP_CHECK_AREA)!=checkSum[i])
+        {
+			return 0;
+        }
+    }
+	return 1;
+}
+
+uint8_t AllCheckSumCheck()
+{
+	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNum;
+	uint16_t calCheckSum = 0;
+	
+	for(uint32_t i; i < packetTatolSize; i++) {
+		calCheckSum += IAP_ReadOneByte(APP_ADDR+i,IAP_CHECK_AREA);
+	}
+	// uint8_t* flashCheckSum[2] = {0x0, 0x0};
+	
+
+	if(All_CheckSum_Read((uint8_t*)(&calCheckSum)) == 1) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
 #ifdef ENCRYPT_UID_ENABLE
 uint8_t CheckUID()
 {
@@ -98,6 +144,10 @@ uint8_t CheckUID()
 	return 1;
 }
 #endif
+
+
+
+
 void BootCheckReset()
 {
     if(ResetFlag==1)
@@ -220,31 +270,45 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				Decrypt_Fun(CommuData+4);
 			}
 			#endif
-			if((CommuData[7] + (uint32_t)CommuData[8] * 0x100) != (PacketNumber)) {
+			if((CommuData[7] + (uint32_t)CommuData[8] * 0x100) != (NextPacketNumber)) {
 				ACK = ERR_PACKET_NUMBER;
 			}
 			if(IAP_WriteMultiByte(BeginAddr,(CommuData+DATA_OFFSET),PACKET_SIZE,temp))
 			{
 				BeginAddr = BeginAddr+CmmuLength;
-				PacketNumber++;
+				NextPacketNumber++;
 				ACK = ERR_NO;
-				if(CommuData[7] == CommuData[9] \
-				&& CommuData[8] == CommuData[10] \
-				&& CommuData[9] > 0) {
-					#ifdef FLASH_BUFF_ENABLE            
-					CurrState = 2;//表示代码缓存已下载完成
-					#endif
-					ResetFlag = 1;
+				for(int i = 0; i < PACKET_ID_LENTH; i++) {
+					PacketTotalNum = CommuData[i + 7 + PACKET_ID_LENTH] << (i * 8);
 				}
+				All_CheckSum_Write(&CommuData[7]);
 			}
 			else
 			{
 				ACK = ERR_OPERATE;
 			}
-			CmmuSendLength = 2;
-			CmdSendData[0] = CommuData[7];
-			CmdSendData[1] = CommuData[8];
+			for(int i = 0; i < PACKET_ID_LENTH; i++) {
+				CmdSendData[i] = CommuData[i + 7];
+			}
+			CmmuSendLength = PACKET_ID_LENTH;
 		}break;        
+		case REC_ALL_CHECKSUM: //运行用户代码
+        {
+			for(int i = 0; i < PACKET_ID_LENTH; i++) {
+				CmdSendData[i] = CommuData[i + 7];
+			}
+			CheckSum[0] = CommuData[7];
+			CheckSum[1] = CommuData[8];
+			All_CheckSum_Write(CheckSum);
+
+			if(AllCheckSumCheck() == 1)
+			{
+				ACK = ERR_NO; //回应退出了Bootloader 
+				ResetFlag = 1;
+			} else {
+				ACK = ERR_ALL_CHECK;
+			}
+        }break;        
 //        case ENTER_APPMODE: //运行用户代码
 //        {
 //            cmd_buff = DEAL_SUCCESS; //回应退出了Bootloader 

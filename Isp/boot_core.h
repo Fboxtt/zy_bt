@@ -59,7 +59,7 @@
 #define EARSE_ALL				0x54		//擦除所有APROM
 #define WRITE_FLASH				0x55		//更新程序命令
 #define READ_FLASH              0x56        //读FLASH指定地址
-
+#define REC_ALL_CHECKSUM			0x57		// 发送校验和
 
 #define ERR_NO                  0x00        // 无异常
 #define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
@@ -68,7 +68,7 @@
 #define ERR_OPERATE             0x07        // 未能完成主机要求的操作
 #define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
-
+#define ERR_ALL_CHECK			0x23		// 总包校验和错误
 //从站回应控制码类型
 #define DEAL_SUCCESS 			0X9F		//回应操作成功
 #define DEAL_FAIL				0xDF		//回应操作失败
