@@ -12,6 +12,9 @@
         "base_time_system.h": "c",
         "tea.h": "c",
         "flash_operate.h": "c",
-        "userdefine.h": "c"
-    }
+        "userdefine.h": "c",
+        "cg_macrodriver.h": "c",
+        "cg_port.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

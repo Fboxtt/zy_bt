@@ -14,9 +14,10 @@ uint8_t CurrState = 0;								//当前芯片的状态
 uint32_t ReadFlashLength = 0;                       //读Flash的长度        
 uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 
-uint32_t PacketTotalNum = 0;								//烧录文件数据包的数量
+uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
 
-uint8_t CheckSum[2] = {0x0, 0x0};
+// uint8_t CheckSum[2] = {0x0, 0x0};
+uint32_t CheckSum = 0;
 const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
@@ -84,23 +85,33 @@ void Decrypt_Fun(uint8_t* buff)
 	}
 }
 
-void All_CheckSum_Write(uint8_t* checkSum)
+void All_CheckSum_Write(uint32_t checkSum)
 {
     unsigned char i;
     IAP_Erase_512B(IAP_CHECK_ADRESS,IAP_CHECK_AREA);
 	for(i=0;i<TOTAL_CHECKSUM_LENGTH;i++)
 	{
-		IAP_WriteOneByte(TOTAL_CHECKSUM_ADRESS+i,checkSum[i],IAP_CHECK_AREA);
+		IAP_WriteOneByte(TOTAL_CHECKSUM_ADRESS+i,(checkSum >> (8 * i)),IAP_CHECK_AREA);
+	}
+
+}
+
+void PacketTotalNumWrite(uint32_t packetTotalNum)
+{
+	for(uint32_t i = 0;i < PACKET_TOTAL_NUM_LENGTH; i++)
+	{
+		IAP_WriteOneByte(PACKET_TOTAL_NUM_ADRESS+i, (packetTotalNum >> (8 * i)), IAP_CHECK_AREA);
 	}
 }
 
 uint8_t All_CheckSum_Read(uint8_t* checkSum)
 {
     unsigned char i;
-	volatile uint8_t temp = 1;
-    for(i=0;i<IAP_CHECK_LENGTH;i++)
+	volatile uint8_t temp = 0;
+    for(i=0;i<TOTAL_CHECKSUM_LENGTH;i++)
     {
-        if(IAP_ReadOneByte(TOTAL_CHECKSUM_ADRESS+i,IAP_CHECK_AREA)!=checkSum[i])
+		temp = IAP_ReadOneByte(TOTAL_CHECKSUM_ADRESS+i,IAP_CHECK_AREA);
+        if(temp != *(checkSum + i))
         {
 			return 0;
         }
@@ -108,16 +119,26 @@ uint8_t All_CheckSum_Read(uint8_t* checkSum)
 	return 1;
 }
 
-uint8_t AllCheckSumCheck()
+uint32_t PacketTotalNumRead(void)
 {
-	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNum;
+    uint32_t packetTotalNum = 0;
+    for(uint32_t i = 0; i<PACKET_TOTAL_NUM_LENGTH; i++)
+    {
+        packetTotalNum += (IAP_ReadOneByte(PACKET_TOTAL_NUM_ADRESS+i,IAP_CHECK_AREA) << (8 * i));
+    }
+	if(packetTotalNum == 0xffffffff) {
+		return 0;
+	}
+	return packetTotalNum;
+}
+uint8_t AllCheckSumCheck(void)
+{
+	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNumRead();
 	uint16_t calCheckSum = 0;
 	
-	for(uint32_t i; i < packetTatolSize; i++) {
+	for(uint32_t i = 0; i < packetTatolSize; i++) {
 		calCheckSum += IAP_ReadOneByte(APP_ADDR+i,IAP_CHECK_AREA);
 	}
-	// uint8_t* flashCheckSum[2] = {0x0, 0x0};
-	
 
 	if(All_CheckSum_Read((uint8_t*)(&calCheckSum)) == 1) {
 		return 1;
@@ -257,6 +278,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			IAP_Erase_ALL(temp);
 			#endif
             ACK = ERR_NO;
+			BeginAddr = APP_ADDR;
         }break;
 		case WRITE_FLASH:// 写入app，成功后进入app
 		{
@@ -278,10 +300,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				BeginAddr = BeginAddr+CmmuLength;
 				NextPacketNumber++;
 				ACK = ERR_NO;
+				g_packetTotalNum = 0;
 				for(int i = 0; i < PACKET_ID_LENTH; i++) {
-					PacketTotalNum = CommuData[i + 7 + PACKET_ID_LENTH] << (i * 8);
+					g_packetTotalNum += CommuData[i + 7 + PACKET_ID_LENTH] << (i * 8);
 				}
-				All_CheckSum_Write(&CommuData[7]);
 			}
 			else
 			{
@@ -297,13 +319,14 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			for(int i = 0; i < PACKET_ID_LENTH; i++) {
 				CmdSendData[i] = CommuData[i + 7];
 			}
-			CheckSum[0] = CommuData[7];
-			CheckSum[1] = CommuData[8];
+			// CheckSum[0] = CommuData[7];
+			// CheckSum[1] = CommuData[8];
+			CheckSum = CommuData[7] + CommuData[8] * 0x100;
 			All_CheckSum_Write(CheckSum);
-
+			PacketTotalNumWrite(g_packetTotalNum);
 			if(AllCheckSumCheck() == 1)
 			{
-				ACK = ERR_NO; //回应退出了Bootloader 
+				ACK = ERR_NO; //回应退出了Bootloader
 				ResetFlag = 1;
 			} else {
 				ACK = ERR_ALL_CHECK;
@@ -348,6 +371,8 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         break;
     }
     if(ACK != ERR_CMD_ID) {
+		BootWaitTime = 0;
+		BootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
         return (cmd | 0x80);
     } else {
         return cmd;

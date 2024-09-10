@@ -59,7 +59,7 @@
 #define EARSE_ALL				0x54		//擦除所有APROM
 #define WRITE_FLASH				0x55		//更新程序命令
 #define READ_FLASH              0x56        //读FLASH指定地址
-#define REC_ALL_CHECKSUM			0x57		// 发送校验和
+#define REC_ALL_CHECKSUM        0x57		// 发送校验和
 
 #define ERR_NO                  0x00        // 无异常
 #define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
@@ -69,6 +69,13 @@
 #define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
+
+#define NO_CMD_BOOT_WAIT_LIMIT  4500
+#define YES_CMD_BOOT_WAIT_LIMIT 5000
+
+extern uint32_t BootWaitTime;
+extern uint32_t BootWaitTimeLimit;
+
 //从站回应控制码类型
 #define DEAL_SUCCESS 			0X9F		//回应操作成功
 #define DEAL_FAIL				0xDF		//回应操作失败
@@ -97,6 +104,7 @@
 #define BOOT_ENABLE        1
 #define BOOT_DISABLE       0
 
+
 /*     此处为通讯相关接口，需要在通讯协议文件中定义此部分内容      */
 // #define CommunicationLength1    (64+2+8)
 extern boot_length_t CmmuLength;		             //接收数据长度
@@ -112,4 +120,6 @@ extern uint8_t CheckUID(void);
 void BootInit(void);
 boot_cmd_t BootCmdRun(boot_cmd_t cmd);
 
+
+uint8_t AllCheckSumCheck(void);
 #endif

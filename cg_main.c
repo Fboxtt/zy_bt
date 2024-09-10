@@ -43,6 +43,9 @@ Global variables and functions
 volatile uint32_t g_ticks;
 uint8_t result_cmd;
 extern volatile uint8_t ACK;
+
+uint32_t BootWaitTime = 0;
+uint32_t BootWaitTimeLimit = 0;
 void delay_ms(uint32_t n)
 {
     g_ticks = n;
@@ -171,14 +174,35 @@ void P_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
 			break;
 	}
 }
+void toggle_Init(void)
+{
+    // PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
+    PORT->P7 = _02_Pn1_OUTPUT_1;
+    PORT->PU7 = _01_PUn0_PULLUP_ON;
+    PORT->POM7 = _00_POMn1_NCH_OFF;
+    // PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
+    PORT->PM7 = _00_PMn1_MODE_OUTPUT;
+}
+void toggle(void)
+{
+	// PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
+	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
+    PORT->P7 = _02_Pn1_OUTPUT_1;
+	PORT->P7 = _00_Pn1_OUTPUT_0;
+}
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
     system_tick_init();
     BootInit();
+//	toggle_Init();
+//	toggle();
+//	toggle();
 	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // 配置p16 p17
 	P_Init(PORT2,PIN3,OUTPUT); // 配置P23引脚
-	VB_ON; // 打开VB是能RS485
+	VB_ON; // 打开VB使能RS485
+	BootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // 进入APP等待开始计时
+	BootWaitTime = 0;
     while (1U)
     {
         if(UartReceFlag)
@@ -198,6 +222,14 @@ int main(void)
 
             CMDBuff = 0; 
         }
+		if(BootWaitTime > BootWaitTimeLimit) {
+			if(AllCheckSumCheck() == 1) {
+				ResetFlag = 1;
+			} else {
+				ResetFlag = 0;
+				BootWaitTime = 0;
+			}
+		}
         BootCheckReset(); // 跳转函数，条件满足即可跳转入app
     }
     /* End user code. Do not edit comment generated here */
@@ -208,5 +240,6 @@ void SysTick_Handler(void)
 {
 	WDT->WDTE = 0xAC;
 	g_ticks--;
+	BootWaitTime++;
 }
 /* End user code. Do not edit comment generated here */

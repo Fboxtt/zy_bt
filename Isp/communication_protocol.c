@@ -63,7 +63,7 @@ uint8_t AnalysisData()//分析接收帧的数据
 	if((cmd&0x80) != 0) {
 		ACK = ERR_CMD_ID;
 	}
-	if(cmd != WRITE_FLASH && CmmuReadNumber != 8) {
+	if(cmd != WRITE_FLASH && cmd != REC_ALL_CHECKSUM && CmmuReadNumber != 8) {
 		ACK = ERR_CMD_LEN;
 	}
 	//校验成功,提取控制码
@@ -76,7 +76,6 @@ uint8_t AnalysisData()//分析接收帧的数据
 	} else {
 		CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
 	}
-	
 
     return cmd;
 }
