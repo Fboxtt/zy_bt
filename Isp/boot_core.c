@@ -187,7 +187,7 @@ void BootCheckReset()
 			IAP_FlagWrite(2);//APP可正常运行标志
 		}
 		#else
-        IAP_FlagWrite(1);//APP可正常运行标志
+        // IAP_FlagWrite(1);//APP可正常运行标志
 		#endif	
 					
         IAP_Reset();//复位进入APP

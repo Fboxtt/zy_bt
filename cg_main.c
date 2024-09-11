@@ -189,15 +189,16 @@ void toggle(void)
 	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
     PORT->P7 = _02_Pn1_OUTPUT_1;
 	PORT->P7 = _00_Pn1_OUTPUT_0;
+	PORT->P7 = _02_Pn1_OUTPUT_1;
 }
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
     system_tick_init();
     BootInit();
-//	toggle_Init();
-//	toggle();
-//	toggle();
+	toggle_Init();
+	toggle();
+	toggle();
 	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // 配置p16 p17
 	P_Init(PORT2,PIN3,OUTPUT); // 配置P23引脚
 	VB_ON; // 打开VB使能RS485
@@ -236,9 +237,16 @@ int main(void)
 }
 
 /* Start user code for adding. Do not edit comment generated here */
+int32_t P71FlushCount = 0;
 void SysTick_Handler(void)
 {
 	WDT->WDTE = 0xAC;
+	P71FlushCount++;
+	if(P71FlushCount / 100 % 2 == 1) {
+		PORT->P7 = _02_Pn1_OUTPUT_1;
+	} else {
+		PORT->P7 = _00_Pn1_OUTPUT_0;
+	}
 	g_ticks--;
 	BootWaitTime++;
 }
