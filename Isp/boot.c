@@ -7,9 +7,6 @@
 //************************************************************
 #include "boot.h"
 
-#include "communication_protocol.h"
-
-
 /*串口接收发送*/
 uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位

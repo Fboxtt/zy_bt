@@ -3,8 +3,11 @@
 /*communication_protocol.h*/
 /*communication_protocol.h*/
 /*communication_protocol.h*/
-
-#include "serial_port_config.h"//串口通讯底层驱动文件
+#include "BAT32G137.h"
+#include "userdefine.h"
+#include "cg_sci.h"
+#include "cg_macrodriver.h"
+// #include "serial_port_config.h"//串口通讯底层驱动文件
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
@@ -254,4 +257,7 @@ extern volatile uint16_t  g_uart0_rx_length;          /* uart0 receive data leng
 
 extern void BootWaitTimeInit(void);
 extern void BootProcess(void);
+
+#define UartBaud				19200		    	 //初始默认波特率
+#define	Fsoc					48000000	    	//主频选择
 #endif
