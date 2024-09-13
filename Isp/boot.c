@@ -10,12 +10,10 @@
 #include "communication_protocol.h"
 
 
-
+/*串口接收发送*/
 uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位
 uint8_t UartSendFlag;				//UART0发送完一Byte标志位
-
-
 
 uint8_t CommunicationCheckNumber;			//校验位
 commu_length_t CmmuLength;						//接收数据长度
@@ -34,13 +32,26 @@ volatile uint8_t * gp_uart0_rx_address;         /* uart0 receive buffer address 
 volatile uint16_t  g_uart0_rx_count;            /* uart0 receive data number */
 volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
 
+/*串口接收发送*/
 
-
+/*串口数据分析*/
 uint8_t result_cmd;
 extern volatile uint8_t ACK;
+/*串口数据分析*/
 
 uint32_t BootWaitTime = 0;
 uint32_t BootWaitTimeLimit = 0;
+
+
+// 串口初始化，串口函数
+// 串口接收发送
+// 接收数据分析
+
+// flash操作
+
+void IRQ10_Handler(void) __attribute__((alias("uart0_interrupt_send")));
+void IRQ11_Handler(void) __attribute__((alias("uart0_interrupt_receive")));
+
 void UartInit(uint32_t baud)
 {
     SCI0_Init();
@@ -115,44 +126,6 @@ void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 	UartSendOneByte(check_sum);						//发送校验位低8位
 	// UartSendOneByte(CommunicationCommandEnd);		//发送帧尾   
 }
-
-uint8_t AnalysisData()//分析接收帧的数据
-{
-	volatile uint8_t cmd = NO_CMD;
-    uint32_t data_len;
-	uint32_t i;
-	uint8_t check_sum = 0;
-	data_len = CommuData[1] * 0x100 + CommuData[2];
-	cmd = CommuData[4];
-
-	ACK = ERR_NO;
-	//计算单板类型到数据位的校验和
-	for(i=1; i<data_len + 3; i++)
-	{
-	   check_sum+=CommuData[i];
-	}
-	if((cmd&0x80) != 0) {
-		ACK = ERR_CMD_ID;
-	}
-	if(cmd != WRITE_FLASH && cmd != REC_ALL_CHECKSUM && CmmuReadNumber != 8) {
-		ACK = ERR_CMD_LEN;
-	}
-	//校验成功,提取控制码
-	if(check_sum!=(CommuData[3 + data_len]))
-	{
-        ACK = ERR_CHECK;
-	}
-	if(cmd == WRITE_FLASH) {
-		CmmuLength = data_len - TYPE_TO_DATA_LENTH;//取长度
-	} else {
-		CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
-	}
-
-    return cmd;
-}
-void IRQ10_Handler(void) __attribute__((alias("uart0_interrupt_send")));
-void IRQ11_Handler(void) __attribute__((alias("uart0_interrupt_receive")));
-
 static void uart0_callback_sendend(void)
 {
     /* Start user code. Do not edit comment generated here */
@@ -207,12 +180,47 @@ static void uart0_interrupt_receive(void)
 
     UartReceData(id);
 }
+uint8_t AnalysisData()//分析接收帧的数据
+{
+	volatile uint8_t cmd = NO_CMD;
+    uint32_t data_len;
+	uint32_t i;
+	uint8_t check_sum = 0;
+	data_len = CommuData[1] * 0x100 + CommuData[2];
+	cmd = CommuData[4];
 
+	ACK = ERR_NO;
+	//计算单板类型到数据位的校验和
+	for(i=1; i<data_len + 3; i++)
+	{
+	   check_sum+=CommuData[i];
+	}
+	if((cmd&0x80) != 0) {
+		ACK = ERR_CMD_ID;
+	}
+	if(cmd != WRITE_FLASH && cmd != REC_ALL_CHECKSUM && CmmuReadNumber != 8) {
+		ACK = ERR_CMD_LEN;
+	}
+	//校验成功,提取控制码
+	if(check_sum!=(CommuData[3 + data_len]))
+	{
+        ACK = ERR_CHECK;
+	}
+	if(cmd == WRITE_FLASH) {
+		CmmuLength = data_len - TYPE_TO_DATA_LENTH;//取长度
+	} else {
+		CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
+	}
+
+    return cmd;
+}
 /*flash_operate*/
 /*flash_operate*/
 /*flash_operate*/
+
 const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP可正常运行状态。
 const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//代码缓存区代码就绪状态。
+
 uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//写单字节IAP操作
 {
     uint8_t *ptr;
@@ -300,29 +308,6 @@ void IAP_Erase_ALL(uint8_t area)
     }
 }
 
-void __set_VECTOR_ADDR(uint32_t addr)
-{
-	SCB->VTOR = addr;
-}
-
-void IAP_Reset()
-{	
-    #ifdef ENCRYPT_UID_ENABLE		
-	if(!CheckUID())
-	{
-		return;
-	}
-	#endif
-    SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
-	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
-	INTC_DisableIRQ(SR0_IRQn);
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
-    __set_MSP(*(__IO uint32_t*) APP_ADDR);
-    ((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
-    
-    /* Trap the CPU */
-    while(1);
-}
 
 uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area)	//写多字节IAP操作
 {
@@ -427,6 +412,31 @@ void IAP_Remap()//将缓存区的代码装载如运行区
 	}
 }
 #endif
+
+//设置向量表
+void __set_VECTOR_ADDR(uint32_t addr)
+{
+	SCB->VTOR = addr;
+}
+
+void IAP_Reset()
+{	
+    #ifdef ENCRYPT_UID_ENABLE		
+	if(!CheckUID())
+	{
+		return;
+	}
+	#endif
+    SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
+	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
+	INTC_DisableIRQ(SR0_IRQn);
+	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+    __set_MSP(*(__IO uint32_t*) APP_ADDR);
+    ((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
+    
+    /* Trap the CPU */
+    while(1);
+}
 /*flash_operate*/
 /*flash_operate*/
 /*flash_operate*/
@@ -440,18 +450,13 @@ uint8_t ResetFlag = 0;								//表示复位条件达成
 uint8_t CurrState = 0;								//当前芯片的状态
 uint32_t ReadFlashLength = 0;                       //读Flash的长度        
 uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
-
 uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
-
-// uint8_t CheckSum[2] = {0x0, 0x0};
 uint32_t CheckSum = 0;
 const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
-boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
-uint32_t NewBaud = UartBaud;						//存储新波特率的变量
-extern commu_data_t CmdSendData[SendLength1];
-uint32_t NextPacketNumber = 0;
-
 const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
+boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
+// uint32_t NewBaud = UartBaud;						//存储新波特率的变量
+uint32_t NextPacketNumber = 0;
 volatile uint8_t ACK = 0x00;
 
 
