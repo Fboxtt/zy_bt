@@ -14,16 +14,16 @@
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
-          <Device>BAT32G137GH64FB</Device>
+          <Device>BAT32G137GH48FA</Device>
           <Vendor>Cmsemicon</Vendor>
           <PackID>Cmsemicon.BAT32G137.3.0.8</PackID>
           <PackURL>http://www.mcu.com.cn/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x03000) IROM(0x00000000,0x20000) CPUTYPE("Cortex-M0+") CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
-          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC1000 -FN2 -FF0BAT32G137GH -FS00 -FL020000 -FF1BAT32G137_DataFlash -FS1500000 -FL1600 -FP0($$Device:BAT32G137GH64FB$Flash\BAT32G137GH.FLM) -FP1($$Device:BAT32G137GH64FB$Flash\BAT32G137_DataFlash.FLM))</FlashDriverDll>
+          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC1000 -FN2 -FF0BAT32G137GH -FS00 -FL020000 -FF1BAT32G137_DataFlash -FS1500000 -FL1600 -FP0($$Device:BAT32G137GH48FA$Flash\BAT32G137GH.FLM) -FP1($$Device:BAT32G137GH48FA$Flash\BAT32G137_DataFlash.FLM))</FlashDriverDll>
           <DeviceId>0</DeviceId>
-          <RegisterFile>$$Device:BAT32G137GH64FB$Device\Include\BAT32G137.h</RegisterFile>
+          <RegisterFile>$$Device:BAT32G137GH48FA$Device\Include\BAT32G137.h</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -33,7 +33,7 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile>$$Device:BAT32G137GH64FB$SVD\BAT32G137.svd</SFDFile>
+          <SFDFile>$$Device:BAT32G137GH48FA$SVD\BAT32G137.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
@@ -274,7 +274,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x1c00</Size>
+                <Size>0x20000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -367,7 +367,7 @@
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0x20000000</DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile></ScatterFile>
+            <ScatterFile>.\Objects\BAT32G137_BOOT_V0_1.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -522,6 +522,11 @@
               <FileName>tea.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Isp\tea.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Isp\boot.c</FilePath>
             </File>
           </Files>
         </Group>

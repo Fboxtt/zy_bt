@@ -15,7 +15,7 @@ Includes
 #include "stdlib.h"
 /* End user code. Do not edit comment generated here */
 #include "cg_userdefine.h"
-
+#include "boot.h"
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
@@ -26,11 +26,7 @@ const uint16_t sps_tbl[16] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048,
 /***********************************************************************************************************************
 Global variables and functions
 ***********************************************************************************************************************/
-volatile uint8_t * gp_uart0_tx_address;        /* uart0 transmit buffer address */
-volatile uint16_t  g_uart0_tx_count;           /* uart0 transmit data number */
-volatile uint8_t * gp_uart0_rx_address;        /* uart0 receive buffer address */
-volatile uint16_t  g_uart0_rx_count;           /* uart0 receive data number */
-volatile uint16_t  g_uart0_rx_length;          /* uart0 receive data length */
+
 /* Start user code for global. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
 

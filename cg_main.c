@@ -23,6 +23,8 @@ Includes
 /* End user code. Do not edit comment generated here */
 #include "cg_userdefine.h"
 
+#include "boot.h"
+
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
@@ -30,9 +32,9 @@ Pragma directive
 /*
     P50->RX0
     P51->TX0
-    初始波特率->9600
-    系统主频->48M
-    RST->使能
+    ��ʼ������->9600
+    ϵͳ��Ƶ->48M
+    RST->ʹ��
 */
 /* End user code. Do not edit comment generated here */
 
@@ -41,11 +43,7 @@ Global variables and functions
 ***********************************************************************************************************************/
 /* Start user code for global. Do not edit comment generated here */
 volatile uint32_t g_ticks;
-uint8_t result_cmd;
-extern volatile uint8_t ACK;
 
-uint32_t BootWaitTime = 0;
-uint32_t BootWaitTimeLimit = 0;
 void delay_ms(uint32_t n)
 {
     g_ticks = n;
@@ -191,6 +189,9 @@ void toggle(void)
 	PORT->P7 = _00_Pn1_OUTPUT_0;
 	PORT->P7 = _02_Pn1_OUTPUT_1;
 }
+
+
+
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
@@ -199,39 +200,13 @@ int main(void)
 	toggle_Init();
 	toggle();
 	toggle();
-	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // 配置p16 p17
-	P_Init(PORT2,PIN3,OUTPUT); // 配置P23引脚
-	VB_ON; // 打开VB使能RS485
-	BootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // 进入APP等待开始计时
-	BootWaitTime = 0;
+	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // ����p16 p17
+	P_Init(PORT2,PIN3,OUTPUT); // ����P23����
+	VB_ON; // ��VBʹ��RS485
+	BootWaitTimeInit();
     while (1U)
     {
-        if(UartReceFlag)
-        {
-            CMDBuff = AnalysisData();  // 分析从中断函数总获取的数据包， 返回cmd       
-            ClearCommu();
-            if (ACK == ERR_NO) {
-                result_cmd = BootCmdRun(CMDBuff);  // 根据cmd运行响应函数
-            }
-
-            CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
-//                if(CMDBuff==SET_BAUD)//设置新的波特率
-//                {
-//                    UartInit(NewBaud);
-//                }
-            result_cmd = BOOT_BOOL_FALSE;
-
-            CMDBuff = 0; 
-        }
-		if(BootWaitTime > BootWaitTimeLimit) {
-			if(AllCheckSumCheck() == 1) {
-				ResetFlag = 1;
-			} else {
-				ResetFlag = 0;
-				BootWaitTime = 0;
-			}
-		}
-        BootCheckReset(); // 跳转函数，条件满足即可跳转入app
+		BootProcess();
     }
     /* End user code. Do not edit comment generated here */
 }
