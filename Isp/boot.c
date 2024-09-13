@@ -460,10 +460,10 @@ void BootInit()
 {
 	UartInit(UartBaud);
 	CurrState = IAP_CheckAPP();
-    if(CurrState==1)//判断APP是否完整，完整则开启定时
-    {
-        BaseTimeSystemInit(BOOT_ENABLE);
-    }
+//    if(CurrState==1)//判断APP是否完整，完整则开启定时
+//    {
+//        BaseTimeSystemInit(BOOT_ENABLE);
+//    }
 	#ifdef FLASH_BUFF_ENABLE
 	else if(CurrState==2)//将缓存区加载到运行区后直接运行APP
 	{
@@ -474,43 +474,43 @@ void BootInit()
 	#endif
 }
 
-void Decrypt_Fun(uint8_t* buff)
-{
-	uint8_t i;
-	uint8_t k;
-	uint32_t first_chunk;
-	uint32_t second_chunk;
-    union  
-	{
-		uint32_t temp_uint32[16];
-		uint8_t temp_uint8[64];
-	}temp; 
-	if(CmmuLength>64)
-	{
-		return;
-	}
-    //ARM为小端模式需要将每个字的高位和低位对调
-    for(i=0;i<(CmmuLength/4);i=i+1)
-	{		
-        for(k=0;k<4;k++)
-        {
-            temp.temp_uint8[i*4+(3-k)] = buff[i*4+k];
-        }
-	}
-	for(i=0;i<(CmmuLength/4);i=i+2)
-	{
-		first_chunk = temp.temp_uint32[i];
-		second_chunk = temp.temp_uint32[i+1];
-		DecryptTEA(&first_chunk,&second_chunk);
-		temp.temp_uint32[i] = first_chunk;
-		temp.temp_uint32[i+1] = second_chunk;
-        for(k=0;k<4;k++)
-        {
-            buff[i*4+k] = temp.temp_uint8[i*4+(3-k)] ;
-            buff[(i+1)*4+k] = temp.temp_uint8[(i+1)*4+(3-k)] ;
-        }
-	}
-}
+//void Decrypt_Fun(uint8_t* buff)
+//{
+//	uint8_t i;
+//	uint8_t k;
+//	uint32_t first_chunk;
+//	uint32_t second_chunk;
+//    union  
+//	{
+//		uint32_t temp_uint32[16];
+//		uint8_t temp_uint8[64];
+//	}temp; 
+//	if(CmmuLength>64)
+//	{
+//		return;
+//	}
+//    //ARM为小端模式需要将每个字的高位和低位对调
+//    for(i=0;i<(CmmuLength/4);i=i+1)
+//	{		
+//        for(k=0;k<4;k++)
+//        {
+//            temp.temp_uint8[i*4+(3-k)] = buff[i*4+k];
+//        }
+//	}
+//	for(i=0;i<(CmmuLength/4);i=i+2)
+//	{
+//		first_chunk = temp.temp_uint32[i];
+//		second_chunk = temp.temp_uint32[i+1];
+//		DecryptTEA(&first_chunk,&second_chunk);
+//		temp.temp_uint32[i] = first_chunk;
+//		temp.temp_uint32[i+1] = second_chunk;
+//        for(k=0;k<4;k++)
+//        {
+//            buff[i*4+k] = temp.temp_uint8[i*4+(3-k)] ;
+//            buff[(i+1)*4+k] = temp.temp_uint8[(i+1)*4+(3-k)] ;
+//        }
+//	}
+//}
 
 void All_CheckSum_Write(uint32_t checkSum)
 {
@@ -601,7 +601,7 @@ void BootCheckReset()
     if(ResetFlag==1)
     {
         ResetFlag = 0;	
-        BaseTimeSystemInit(BOOT_DISABLE);//关闭定时器
+//        BaseTimeSystemInit(BOOT_DISABLE);//关闭定时器
 
 		#ifdef FLASH_BUFF_ENABLE
 		if(CurrState == 2)
@@ -659,7 +659,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             if(HandShakeValue>=HandShakes)
             {
                /* 关闭时钟 */
-               BaseTimeSystemInit(BOOT_DISABLE);
+//               BaseTimeSystemInit(BOOT_DISABLE);
 			   #ifndef FLASH_BUFF_ENABLE
                IAP_FlagWrite(0);//将APP完成标志去掉，如果更新过程失败则下次上电一直维持在BOOT等待更新
 			   #endif

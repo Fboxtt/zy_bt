@@ -3,9 +3,10 @@
 /*communication_protocol.h*/
 /*communication_protocol.h*/
 /*communication_protocol.h*/
-#include "serial_port_config.h"//ï¿½ï¿½ï¿½ï¿½Í¨Ñ¶ï¿½×²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
-/*************************Í¨Ñ¶Ð­ï¿½ï¿½ï¿½ï¿½Øºê¶¨ï¿½ï¿½*******************************/
-//Ö¡ï¿½ï¿½Ê½ï¿½ï¿½Ö¡Í·+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½+ï¿½ï¿½ï¿½ï¿½ï¿½ò³¤¶ï¿½(2Byte)+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½+Ð£ï¿½ï¿½Î»(1Byte)+Ö¡Î²
+
+#include "serial_port_config.h"//´®¿ÚÍ¨Ñ¶µ×²ãÇý¶¯ÎÄ¼þ
+/*************************Í¨Ñ¶Ð­ÒéÏà¹Øºê¶¨Òå*******************************/
+//Ö¡¸ñÊ½£ºÖ¡Í·+¿ØÖÆÂë+Êý¾ÝÓò³¤¶È(2Byte)+Êý¾ÝÓò+Ð£ÑéÎ»(1Byte)+Ö¡Î²
 /**************************************************************************/
 typedef enum {
     UART0,
@@ -13,8 +14,8 @@ typedef enum {
     UART2,
 }uartId;
 
-#define CommunicationCommandHeader   0X68		//ï¿½ï¿½ï¿½ï¿½Ö¡Í·
-#define CommunicationCommandEnd		 0x16		//ï¿½ï¿½ï¿½ï¿½Ö¡Î²
+#define CommunicationCommandHeader   0X68		//ÃüÁîÖ¡Í·
+#define CommunicationCommandEnd		 0x16		//ÃüÁîÖ¡Î²
 #define SEND_PACKET_LENTH           2
 #define SendLength1                (64+SEND_PACKET_LENTH+8)
 
@@ -22,21 +23,21 @@ typedef enum {
 #define RECEIVE_PACKET_LENTH        (PACKET_ID_LENTH+PACKET_ID_LENTH)
 #define DATA_OFFSET					(7+RECEIVE_PACKET_LENTH)
 #define PACKET_SIZE                 512
-#define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //Ö¡ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½ + ï¿½Ü°ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½Í¨Ñ¶ï¿½ï¿½ï¿½ï¿½
+#define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //Ö¡Êý¾Ý + °üºÅ + ×Ü°üºÅ + ÆäËûÍ¨Ñ¶ÄÚÈÝ
 #define TYPE_TO_SHAKE_LENTH         4
 #define TYPE_TO_DATA_LENTH          (TYPE_TO_SHAKE_LENTH + RECEIVE_PACKET_LENTH)
-/* ï¿½ï¿½ï¿½ï¿½Ð¾Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æºï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
-#define commu_bool_t uint8_t                //boolï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define commu_data_t uint8_t           //ï¿½ï¿½ï¿½Ý¶ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define commu_addr_t uint16_t           //ï¿½ï¿½Ö·ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define commu_length_t uint16_t         //ï¿½ï¿½ï¿½Ý³ï¿½ï¿½È¶ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define commu_cmd_t  uint8_t                //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+/* ÒÀ¾ÝÐ¾Æ¬ÌØÐÔÉè¼ÆºÏÊÊµÄÊý¾ÝÀàÐÍ */
+#define commu_bool_t uint8_t                //boolÐÍÊý¾ÝÀàÐÍ
+#define commu_data_t uint8_t           //Êý¾Ý¶ÔÓ¦µÄÊý¾ÝÀàÐÍ
+#define commu_addr_t uint16_t           //µØÖ·¶ÔÓ¦µÄÊý¾ÝÀàÐÍ
+#define commu_length_t uint16_t         //Êý¾Ý³¤¶È¶ÔÓ¦µÄÊý¾ÝÀàÐÍ
+#define commu_cmd_t  uint8_t                //ÃüÁîµÄÊý¾ÝÀàÐÍ
 
-extern commu_length_t CmmuLength;		                //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½
-extern commu_cmd_t CMDBuff;		                        //ï¿½ï¿½ï¿½ï¿½æ´¢ï¿½ï¿½ï¿½ï¿½
-extern commu_data_t CommuData[ReceiveLength1];	//Í¨Ñ¶ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½
-extern commu_data_t CmdSendData[SendLength1];  //ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½
-extern commu_length_t CmmuSendLength;		            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½
+extern commu_length_t CmmuLength;		                //½ÓÊÕÊý¾Ý³¤¶È
+extern commu_cmd_t CMDBuff;		                        //ÃüÁî´æ´¢»º´æ
+extern commu_data_t CommuData[ReceiveLength1];	//Í¨Ñ¶½ÓÊÕ»º´æ
+extern commu_data_t CmdSendData[SendLength1];  //·¢ËÍ»º´æ
+extern commu_length_t CmmuSendLength;		            //½ÓÊÕÊý¾Ý³¤¶È
 void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data);    
 uint8_t AnalysisData(void);
 void ClearCommu(void);
@@ -66,59 +67,60 @@ extern volatile uint8_t ACK;
 /* boot core.h*/
 /* boot core.h*/
 /* boot core.h*/
-#define boot_bool_t 	uint8_t         	//boolï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define boot_data_t 	uint8_t    	        //ï¿½ï¿½ï¿½Ý¶ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define boot_addr_t 	uint32_t    	    //ï¿½ï¿½Ö·ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define boot_length_t 	uint16_t  		    //ï¿½ï¿½ï¿½Ý³ï¿½ï¿½È¶ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define boot_cmd_t  	uint8_t         	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define boot_flag_t 	uint8_t    	        //ï¿½â²¿ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½ 
+/* ÒÀ¾ÝÐ¾Æ¬ÌØÐÔÉè¼ÆºÏÊÊµÄÊý¾ÝÀàÐÍ */
+#define boot_bool_t 	uint8_t         	//boolÐÍÊý¾ÝÀàÐÍ
+#define boot_data_t 	uint8_t    	        //Êý¾Ý¶ÔÓ¦µÄÊý¾ÝÀàÐÍ
+#define boot_addr_t 	uint32_t    	    //µØÖ·¶ÔÓ¦µÄÊý¾ÝÀàÐÍ
+#define boot_length_t 	uint16_t  		    //Êý¾Ý³¤¶È¶ÔÓ¦µÄÊý¾ÝÀàÐÍ
+#define boot_cmd_t  	uint8_t         	//ÃüÁîµÄÊý¾ÝÀàÐÍ
+#define boot_flag_t 	uint8_t    	        //Íâ²¿±êÖ¾ÀàÐÍ 
 
-#define READ_FLASH_ENABLE						//Ê¹ï¿½Üºï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½Ð¶ï¿½FLASHï¿½ï¿½ï¿½ï¿½
-//#define ENCRYPT_ENABLE						    //Ê¹ï¿½ï¿½Í¨Ñ¶ï¿½ï¿½ï¿½Ü£ï¿½Ê¹ï¿½Üºï¿½ï¿½Ô½ï¿½ï¿½ÕµÄ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý½ï¿½ï¿½Ð½ï¿½ï¿½Ü²ï¿½ï¿½ï¿½	
-//#define ENCRYPT_UID_ENABLE					    //Ê¹ï¿½ï¿½UIDï¿½ï¿½ï¿½Ü¹ï¿½ï¿½Ü£ï¿½Ê¹ï¿½Üºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½APPÇ°ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½UIDï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï£ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½Â¾Í¾Ü¾ï¿½ï¿½ï¿½×ªï¿½ï¿½APPï¿½ï¿½ï¿½ï¿½
-//#define FLASH_BUFF_ENABLE						//Flashï¿½ï¿½ï¿½æ¹¦ï¿½Ü¿ï¿½ï¿½Ø£ï¿½Ê¹ï¿½Üºï¿½ï¿½ï¿½ï¿½FLASHï¿½ï¿½ï¿½ò¿ª±ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ë»ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú´æ´¢ï¿½ï¿½ï¿½äµ½ï¿½ï¿½ï¿½ï¿½ï¿½Â´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+#define READ_FLASH_ENABLE						//Ê¹ÄÜºóÔÊÐíÖ´ÐÐ¶ÁFLASH²Ù×÷
+//#define ENCRYPT_ENABLE						    //Ê¹ÄÜÍ¨Ñ¶¼ÓÃÜ£¬Ê¹ÄÜºó»á¶Ô½ÓÊÕµÄ¸üÐÂÊý¾Ý½øÐÐ½âÃÜ²Ù×÷	
+//#define ENCRYPT_UID_ENABLE					    //Ê¹ÄÜUID¼ÓÃÜ¹¦ÄÜ£¬Ê¹ÄÜºó»áÔÚÌø×ªÖÁAPPÇ°½øÐÐÒ»´ÎUID½âÃÜÅÐ¶Ï£¬Èô²»Ò»ÖÂ¾Í¾Ü¾øÌø×ªµ½APP¹¤×÷
+//#define FLASH_BUFF_ENABLE						//Flash»º´æ¹¦ÄÜ¿ª¹Ø£¬Ê¹ÄÜºó»áÔÚFLASHÇøÓò¿ª±ÙÒ»¸ö´úÂë»º´æÇøÓÃÓÚ´æ´¢´«Êäµ½À´µÄÐÂ´úÂëÊý¾Ý
 
 #define IC_EDITION              "BAT32G13701"
 #define IC_EDITION_LENTH              11
 
-#define Edition                 "BAT32G13701"	//BOOTï¿½ï¿½ï¿½ï¿½Ä°æ±¾ï¿½ï¿½
-#define EditionLength           11				//ï¿½æ±¾ï¿½Å³ï¿½ï¿½ï¿½
-//Ë½ï¿½ï¿½Ð­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define TYPE_FAIL 0xDE//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í´ï¿½ï¿½ï¿½
-#define CHECK_FAIL 0xDF //Ð£ï¿½ï¿½ï¿½ï¿½ï¿½
+#define Edition                 "BAT32G13701"	//BOOT´úÂëµÄ°æ±¾ºÅ
+#define EditionLength           11				//°æ±¾ºÅ³¤¶È
+//Ë½ÓÐÐ­ÒéÐÂÔöÄÚÈÝ
+#define TYPE_FAIL 0xDE//Ö÷»úÃüÁîÀàÐÍ´íÎó
+#define CHECK_FAIL 0xDF //Ð£Ñé´íÎó
 
-// //ï¿½ï¿½Õ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-// #define ENTER_BOOTMODE 			0x01		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Åºï¿½
-// #define ENTER_APPMODE			0x0f		//ï¿½ï¿½×ªÖ´ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
-// #define WRITE_FLASH				0x22		//ï¿½ï¿½ï¿½Â³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-// #define SET_ADDRESS			    0x30		//ï¿½ï¿½ï¿½ï¿½MCUï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ÂµÄµï¿½Ö·
-// #define	SET_BAUD				0x25		//ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½
-// #define	READ_IC_INF				0x03		//ï¿½ï¿½È¡Ð¾Æ¬ï¿½Íºï¿½
-// #define	READ_BOOT_CODE_INF		0x04		//ï¿½ï¿½È¡Bootï¿½ï¿½ï¿½ï¿½æ±¾ï¿½ï¿½
-// #define EARSE_ALL				0x06		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½APROM
-// #define READ_FLASH              0x23        //ï¿½ï¿½FLASHÖ¸ï¿½ï¿½ï¿½ï¿½Ö·
-//ï¿½ï¿½Õ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ë½ï¿½ï¿½Ð­ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	READ_BOOT_CODE_INF		0x10		//ï¿½ï¿½È¡Bootï¿½ï¿½ï¿½ï¿½æ±¾ï¿½ï¿½
-#define	READ_IC_INF				0x51		//ï¿½ï¿½È¡Ð¾Æ¬ï¿½Íºï¿½
-#define HEX_INFO                0x52        //ï¿½ï¿½ï¿½ï¿½HEXï¿½Ä¼ï¿½ï¿½ï¿½Ï¢
-#define ENTER_BOOTMODE 			0x53		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Åºï¿½
-// #define ENTER_APPMODE			0x0f		//ï¿½ï¿½×ªÖ´ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
+// //Ö÷Õ¾·¢ËÍÀ´µÄ¿ØÖÆÂëÀàÐÍ
+// #define ENTER_BOOTMODE 			0x01		//½øÈë¸üÐÂÄ£Ê½£¬¼´ÎÕÊÖÐÅºÅ
+// #define ENTER_APPMODE			0x0f		//Ìø×ªÖ´ÐÐÓÃ»§³ÌÐò
+// #define WRITE_FLASH				0x22		//¸üÐÂ³ÌÐòÃüÁî
+// #define SET_ADDRESS			    0x30		//ÉèÖÃMCU¿ªÊ¼¸üÐÂµÄµØÖ·
+// #define	SET_BAUD				0x25		//ÉèÖÃ²¨ÌØÂÊ
+// #define	READ_IC_INF				0x03		//¶ÁÈ¡Ð¾Æ¬ÐÍºÅ
+// #define	READ_BOOT_CODE_INF		0x04		//¶ÁÈ¡Boot´úÂë°æ±¾ºÅ
+// #define EARSE_ALL				0x06		//²Á³ýËùÓÐAPROM
+// #define READ_FLASH              0x23        //¶ÁFLASHÖ¸¶¨µØÖ·
+//Ö÷Õ¾·¢ËÍÀ´µÄ¿ØÖÆÂëÀàÐÍ Ë½ÓÐÐ­ÒéÐÞ¸ÄÄÚÈÝ
+#define	READ_BOOT_CODE_INF		0x10		//¶ÁÈ¡Boot´úÂë°æ±¾ºÅ
+#define	READ_IC_INF				0x51		//¶ÁÈ¡Ð¾Æ¬ÐÍºÅ
+#define HEX_INFO                0x52        //½ÓÊÕHEXÎÄ¼þÐÅÏ¢
+#define ENTER_BOOTMODE 			0x53		//½øÈë¸üÐÂÄ£Ê½£¬¼´ÎÕÊÖÐÅºÅ
+// #define ENTER_APPMODE			0x0f		//Ìø×ªÖ´ÐÐÓÃ»§³ÌÐò
 
-// #define SET_ADDRESS			    0x30		//ï¿½ï¿½ï¿½ï¿½MCUï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ÂµÄµï¿½Ö·
-// #define	SET_BAUD				0x25		//ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½
-#define EARSE_ALL				0x54		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½APROM
-#define WRITE_FLASH				0x55		//ï¿½ï¿½ï¿½Â³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define READ_FLASH              0x56        //ï¿½ï¿½FLASHÖ¸ï¿½ï¿½ï¿½ï¿½Ö·
-#define REC_ALL_CHECKSUM        0x57		// ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½
+// #define SET_ADDRESS			    0x30		//ÉèÖÃMCU¿ªÊ¼¸üÐÂµÄµØÖ·
+// #define	SET_BAUD				0x25		//ÉèÖÃ²¨ÌØÂÊ
+#define EARSE_ALL				0x54		//²Á³ýËùÓÐAPROM
+#define WRITE_FLASH				0x55		//¸üÐÂ³ÌÐòÃüÁî
+#define READ_FLASH              0x56        //¶ÁFLASHÖ¸¶¨µØÖ·
+#define REC_ALL_CHECKSUM        0x57		// ·¢ËÍÐ£ÑéºÍ
 
-#define ERR_NO                  0x00        // ï¿½ï¿½ï¿½ì³£
-#define ERR_CMD_LEN             0x02        // ï¿½Ó»ï¿½ï¿½ï¿½ï¿½Õµï¿½ï¿½Ä°ï¿½ï¿½ï¿½ï¿½Èºï¿½ï¿½ï¿½ï¿½î³¤ï¿½È²ï¿½ï¿½ï¿½
-#define ERR_CMD_ID              0x04        // Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define ERR_CHECK               0x06        // ï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Í´ï¿½ï¿½ï¿½
-#define ERR_OPERATE             0x07        // Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ä²ï¿½ï¿½ï¿½
-#define ERR_PACKET_NUMBER       0x21        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define ERR_MEM_NOT_ENOUGH      0x22        // ï¿½ï¿½ï¿½ï¿½hexï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ·ï¿½Ð´ï¿½ï¿½
-#define ERR_ALL_CHECK			0x23		// ï¿½Ü°ï¿½Ð£ï¿½ï¿½Í´ï¿½ï¿½ï¿½
+#define ERR_NO                  0x00        // ÎÞÒì³£
+#define ERR_CMD_LEN             0x02        // ´Ó»ú½ÓÊÕµ½µÄ°ü³¤¶ÈºÍÃüÁî³¤¶È²»¶Ô
+#define ERR_CMD_ID              0x04        // Ã»ÓÐÃüÁî
+#define ERR_CHECK               0x06        // Ö÷»úÄ³¸ö°üÐ£ÑéºÍ´íÎó
+#define ERR_OPERATE             0x07        // Î´ÄÜÍê³ÉÖ÷»úÒªÇóµÄ²Ù×÷
+#define ERR_PACKET_NUMBER       0x21        // Ö÷»ú°üµÄÐòºÅÌø´íÎó
+#define ERR_MEM_NOT_ENOUGH      0x22        // Ö÷»úhexÎÄ¼þ¹ý´óÎÞ·¨Ð´Èë
+#define ERR_ALL_CHECK			0x23		// ×Ü°üÐ£ÑéºÍ´íÎó
 
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
@@ -126,28 +128,28 @@ extern volatile uint8_t ACK;
 extern uint32_t BootWaitTime;
 extern uint32_t BootWaitTimeLimit;
 
-//ï¿½ï¿½Õ¾ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define DEAL_SUCCESS 			0X9F		//ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½
-#define DEAL_FAIL				0xDF		//ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
-#define	RETURN_IC_INF			0xA3		//ï¿½ï¿½Ó¦Ð¾Æ¬ï¿½Íºï¿½
-#define	RETURN_BOOT_CODE_INF	0XA4		//ï¿½ï¿½Ó¦BOOTï¿½ï¿½ï¿½ï¿½æ±¾ï¿½ï¿½
-#define RETURN_FLASH            0xA5        //ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½FLASHï¿½ï¿½Ï¢
-//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-// #define	ERROR_CHECK_FAIL		0x01		//ï¿½ï¿½Ê¾Í¨Ñ¶Ð£ï¿½ï¿½Ê§ï¿½ï¿½
-// #define	ERROR_BURN_FAIL			0x02		//ï¿½ï¿½Ê¾ï¿½ï¿½Ð´Ð£ï¿½ï¿½ï¿½ï¿½ï¿½
-// #define	ERROR_CMD_FAIL			0x04		//ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-//ï¿½ï¿½ï¿½ï¿½
-#define NO_CMD					0x00		//ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//´ÓÕ¾»ØÓ¦¿ØÖÆÂëÀàÐÍ
+#define DEAL_SUCCESS 			0X9F		//»ØÓ¦²Ù×÷³É¹¦
+#define DEAL_FAIL				0xDF		//»ØÓ¦²Ù×÷Ê§°Ü
+#define	RETURN_IC_INF			0xA3		//»ØÓ¦Ð¾Æ¬ÐÍºÅ
+#define	RETURN_BOOT_CODE_INF	0XA4		//»ØÓ¦BOOT³ÌÐò°æ±¾ºÅ
+#define RETURN_FLASH            0xA5        //»ØÓ¦¶Á³öµÄFLASHÐÅÏ¢
+//´íÎóÀàÐÍ
+// #define	ERROR_CHECK_FAIL		0x01		//±íÊ¾Í¨Ñ¶Ð£ÑéÊ§°Ü
+// #define	ERROR_BURN_FAIL			0x02		//±íÊ¾ÉÕÐ´Ð£Ñé´íÎó
+// #define	ERROR_CMD_FAIL			0x04		//±íÊ¾ÃüÁî´íÎó
+//¿ÕÏÐ
+#define NO_CMD					0x00		//±íÊ¾ÎÞÃüÁî
 
-#define  RETURN_FLASH_APROM     0x00		//Ñ¡ï¿½ï¿½APROM
-#define  RETURN_FLASH_DATA      0x01		//Ñ¡ï¿½ï¿½DATA Flash
-#define  RETURN_FLASH_LDROM     0x02		//Ñ¡ï¿½ï¿½APROM
-#define  RETURN_FLASH_XDATA     0x03		//Ñ¡ï¿½ï¿½XDATA
-#define  RETURN_FLASH_SFR       0x04		//Ñ¡ï¿½ï¿½SFR
-#define  RETURN_FLASH_RAM	    0x05		//Ñ¡ï¿½ï¿½RAM
-#define  RETURN_FLASH_UID       0x06		//Ñ¡ï¿½ï¿½UID
+#define  RETURN_FLASH_APROM     0x00		//Ñ¡ÔñAPROM
+#define  RETURN_FLASH_DATA      0x01		//Ñ¡ÔñDATA Flash
+#define  RETURN_FLASH_LDROM     0x02		//Ñ¡ÔñAPROM
+#define  RETURN_FLASH_XDATA     0x03		//Ñ¡ÔñXDATA
+#define  RETURN_FLASH_SFR       0x04		//Ñ¡ÔñSFR
+#define  RETURN_FLASH_RAM	    0x05		//Ñ¡ÔñRAM
+#define  RETURN_FLASH_UID       0x06		//Ñ¡ÔñUID
 
-#define HandShakes				3			 //ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+#define HandShakes				3			 //ÎÕÊÖ´ÎÊýÉèÖÃ
 
 #define BOOT_BOOL_TRUE     1
 #define BOOT_BOOL_FALSE    0
@@ -155,17 +157,17 @@ extern uint32_t BootWaitTimeLimit;
 #define BOOT_DISABLE       0
 
 
-/*     ï¿½Ë´ï¿½ÎªÍ¨Ñ¶ï¿½ï¿½Ø½Ó¿Ú£ï¿½ï¿½ï¿½Òªï¿½ï¿½Í¨Ñ¶Ð­ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½Ë²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½      */
+/*     ´Ë´¦ÎªÍ¨Ñ¶Ïà¹Ø½Ó¿Ú£¬ÐèÒªÔÚÍ¨Ñ¶Ð­ÒéÎÄ¼þÖÐ¶¨Òå´Ë²¿·ÖÄÚÈÝ      */
 // #define CommunicationLength1    (64+2+8)
-extern boot_length_t CmmuLength;		             //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½
-extern boot_cmd_t CMDBuff;		                     //ï¿½ï¿½ï¿½ï¿½æ´¢ï¿½ï¿½ï¿½ï¿½
-extern boot_data_t CommuData[ReceiveLength1];	 //Í¨Ñ¶ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½
-extern boot_data_t CmdSendData[SendLength1];//ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½
-extern boot_length_t CmmuSendLength;		         //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½
-extern uint32_t NewBaud;							 //ï¿½Â²ï¿½ï¿½ï¿½ï¿½Ê´æ´¢													
-extern uint8_t CurrState;							 //ï¿½æ´¢ï¿½ï¿½Ç°Ð¾Æ¬ï¿½ï¿½×´Ì¬,0:BOOTÄ£Ê½  1:APPï¿½ï¿½ï¿½ï¿½Ì¬     2:ï¿½ï¿½ï¿½ë»ºï¿½ï¿½ï¿½ï¿½ï¿½Ì¬
+extern boot_length_t CmmuLength;		             //½ÓÊÕÊý¾Ý³¤¶È
+extern boot_cmd_t CMDBuff;		                     //ÃüÁî´æ´¢»º´æ
+extern boot_data_t CommuData[ReceiveLength1];	 //Í¨Ñ¶½ÓÊÕ»º´æ
+extern boot_data_t CmdSendData[SendLength1];//·¢ËÍ»º´æ
+extern boot_length_t CmmuSendLength;		         //½ÓÊÕÊý¾Ý³¤¶È
+extern uint32_t NewBaud;							 //ÐÂ²¨ÌØÂÊ´æ´¢													
+extern uint8_t CurrState;							 //´æ´¢µ±Ç°Ð¾Æ¬µÄ×´Ì¬,0:BOOTÄ£Ê½  1:APPÔËÐÐÌ¬     2:´úÂë»º´æ¾ÍÐ÷Ì¬
 extern boot_bool_t ResetFlag;
-extern void BootCheckReset(void);		//ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½Ð¸ï¿½Î»ï¿½Åºï¿½
+extern void BootCheckReset(void);		//¼ì²âÊÇ·ñÓÐ¸´Î»ÐÅºÅ
 extern uint8_t CheckUID(void);
 void BootInit(void);
 boot_cmd_t BootCmdRun(boot_cmd_t cmd);
@@ -184,66 +186,65 @@ uint8_t AllCheckSumCheck(void);
 /*cg_sci_user.c*/
 /*cg_sci_user.c*/
 
-#include "BAT32G137.h"
-#include "boot_core.h"
+// flash_operate.h
 
-#define APP_ADDR                0X2000				//APPï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
-#define APP_SIZE                (0x10000 - 0X2000)	//APPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó³¤¶ï¿½
+#define APP_ADDR                0X2000				//APPµÄÆðÊ¼Î»ÖÃ
+#define APP_SIZE                (0x10000 - 0X2000)	//APP´úÂë×î´ó³¤¶È
 
 //#define VECTOR_OFFSET           0x1c
 #define APP_VECTOR_ADDR         APP_ADDR
 
-#define LDROM_ADDR				0X0000				//LDROMï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
-#define LDROM_SIZE				0x2000				//LDROMï¿½Ä´ï¿½Ð¡
+#define LDROM_ADDR				0X0000				//LDROMµÄÆðÊ¼Î»ÖÃ
+#define LDROM_SIZE				0x2000				//LDROMµÄ´óÐ¡
 
-#define DATA_ADDR				0x500200			//ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½Ö¾DATA Flashï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
-#define DATA_SIZE				0x500				//ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½Ö¾DATAï¿½Ä´ï¿½Ð¡
+#define DATA_ADDR				0x500200			//³ÌÐò×´Ì¬±êÖ¾DATA FlashµÄÆðÊ¼Î»ÖÃ
+#define DATA_SIZE				0x500				//³ÌÐò×´Ì¬±êÖ¾DATAµÄ´óÐ¡
 
-#define ONE_PAGE_SIZE           512                 //Ò»Ò³ï¿½Ä³ï¿½ï¿½ï¿½
+#define ONE_PAGE_SIZE           512                 //Ò»Ò³µÄ³¤¶È
 
-#define IAP_CHECK_ADRESS 		0x1C00     		//ï¿½ï¿½ï¿½Â³É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ´¢ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ö·
-#define IAP_CHECK_LENGTH		4		  			//ï¿½ï¿½ï¿½Â³É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë³¤ï¿½ï¿½,ï¿½ï¿½ï¿½14Byte
-#define IAP_CHECK_AREA			APROM_AREA			//ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA //ï¿½ï¿½Ê¾APPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë£¬ï¿½ï¿½ï¿½14Byte
+#define IAP_CHECK_ADRESS 		0x1C00     		//¸üÐÂ³É¹¦Êý×ÖÂë´æ´¢µÄÆðÊ¼µØÖ·
+#define IAP_CHECK_LENGTH		4		  			//¸üÐÂ³É¹¦Êý×ÖÂë³¤¶È,×î´ó14Byte
+#define IAP_CHECK_AREA			APROM_AREA			//±êÖ¾Ëù´¦ÇøÓò
+#define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA //±íÊ¾APP´úÂëÇø³ÌÐòÕý³£µÄÊý×ÖÂë£¬×î´ó14Byte
 
-#define TOTAL_CHECKSUM_ADRESS   0x1C04     		//ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Í´æ´¢ï¿½ï¿½Ö·
+#define TOTAL_CHECKSUM_ADRESS   0x1C04     		//ÉÏÎ»»ú·¢ËÍÐ£ÑéºÍ´æ´¢µØÖ·
 #define TOTAL_CHECKSUM_LENGTH   4
 
-#define PACKET_TOTAL_NUM_ADRESS (TOTAL_CHECKSUM_ADRESS + 4)     		//ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Í´æ´¢ï¿½ï¿½Ö·
+#define PACKET_TOTAL_NUM_ADRESS (TOTAL_CHECKSUM_ADRESS + 4)     		//ÉÏÎ»»ú·¢ËÍÐ£ÑéºÍ´æ´¢µØÖ·
 #define PACKET_TOTAL_NUM_LENGTH 4
 
-#define APP_BUFF_ADDR           0X10000		        //APPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½
-#define APP_BUFF_SIZE           (0x10000-0X2000)	//APPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó³¤¶ï¿½
-#define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //ï¿½ï¿½Ê¾APPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½ï¿½ê±¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë£¬ï¿½ï¿½ï¿½14Byte
+#define APP_BUFF_ADDR           0X10000		        //APP»º´æÇøµÄÆðÊ¼Î»ÖÃ
+#define APP_BUFF_SIZE           (0x10000-0X2000)	//APP»º´æÇø×î´ó³¤¶È
+#define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //±íÊ¾APP»º´æÇø×°ÔØÍê±¸µÄÊý×ÖÂë£¬×î´ó14Byte
 
-#define UID_ENC_ADRESS			0x1FE00		        //UIDï¿½ï¿½ï¿½Ä´æ´¢ï¿½ï¿½Ö·
-#define UID_ENC_SIZE			16					//UIDï¿½ï¿½ï¿½Ä³ï¿½ï¿½ï¿½
-#define UID_SIZE				(128/8)				//UIDï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½
-#define UID_ENC_AREA_AREA		APROM_AREA			//UIDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÚµÄ´æ´¢ï¿½ï¿½ï¿½ï¿½
+#define UID_ENC_ADRESS			0x1FE00		        //UIDÃÜÎÄ´æ´¢µØÖ·
+#define UID_ENC_SIZE			16					//UIDÃÜÎÄ³¤¶È
+#define UID_SIZE				(128/8)				//UIDÓÐÐ§³¤¶È
+#define UID_ENC_AREA_AREA		APROM_AREA			//UIDÃÜÎÄËùÔÚµÄ´æ´¢ÇøÓò
 
 #define APP_TO_BOOT             0x55
 #define BOOT_TO_APP             0xAA
-#define	APROM_AREA	            0x55				//APROMï¿½ï¿½
-#define DATA_AREA               0xAA				//DATAï¿½ï¿½
-#define LDROM_AREA	            0X96				//LDROMï¿½ï¿½
-#define APROM_BUFF_AREA			0x69				//APPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define UID_ENC_AREA			0x22				//UIDï¿½ï¿½ï¿½Ä´æ´¢ï¿½ï¿½
+#define	APROM_AREA	            0x55				//APROMÇø
+#define DATA_AREA               0xAA				//DATAÇø
+#define LDROM_AREA	            0X96				//LDROMÇø
+#define APROM_BUFF_AREA			0x69				//APP»º´æÇø
+#define UID_ENC_AREA			0x22				//UIDÃÜÎÄ´æ´¢Çø
 
-extern uint8_t IAP_IapLength;	        //ï¿½ï¿½ï¿½ï¿½IAPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½È»ï¿½ï¿½ï¿½
+extern uint8_t IAP_IapLength;	        //ÓÃÓÚIAP²Ù×÷Êý¾Ý³¤¶È»º´æ
 
-extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area);//Ð´ï¿½ï¿½ï¿½Ö½ï¿½IAPï¿½ï¿½ï¿½ï¿½
-extern void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area); //ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½IAPï¿½ï¿½ï¿½ï¿½
-extern uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area);  //ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½IAPï¿½ï¿½ï¿½ï¿½
-extern void IAP_Reset(void);			 		                    //ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½								
-extern void IAP_Erase_ALL(uint8_t area);						    //ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½
-extern void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½é£¨512Bï¿½ï¿½
+extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area);//Ð´¶à×Ö½ÚIAP²Ù×÷
+extern void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area); //¶Á¶à×Ö½ÚIAP²Ù×÷
+extern uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area);  //¶Áµ¥×Ö½ÚIAP²Ù×÷
+extern void IAP_Reset(void);			 		                    //¸´Î»Æô¶¯								
+extern void IAP_Erase_ALL(uint8_t area);						    //½«Ä¿±êÇøÓòÈ«²Á
+extern void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //²Á³ýÒ»¸ö¿é£¨512B£©
 extern void IAP_FlagWrite(uint8_t flag);
 extern uint8_t IAP_CheckAPP(void);
 extern void IAP_ReadEncUID(uint8_t* buff);
-extern void IAP_Remap(void);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-extern uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area); //Ð´ï¿½ï¿½ï¿½Ö½ï¿½IAPï¿½ï¿½ï¿½ï¿½
+extern void IAP_Remap(void);//½«»º´æÇøµÄ´úÂë×°ÔØÈçÔËÐÐÇø
+extern uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area); //Ð´µ¥×Ö½ÚIAP²Ù×÷
 
-
+// flash_operate.h
 
 extern volatile uint8_t * gp_uart0_tx_address;        /* uart0 transmit buffer address */
 extern volatile uint16_t  g_uart0_tx_count;           /* uart0 transmit data number */
