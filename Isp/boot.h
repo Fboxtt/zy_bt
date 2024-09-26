@@ -3,11 +3,8 @@
 /*communication_protocol.h*/
 /*communication_protocol.h*/
 /*communication_protocol.h*/
-#include "BAT32G137.h"
-#include "userdefine.h"
-#include "cg_sci.h"
-#include "cg_macrodriver.h"
-// #include "serial_port_config.h"//串口通讯底层驱动文件
+
+#include "serial_port_config.h"//串口通讯底层驱动文件
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
@@ -171,12 +168,13 @@ extern uint32_t NewBaud;							 //新波特率存储
 extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
 extern boot_bool_t ResetFlag;
 extern void BootCheckReset(void);		//检测是否有复位信号
+extern void BufferExchange(void);
 extern uint8_t CheckUID(void);
 void BootInit(void);
 boot_cmd_t BootCmdRun(boot_cmd_t cmd);
 
 
-uint8_t AllCheckSumCheck(void);
+uint8_t AppCheckSumCheck(void);
 /* boot core.h*/
 /* boot core.h*/
 /* boot core.h*/
@@ -192,8 +190,11 @@ uint8_t AllCheckSumCheck(void);
 // flash_operate.h
 
 #define APP_ADDR                0X2000				//APP的起始位置
-#define APP_SIZE                (0x10000 - 0X2000)	//APP代码最大长度
+#define APP_BUFF_ADDR           0x11000		        //APP缓存区的起始位置
+#define APP_SIZE                (APP_BUFF_ADDR - 0X2000)	//APP代码最大长度
 
+// #define BUFFER_ADDR             0x11000
+// #define BUFFER_SIZE                (0x20000 - BUFFER_ADDR)	//APP代码最大长度
 //#define VECTOR_OFFSET           0x1c
 #define APP_VECTOR_ADDR         APP_ADDR
 
@@ -205,19 +206,24 @@ uint8_t AllCheckSumCheck(void);
 
 #define ONE_PAGE_SIZE           512                 //一页的长度
 
-#define IAP_CHECK_ADRESS 		0x1C00     		//更新成功数字码存储的起始地址
+#define IAP_CHECK_ADRESS 		0x1C00     		    //更新成功数字码存储的起始地址
 #define IAP_CHECK_LENGTH		4		  			//更新成功数字码长度,最大14Byte
 #define IAP_CHECK_AREA			APROM_AREA			//标志所处区域
 #define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA //表示APP代码区程序正常的数字码，最大14Byte
 
-#define TOTAL_CHECKSUM_ADRESS   0x1C04     		//上位机发送校验和存储地址
-#define TOTAL_CHECKSUM_LENGTH   4
+#define APP_CHECKSUM_ADRESS     0x1C04     		    //上位机发送校验和存储地址
+#define CHECKSUM_LENGTH         4
 
-#define PACKET_TOTAL_NUM_ADRESS (TOTAL_CHECKSUM_ADRESS + 4)     		//上位机发送校验和存储地址
-#define PACKET_TOTAL_NUM_LENGTH 4
+#define APP_TOTAL_NUM_ADRESS    (APP_CHECKSUM_ADRESS + 4)     		//hex文件大小存储
+#define TOTAL_NUM_LENGTH        4
 
-#define APP_BUFF_ADDR           0X10000		        //APP缓存区的起始位置
-#define APP_BUFF_SIZE           (0x10000-0X2000)	//APP缓存区最大长度
+#define BUFFER_CHECK_ADRESS 	0x1E00     		    //更新成功数字码存储的起始地址
+#define BUFFER_CHECKSUM_ADRESS  0x1E04     		    //上位机发送校验和存储地址
+#define BUFFER_TOTAL_NUM_ADRESS (BUFFER_CHECKSUM_ADRESS + 4)            //缓冲区hex文件大小存储
+
+
+#define APP_BUFF_SIZE           (0x20000 - APP_BUFF_ADDR)	//APP缓存区最大长度
+#define FLASH_BUFF_ENABLE
 #define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //表示APP缓存区装载完备的数字码，最大14Byte
 
 #define UID_ENC_ADRESS			0x1FE00		        //UID密文存储地址
@@ -257,7 +263,4 @@ extern volatile uint16_t  g_uart0_rx_length;          /* uart0 receive data leng
 
 extern void BootWaitTimeInit(void);
 extern void BootProcess(void);
-
-#define UartBaud				19200		    	 //初始默认波特率
-#define	Fsoc					48000000	    	//主频选择
 #endif
