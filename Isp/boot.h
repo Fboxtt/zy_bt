@@ -108,10 +108,12 @@ extern volatile uint8_t ACK;
 
 // #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
 // #define	SET_BAUD				0x25		//设置波特率
-#define EARSE_ALL				0x54		//擦除所有APROM
-#define WRITE_FLASH				0x55		//更新程序命令
-#define READ_FLASH              0x56        //读FLASH指定地址
+#define EARSE_ALL				0x54		// 擦除所有APROM
+#define WRITE_FLASH				0x55		// 更新程序命令
+#define READ_FLASH              0x56        // 读FLASH指定地址
 #define REC_ALL_CHECKSUM        0x57		// 发送校验和
+#define GET_BT_VERSION          0x58        // 查询BT的版本
+#define ENTER_APP               0x59        // 进入APP
 
 #define ERR_NO                  0x00        // 无异常
 #define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
@@ -121,6 +123,7 @@ extern volatile uint8_t ACK;
 #define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
+#define ERR_REMAP			    0x24		// 总包校验和错误
 
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
@@ -250,7 +253,7 @@ extern void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（5
 extern void IAP_FlagWrite(uint8_t flag);
 extern uint8_t IAP_CheckAPP(void);
 extern void IAP_ReadEncUID(uint8_t* buff);
-extern void IAP_Remap(void);//将缓存区的代码装载如运行区
+extern uint8_t IAP_Remap(void);//将缓存区的代码装载如运行区
 extern uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area); //写单字节IAP操作
 
 // flash_operate.h

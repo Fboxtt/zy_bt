@@ -415,16 +415,19 @@ void IAP_ReadEncUID(uint8_t* buff)
 	{
 		buff[i] = IAP_ReadOneByte(UID_ENC_ADRESS+i,UID_ENC_AREA_AREA);
 	}
-}			
+}
 #ifdef FLASH_BUFF_ENABLE
-void IAP_Remap()//将缓存区的代码装载如运行区
+uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 {
 	uint16_t i;
 	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
 	for(i=0;i<APP_BUFF_SIZE;i++)
 	{
-		 IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA);
+		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
+			return 0;
+		}
 	}
+	return 1;
 }
 #endif
 /*flash_operate*/
@@ -444,8 +447,8 @@ uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 
 uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
 
-// uint8_t CheckSum[2] = {0x0, 0x0};
 uint32_t CheckSum = 0;
+// uint8_t CheckSum[2] = {0x0, 0x0};
 const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
@@ -468,9 +471,9 @@ void BootInit()
 	#ifdef FLASH_BUFF_ENABLE
 	else if(CurrState==2)//将缓存区加载到运行区后直接运行APP
 	{
-		IAP_Remap();//将代码缓存区的内容加载入程序运行区
-		IAP_FlagWrite(1);//设置为APP可运行态
-        IAP_Reset();
+		// IAP_Remap();//将代码缓存区的内容加载入程序运行区
+		// IAP_FlagWrite(1);//设置为APP可运行态
+//        IAP_Reset();
 	}
 	#endif
 }
@@ -532,19 +535,17 @@ void PacketTotalNumWrite(uint32_t packetTotalNum, uint32_t addr)
 	}
 }
 
-uint8_t All_CheckSum_Read(uint8_t* checkSum, uint32_t addr)
+uint32_t All_CheckSum_Read(uint32_t addr)
 {
     unsigned char i;
 	volatile uint8_t temp = 0;
+	uint32_t checkSum = 0;
     for(i=0;i<CHECKSUM_LENGTH;i++)
     {
-		temp = IAP_ReadOneByte(addr+i,IAP_CHECK_AREA);
-        if(temp != *(checkSum + i))
-        {
-			return 0;
-        }
+		checkSum += (IAP_ReadOneByte(addr+i,IAP_CHECK_AREA) << (i * 8));
+
     }
-	return 1;
+	return checkSum;
 }
 
 uint32_t PacketTotalNumRead(uint32_t addr)
@@ -561,6 +562,9 @@ uint32_t PacketTotalNumRead(uint32_t addr)
 }
 uint8_t AppCheckSumCheck(void)
 {
+	All_CheckSum_Write(All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APP_CHECKSUM_ADRESS);
+	PacketTotalNumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), APP_TOTAL_NUM_ADRESS);
+	
 	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNumRead(APP_TOTAL_NUM_ADRESS);
 	uint16_t calCheckSum = 0;
 	
@@ -568,14 +572,17 @@ uint8_t AppCheckSumCheck(void)
 		calCheckSum += IAP_ReadOneByte(APP_ADDR+i,IAP_CHECK_AREA);
 	}
 
-	if(All_CheckSum_Read((uint8_t*)(&calCheckSum), APP_CHECKSUM_ADRESS) == 1) {
+	if(calCheckSum == All_CheckSum_Read(APP_CHECKSUM_ADRESS)) {
 		return 1;
 	} else {
+		All_CheckSum_Write(0x0, APP_CHECKSUM_ADRESS); // 校验和写0
 		return 0;
 	}
 }
 uint8_t BufferCheckSumCheck(void)
 {
+	All_CheckSum_Write(CheckSum, BUFFER_CHECKSUM_ADRESS);
+	PacketTotalNumWrite(g_packetTotalNum, BUFFER_TOTAL_NUM_ADRESS);
 	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS);
 	uint16_t calCheckSum = 0;
 	
@@ -583,7 +590,7 @@ uint8_t BufferCheckSumCheck(void)
 		calCheckSum += IAP_ReadOneByte(APP_BUFF_ADDR+i,IAP_CHECK_AREA);
 	}
 
-	if(All_CheckSum_Read((uint8_t*)(&calCheckSum), BUFFER_CHECKSUM_ADRESS) == 1) {
+	if(calCheckSum == All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS)) {
 		return 1;
 	} else {
 		return 0;
@@ -612,7 +619,23 @@ uint8_t CheckUID()
 
 void BufferExchange()
 {
-
+	if(BufferFlag == 1) {
+		BufferFlag = 0;
+		if(IAP_Remap() == 1) {
+			if(AppCheckSumCheck() == 1)
+			{
+				ACK = ERR_NO; //回应退出了Bootloader
+				BufferFlag = 1;
+			} else {
+				ACK = ERR_ALL_CHECK;
+			}
+		} else {
+			ACK = ERR_REMAP;
+		}
+		result_cmd = ENTER_APP;
+		CmmuSendLength = 0;
+		CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
+	}
 }
 void BootCheckReset()
 {
@@ -621,19 +644,19 @@ void BootCheckReset()
         ResetFlag = 0;	
 		BaseTimeSystemInit(BOOT_DISABLE);//关闭定时器
 
-		#ifdef FLASH_BUFF_ENABLE
-		if(CurrState == 2)
-		{
-			IAP_FlagWrite(2);//代码缓存区就绪标志
-			//IAP_Remap();
-		}
-		if(CurrState == 0)
-		{
-			IAP_FlagWrite(2);//APP可正常运行标志
-		}
-		#else
+		// #ifdef FLASH_BUFF_ENABLE
+		// if(CurrState == 2)
+		// {
+		// 	IAP_FlagWrite(2);//代码缓存区就绪标志
+		// 	//IAP_Remap();
+		// }
+		// if(CurrState == 0)
+		// {
+		// 	IAP_FlagWrite(2);//APP可正常运行标志
+		// }
+		// #else
         // IAP_FlagWrite(1);//APP可正常运行标志
-		#endif	
+		// #endif	
 					
         IAP_Reset();//复位进入APP
     }
@@ -720,11 +743,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			// 	IAP_Erase_ALL(temp);
 			// }
 			IAP_Erase_ALL(APROM_BUFF_AREA);
+			BeginAddr = APP_BUFF_ADDR; // 地址修改成缓冲区地址为writeflash做准备
 			#else
 			IAP_Erase_ALL(temp);
+			BeginAddr = APP_ADDR;
 			#endif
             ACK = ERR_NO;
-			BeginAddr = APP_ADDR;
         }break;
 		case WRITE_FLASH:// 写入app，成功后进入app
 		{
@@ -741,11 +765,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			if((CommuData[7] + (uint32_t)CommuData[8] * 0x100) != (NextPacketNumber)) {
 				ACK = ERR_PACKET_NUMBER;
 			}
-			#ifdef FLASH_BUFF_ENABLE
-			BeginAddr = APP_BUFF_ADDR;
-			#else
-			BeginAddr = APP_ADDR;
-			#endif
+
 			if(IAP_WriteMultiByte(BeginAddr,(CommuData+DATA_OFFSET),PACKET_SIZE,temp))
 			{
 				BeginAddr = BeginAddr+CmmuLength;
@@ -782,8 +802,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			// } else {
 			// 	ACK = ERR_ALL_CHECK;
 			// }
-			All_CheckSum_Write(CheckSum, BUFFER_CHECKSUM_ADRESS);
-			PacketTotalNumWrite(g_packetTotalNum, BUFFER_TOTAL_NUM_ADRESS);
+
 			if(BufferCheckSumCheck() == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
