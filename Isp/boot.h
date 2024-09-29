@@ -100,7 +100,7 @@ extern volatile uint8_t ACK;
 // #define EARSE_ALL				0x06		//擦除所有APROM
 // #define READ_FLASH              0x23        //读FLASH指定地址
 //主站发送来的控制码类型 私有协议修改内容
-#define	READ_BOOT_CODE_INF		0x10		//读取Boot代码版本号
+#define	READ_BOOT_CODE_INF		0x5A		//读取Boot代码版本号
 #define	READ_IC_INF				0x51		//读取芯片型号
 #define HEX_INFO                0x52        //接收HEX文件信息
 #define ENTER_BOOTMODE 			0x53		//进入更新模式，即握手信号

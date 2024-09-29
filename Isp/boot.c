@@ -560,14 +560,18 @@ uint32_t PacketTotalNumRead(uint32_t addr)
 	}
 	return packetTotalNum;
 }
-uint8_t AppCheckSumCheck(void)
+void AppCheckSumWrite(void)
 {
 	All_CheckSum_Write(All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APP_CHECKSUM_ADRESS);
 	PacketTotalNumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), APP_TOTAL_NUM_ADRESS);
-	
+}
+uint8_t AppCheckSumCheck(void)
+{
 	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNumRead(APP_TOTAL_NUM_ADRESS);
 	uint16_t calCheckSum = 0;
-	
+	if(packetTatolSize == 0) {
+		return 0;
+	}
 	for(uint32_t i = 0; i < packetTatolSize; i++) {
 		calCheckSum += IAP_ReadOneByte(APP_ADDR+i,IAP_CHECK_AREA);
 	}
@@ -579,10 +583,13 @@ uint8_t AppCheckSumCheck(void)
 		return 0;
 	}
 }
-uint8_t BufferCheckSumCheck(void)
+void BufferCheckSumWrite(void)
 {
 	All_CheckSum_Write(CheckSum, BUFFER_CHECKSUM_ADRESS);
 	PacketTotalNumWrite(g_packetTotalNum, BUFFER_TOTAL_NUM_ADRESS);
+}
+uint8_t BufferCheckSumCheck(void)
+{
 	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS);
 	uint16_t calCheckSum = 0;
 	
@@ -622,6 +629,7 @@ void BufferExchange()
 	if(BufferFlag == 1) {
 		BufferFlag = 0;
 		if(IAP_Remap() == 1) {
+			AppCheckSumWrite();
 			if(AppCheckSumCheck() == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
@@ -674,11 +682,9 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
     {
         case READ_BOOT_CODE_INF: // 读取版本号
         {
-            for(i=0;i<EditionLength;i++)
-            {
-                CmdSendData[i] = Boot_Inf_Buff[i];                
-            }
-            CmmuSendLength = EditionLength;
+			
+			// BeginAddr = APP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+			IAP_Erase_ALL(APROM_AREA);
             ACK = ERR_NO;
         }break;
         case READ_IC_INF: // 读取芯片型号
@@ -802,7 +808,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			// } else {
 			// 	ACK = ERR_ALL_CHECK;
 			// }
-
+			BufferCheckSumWrite();
 			if(BufferCheckSumCheck() == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
@@ -887,9 +893,12 @@ void BootProcess(void)
 		CMDBuff = 0; 
 	}
 	if(BootWaitTime > BootWaitTimeLimit) {
-		if(AppCheckSumCheck() == 1) {
+		if(AppCheckSumCheck() == 1) { // 如果时间到，校验App数据，正确则进入APP
 			ResetFlag = 1;
 		} else {
+			if(BufferCheckSumCheck() == 1) { // 如果因为意外使APP损坏，将缓冲区APP复制过来
+				BufferFlag = 1;
+			}
 			ResetFlag = 0;
 			BootWaitTime = 0;
 		}
