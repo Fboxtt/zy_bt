@@ -623,6 +623,11 @@ uint8_t CheckUID()
 }
 #endif
 
+void ReplyEnterBoot(void)
+{
+	CmmuSendLength = 0;
+	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
+}
 
 void BufferExchange()
 {
@@ -633,7 +638,7 @@ void BufferExchange()
 			if(AppCheckSumCheck() == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
-				BufferFlag = 1;
+				ResetFlag = 1;
 			} else {
 				ACK = ERR_ALL_CHECK;
 			}
@@ -641,8 +646,6 @@ void BufferExchange()
 			ACK = ERR_REMAP;
 		}
 		result_cmd = ENTER_APP;
-		CmmuSendLength = 0;
-		CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
 	}
 }
 void BootCheckReset()

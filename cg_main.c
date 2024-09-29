@@ -203,7 +203,8 @@ int main(void)
 	P_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // 配置p16 p17
 	P_Init(PORT2,PIN3,OUTPUT); // 配置P23引脚
 	VB_ON; // 打开VB使能RS485
-	BootWaitTimeInit();                                
+	BootWaitTimeInit();    
+	ReplyEnterBoot();                            
     while (1U)
     {
 		BootProcess();
