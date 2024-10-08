@@ -175,7 +175,7 @@ void SystemInit (void)
     PORT->PIOR2 = 0x00U;
     PORT->PIOR3 = 0x00U;
     CLK_Get_ResetSource();
-    PORT_Init();
+//    PORT_Init();
     CLK_Init();
     WDT_Init();
     SAF->SFRGD = 0x00U;

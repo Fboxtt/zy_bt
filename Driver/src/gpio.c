@@ -114,14 +114,7 @@ uint8_t GPIO_Get_Value(__IO uint8_t *port)
     return (*port);          /*!< PL = value                              */
 }
 
-/**
-  * @brief  Initializes the PORTx
-  * @param  PORTx: where x can be 0~14
-  * @param  PINx: where x can be 0~7
-  * @param  MODEx: such as INPUT,PULLUP_INPUT,TTL_INPUT,ANALOG_INPUT,OUTPUT,OPENDRAIN_OUTPUT      
-	*
-  * @retval None
-  */
+
 void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
 {
   	uint8_t mode = MODEx;
@@ -176,11 +169,11 @@ void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
 	*
   * @retval None
   */
-//void PORT_SetBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
-//{
-//	uint8_t pos = 1<<PINx;
-//	*((volatile uint8_t*)(&PORT->P0+PORTx)) |= pos;
-//}
+void PORT_SetBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
+{
+	uint8_t pos = 1<<PINx;
+	*((volatile uint8_t*)(&PORT->P0+PORTx)) |= pos;
+}
 
 /**
   * @brief  Clear the PORTx bit
@@ -189,11 +182,11 @@ void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
 	*
   * @retval None
   */
-//void PORT_ClrBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
-//{
-//	uint8_t pos = 1<<PINx;
-//	*((volatile uint8_t*)(&PORT->P0+PORTx)) &= ~pos;
-//}
+void PORT_ClrBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
+{
+	uint8_t pos = 1<<PINx;
+	*((volatile uint8_t*)(&PORT->P0+PORTx)) &= ~pos;
+}
 
 /**
   * @brief  Toggle the PORTx bit
@@ -202,11 +195,11 @@ void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
 	*
   * @retval None
   */
-//void PORT_ToggleBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
-//{
-//	uint8_t pos = 1<<PINx;
-//	*((volatile uint8_t*)(&PORT->P0+PORTx)) ^= pos;
-//}
+void PORT_ToggleBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
+{
+	uint8_t pos = 1<<PINx;
+	*((volatile uint8_t*)(&PORT->P0+PORTx)) ^= pos;
+}
 
 /**
   * @brief  Get the PORTx bit
@@ -215,13 +208,11 @@ void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
 	*
   * @retval None
   */
-//uint8_t PORT_GetBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
-//{
-//	uint8_t pos = 1<<PINx;
-//	//PORT->PMS = 0x01;        /*!< Digital output level of the pin is read */
-//	return *((volatile uint8_t*)(&PORT->P0+PORTx))&pos;
-//}
-
-
+uint8_t PORT_GetBit(PORT_TypeDef PORTx,PIN_TypeDef PINx)
+{
+	uint8_t pos = 1<<PINx;
+	//PORT->PMS = 0x01;        /*!< Digital output level of the pin is read */
+	return *((volatile uint8_t*)(&PORT->P0+PORTx))&pos;
+}
 
 

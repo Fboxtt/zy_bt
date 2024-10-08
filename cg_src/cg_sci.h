@@ -352,5 +352,6 @@ static void uart0_callback_error(uint8_t err_type);
 static void uart0_callback_softwareoverrun(uint16_t rx_data);
 /* Start user code for function. Do not edit comment generated here */
 MD_STATUS UART0_BaudRate(uint32_t fclk_freq, uint32_t baud);
+MD_STATUS UART_BaudRateCal(uint32_t fclk_freq, uint32_t baud, uart_baud_t *pvalue);
 /* End user code. Do not edit comment generated here */
 #endif

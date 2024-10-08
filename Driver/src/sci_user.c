@@ -672,58 +672,58 @@ static void iic01_callback_master_sendend(void)
 * @param  None
 * @return None
 ***********************************************************************************************************************/
-void uart1_interrupt_receive(void)
-{
-    volatile uint8_t rx_data;
-    volatile uint8_t err_type;
+// void uart1_interrupt_receive(void)
+// {
+//     volatile uint8_t rx_data;
+//     volatile uint8_t err_type;
     
-    INTC_ClearPendingIRQ(SR1_IRQn);
-    err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
-    SCI0->SIR03 = (uint16_t)err_type;
+//     INTC_ClearPendingIRQ(SR1_IRQn);
+//     err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
+//     SCI0->SIR03 = (uint16_t)err_type;
 
-    if (err_type != 0U)
-    {
-        uart1_callback_error(err_type);
-    }
+//     if (err_type != 0U)
+//     {
+//         uart1_callback_error(err_type);
+//     }
     
-    rx_data = SCI0->RXD1;
+//     rx_data = SCI0->RXD1;
 
-    if (g_uart1_rx_length > g_uart1_rx_count)
-    {
-        *gp_uart1_rx_address = rx_data;
-        gp_uart1_rx_address++;
-        g_uart1_rx_count++;
+//     if (g_uart1_rx_length > g_uart1_rx_count)
+//     {
+//         *gp_uart1_rx_address = rx_data;
+//         gp_uart1_rx_address++;
+//         g_uart1_rx_count++;
 
-        if (g_uart1_rx_length == g_uart1_rx_count)
-        {
-            uart1_callback_receiveend();
-        }
-    }
-    else
-    {
-        uart1_callback_softwareoverrun(rx_data);
-    }
-}
+//         if (g_uart1_rx_length == g_uart1_rx_count)
+//         {
+//             uart1_callback_receiveend();
+//         }
+//     }
+//     else
+//     {
+//         uart1_callback_softwareoverrun(rx_data);
+//     }
+// }
 /***********************************************************************************************************************
 * Function Name: uart1_interrupt_send
 * @brief  UART1 Send interrupt service routine
 * @param  None
 * @return None
 ***********************************************************************************************************************/
-void uart1_interrupt_send(void)
-{
-    INTC_ClearPendingIRQ(ST1_IRQn);
-    if (g_uart1_tx_count > 0U)
-    {
-        SCI0->TXD1 = *gp_uart1_tx_address;
-        gp_uart1_tx_address++;
-        g_uart1_tx_count--;
-    }
-    else
-    {
-        uart1_callback_sendend();
-    }
-}
+// void uart1_interrupt_send(void)
+// {
+//     INTC_ClearPendingIRQ(ST1_IRQn);
+//     if (g_uart1_tx_count > 0U)
+//     {
+//         SCI0->TXD1 = *gp_uart1_tx_address;
+//         gp_uart1_tx_address++;
+//         g_uart1_tx_count--;
+//     }
+//     else
+//     {
+//         uart1_callback_sendend();
+//     }
+// }
 /***********************************************************************************************************************
 * Function Name: uart1_callback_receiveend
 * @brief  This function is a callback function when UART1 finishes reception.

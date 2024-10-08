@@ -5,6 +5,7 @@
 /*communication_protocol.h*/
 
 #include "serial_port_config.h"//串口通讯底层驱动文件
+#include "gpio.h"
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
@@ -23,6 +24,7 @@ typedef enum {
 #define RECEIVE_PACKET_LENTH        (PACKET_ID_LENTH+PACKET_ID_LENTH)
 #define DATA_OFFSET					(7+RECEIVE_PACKET_LENTH)
 #define PACKET_SIZE                 512
+#define MAX_PACK_NUM				(80 * 1024)
 #define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容
 #define TYPE_TO_SHAKE_LENTH         4
 #define TYPE_TO_DATA_LENTH          (TYPE_TO_SHAKE_LENTH + RECEIVE_PACKET_LENTH)
@@ -266,4 +268,121 @@ extern volatile uint16_t  g_uart0_rx_length;          /* uart0 receive data leng
 
 extern void BootWaitTimeInit(void);
 extern void BootProcess(void);
+extern void ReplyEnterBoot(void);
+MD_STATUS UART1_Init(uint32_t freq, uint32_t baud);
+
+
+
+
+
+
+
+
+
+
+
+
+
+//typedef enum {
+//	PORT0 = 0,
+//	PORT1,
+//	PORT2,
+//	PORT3,
+//	PORT4,
+//	PORT5,
+//	PORT6,
+//	PORT7,
+//	PORT8,
+//	PORT9,
+//	PORT10,
+//	PORT11,
+//	PORT12,
+//	PORT13,
+//	PORT14,
+//	
+//}PORT_TypeDef;
+
+//typedef enum {
+//	PIN0 = 0,
+//	PIN1,
+//	PIN2,
+//	PIN3,
+//	PIN4,
+//	PIN5,
+//	PIN6,
+//	PIN7,
+//	
+//}PIN_TypeDef;
+
+//typedef enum {
+//	INPUT = 0,
+//	PULLUP_INPUT,
+//	TTL_INPUT,
+//	ANALOG_INPUT,
+//	OUTPUT,
+//	OPENDRAIN_OUTPUT,
+//	
+//}PIN_ModeDef;
+
+
+//ADC 输入
+#define	 		ADC_PACK_V		  ADC_CHANNEL_6
+#define     ADC_TEMP_T3     ADC_CHANNEL_0  
+#define     ADC_TEMP_MOS    ADC_CHANNEL_2
+#define     ADC_TEMP_T5     ADC_CHANNEL_1
+#define     ADC_TEMP_HEAT   ADC_CHANNEL_7
+
+//GPIO输入输出口变量定义
+
+typedef struct 
+{
+	PORT_TypeDef	emGPIOx;		//refer to PORT_TypeDef
+	PIN_TypeDef 	emPin;			//refer to PIN_TypeDef
+	PIN_ModeDef		emMode;			//refer to PIN_ModeDef
+	uint8_t 		value;			//output TRUE: high, FALSE: low
+}TGPIO;
+
+extern TGPIO PIN_SW; 	
+extern TGPIO PIN_HEATE_N;	
+extern TGPIO PIN_ALERT;	
+
+extern TGPIO PIN_VBCTL; 
+extern TGPIO PIN_CDEN; 	
+extern TGPIO PIN_CEN; 	
+extern TGPIO PIN_GREEN; 
+extern TGPIO PIN_RED; 	
+//extern TGPIO PIN_485DE; 
+extern TGPIO PIN_FUSE_EN; 	
+extern TGPIO PIN_WAKE; 		
+//extern TGPIO PIN_PACKADC_EN; 
+
+extern TGPIO PIN_COM3V3_EN;	 
+extern TGPIO PIN_COM5V_EN;	 
+extern TGPIO PIN_REGOUT_EN;	 
+
+
+
+extern void ADC_Config(void);
+//extern uint16_t ADC_GetChnValue(adc_channel_t Chn);
+extern void GPIO_Config(void);
+extern void Ext_INT_Config(void);
+extern void Clock_Config(void);
+extern void TimeTick_Config(void);
+extern void RTC_Config(void);
+extern void RTC_GetDateAndTime(void *p);
+//extern void RTC_SetDateAndTime(MDate *pDate);
+extern void WDT_feed(void);
+extern void ADC_ClearChnValue(char ADCx);
+
+extern void TimingDelay_Decrement(void);
+
+
+extern void TIM_Config(void);
+//extern ULONG	FLASH_Write(ULONG ulDstAddr, ULONG ulSrcAddr, ULONG ulLen);
+
+extern void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx);
+
+//extern void PORT_ClrBit(PORT_TypeDef PORTx,PIN_TypeDef PINx);
+extern void HardDriveInit(void);
+
 #endif

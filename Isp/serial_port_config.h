@@ -12,7 +12,7 @@
 #include "cg_sci.h"
 #include "cg_macrodriver.h"
 //UART设置接口
-#define UartBaud				19200		    	 //初始默认波特率
+#define UartBaud				25600		    	 //初始默认波特率
 #define	Fsoc					48000000	    	//主频选择
 #define CommunicationIOInit()	GPIO_SET_MUX_MODE(P23CFG,GPIO_MUX_TXD0);GPIO_SET_MUX_MODE(P24CFG,GPIO_MUX_RXD0)//通讯IO设置
 //**********************UART通讯接口**********************************

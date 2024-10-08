@@ -33,13 +33,13 @@ Global variables and functions
 * Arguments    : None
 * Return Value : None
 ***********************************************************************************************************************/
-void PORT_Init(void)
-{
-    PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
-    PORT->PU7 = _01_PUn0_PULLUP_ON;
-    PORT->POM7 = _00_POMn1_NCH_OFF;
-    PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
-}
+//void PORT_Init(void)
+//{
+//    PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
+//    PORT->PU7 = _01_PUn0_PULLUP_ON;
+//    PORT->POM7 = _00_POMn1_NCH_OFF;
+//    PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
+//}
 
 /* Start user code for adding. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
