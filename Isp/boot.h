@@ -15,6 +15,9 @@ typedef enum {
     UART2,
 }uartId;
 
+#define DEBUG_DEVICE 1
+#define BMS_DEVICE 2
+#define DEVICE DEBUG_DEVICE
 #define CommunicationCommandHeader   0X68		//รüม๎ึกอท
 #define CommunicationCommandEnd		 0x16		//รüม๎ึกฮฒ
 #define SEND_PACKET_LENTH           2

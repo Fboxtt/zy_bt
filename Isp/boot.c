@@ -53,8 +53,13 @@ void UartInit(uint32_t baud)
 void UartSendOneByte(uint8_t input_data)
 {
     SCI0->TXD1 = input_data;
-    while(!UartSendFlag);
-    UartSendFlag = 0;
+	//阻塞，等到标志位清零即可发送下个数据
+	while (SCI0->SSR02 & (_0040_SCI_UNDER_EXECUTE | _0020_SCI_VALID_STORED))
+    {
+        ;
+    }
+//    while(!UartSendFlag);
+//    UartSendFlag = 0;
 //    while (SCI0->SSR00 & (_0040_SCI_UNDER_EXECUTE | _0020_SCI_VALID_STORED))
 //    {
 //        ;
@@ -161,7 +166,13 @@ static void uart0_callback_sendend(void)
     uart_send_flag=1;
     /* End user code. Do not edit comment generated here */
 }
-
+static void uart1_callback_sendend(void)
+{
+    /* Start user code. Do not edit comment generated here */
+    UartSendFlag=1; 	 //BootLoader·???±ê??
+    uart_send_flag=1;
+    /* End user code. Do not edit comment generated here */
+}
 static void uart0_interrupt_send(void)
 {
     INTC_ClearPendingIRQ(ST0_IRQn); /* clear INTST0 interrupt flag */
@@ -1017,7 +1028,7 @@ void uart1_interrupt_receive(void)
 {
     volatile uint8_t rx_data;
     volatile uint8_t err_type;
-    uartId id = UART0;
+    uartId id = UART1;
 
     INTC_ClearPendingIRQ(SR1_IRQn);
     SCI0->SIR03 = (uint16_t)err_type;
@@ -1046,6 +1057,8 @@ void uart1_interrupt_receive(void)
 
 void uart1_interrupt_send(void)
 {
+    INTC_ClearPendingIRQ(ST0_IRQn); /* clear INTST0 interrupt flag */
+	uart1_callback_sendend();
 
 }
 
@@ -1249,7 +1262,12 @@ void Clock_Config(void)
 *********************************************************************************************************/
 void HardDriveInit(void)
 {
-	Clock_Config();		//OK
+	if(DEVICE == BMS_DEVICE) {
+		Clock_Config();		//OK
+	} else if (DEVICE == DEBUG_DEVICE) {
+		system_tick_init();
+	}
+	
 //	GPIO_Config();		//OK
 	//Ext_INT_Config();	//?????
 	//TimeTick_Config();	//OK
@@ -1258,7 +1276,7 @@ void HardDriveInit(void)
 	//CAN_Config();		//CAN OK?
 	// ADC_Config();		//OK
 	//sEE_Config();		//OK
-	uint32_t uart_statu = UART1_Init(Fsoc, UartBaud);
+	uint32_t uart_statu = UART1_Init(SystemCoreClock, UartBaud);
 
 }
 

@@ -195,7 +195,7 @@ void toggle(void)
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
-//    system_tick_init();
+   
 	HardDriveInit();
     BootInit();
 	// toggle_Init();
