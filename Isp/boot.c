@@ -285,6 +285,12 @@ void IAP_Erase_ALL(uint8_t area)
 		k = (APP_SIZE/ONE_PAGE_SIZE);
 		begin_addr = APP_ADDR;
 	}
+	else if(area==BACKUP_AREA)
+	{
+		k = (BACKUP_SIZE/ONE_PAGE_SIZE);
+		begin_addr = BACKUP_SIZE;
+		area = APROM_AREA;
+	}
 	#ifdef FLASH_BUFF_ENABLE
 	else if(area==APROM_BUFF_AREA)
 	{
@@ -696,13 +702,13 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
     ACK = ERR_NO;
     switch(cmd)//根据命令执行相应的动作
     {
-        case READ_BOOT_CODE_INF: // 读取版本号
-        {
-			
-			// BeginAddr = APP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
-			IAP_Erase_ALL(APROM_AREA);
-            ACK = ERR_NO;
-        }break;
+//        case READ_BOOT_CODE_INF: // 读取版本号
+//        {
+//			
+//			// BeginAddr = APP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+//			IAP_Erase_ALL(APROM_AREA);
+//            ACK = ERR_NO;
+//        }break;
         case READ_IC_INF: // 读取芯片型号
         {
             for(i=0;i<EditionLength;i++)
@@ -753,24 +759,21 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //            }            			
 //            cmd_buff = DEAL_SUCCESS;			
 //        }break;
-        case EARSE_ALL:	//擦除APROM所有内容
+        case DOWNLOAD_BUFFER:	//擦除APROM所有内容
         {
-			#ifdef FLASH_BUFF_ENABLE
-			// if(temp==APROM_AREA)
-			// {
-			// 	IAP_Erase_ALL(APROM_BUFF_AREA);
-			// }
-			// else
-			// {
-			// 	IAP_Erase_ALL(temp);
-			// }
 			IAP_Erase_ALL(APROM_BUFF_AREA);
 			BeginAddr = APP_BUFF_ADDR; // 地址修改成缓冲区地址为writeflash做准备
-			#else
-			IAP_Erase_ALL(temp);
-			BeginAddr = APP_ADDR;
-			#endif
             ACK = ERR_NO;
+        }break;
+		case DOWNLOAD_BACKUP:	//擦除APROM所有内容
+        {
+			if(BACKUP_ADDR != 0x0000) {
+				IAP_Erase_ALL(BACKUP_AREA);
+				BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+				ACK = ERR_NO;
+			} else {
+				ACK = ERR_OPERATE;
+			}
         }break;
 		case WRITE_FLASH:// 写入app，成功后进入app
 		{

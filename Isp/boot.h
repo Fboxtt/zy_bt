@@ -105,20 +105,22 @@ extern volatile uint8_t ACK;
 // #define EARSE_ALL				0x06		//擦除所有APROM
 // #define READ_FLASH              0x23        //读FLASH指定地址
 //主站发送来的控制码类型 私有协议修改内容
-#define	READ_BOOT_CODE_INF		0x5A		//读取Boot代码版本号
+
 #define	READ_IC_INF				0x51		//读取芯片型号
 #define HEX_INFO                0x52        //接收HEX文件信息
-#define ENTER_BOOTMODE 			0x53		//进入更新模式，即握手信号
-// #define ENTER_APPMODE			0x0f		//跳转执行用户程序
+#define GET_BT_VERSION          0x53        // 查询BT的版本
 
 // #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
 // #define	SET_BAUD				0x25		//设置波特率
-#define EARSE_ALL				0x54		// 擦除所有APROM
-#define WRITE_FLASH				0x55		// 更新程序命令
-#define READ_FLASH              0x56        // 读FLASH指定地址
-#define REC_ALL_CHECKSUM        0x57		// 发送校验和
-#define GET_BT_VERSION          0x58        // 查询BT的版本
-#define ENTER_APP               0x59        // 进入APP
+#define DOWNLOAD_BUFFER			0x55		// 擦除所有APROM
+#define ENTER_BOOTMODE 			0x56		//进入更新模式，即握手信号
+#define WRITE_FLASH				0x57		// 更新程序命令
+#define REC_ALL_CHECKSUM        0x58		// 发送校验和
+#define READ_FLASH              0x59        // 读FLASH指定地址
+#define ENTER_APP               0x5A        // 进入APP
+
+#define DOWNLOAD_BACKUP			0x5C		// 擦除所有APROM
+
 
 #define ERR_NO                  0x00        // 无异常
 #define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
@@ -128,7 +130,7 @@ extern volatile uint8_t ACK;
 #define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
-#define ERR_REMAP			    0x24		// 总包校验和错误
+#define ERR_REMAP			    0x24		// 重映射错误
 
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
@@ -200,7 +202,8 @@ uint8_t AppCheckSumCheck(void);
 #define APP_ADDR                0X2000				//APP的起始位置
 #define APP_BUFF_ADDR           0x11000		        //APP缓存区的起始位置
 #define APP_SIZE                (APP_BUFF_ADDR - 0X2000)	//APP代码最大长度
-
+#define BACKUP_ADDR				0x20000
+#define BACKUP_SIZE				(60 * 1024)			// 60 * 1024 = 0xF000			
 // #define BUFFER_ADDR             0x11000
 // #define BUFFER_SIZE                (0x20000 - BUFFER_ADDR)	//APP代码最大长度
 //#define VECTOR_OFFSET           0x1c
@@ -246,6 +249,7 @@ uint8_t AppCheckSumCheck(void);
 #define LDROM_AREA	            0X96				//LDROM区
 #define APROM_BUFF_AREA			0x69				//APP缓存区
 #define UID_ENC_AREA			0x22				//UID密文存储区
+#define BACKUP_AREA				0x5A				//备份区
 
 extern uint8_t IAP_IapLength;	        //用于IAP操作数据长度缓存
 
@@ -387,5 +391,5 @@ extern void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx);
 
 //extern void PORT_ClrBit(PORT_TypeDef PORTx,PIN_TypeDef PINx);
 extern void HardDriveInit(void);
-
+extern void system_tick_init(void);
 #endif
