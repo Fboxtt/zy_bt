@@ -36,6 +36,21 @@ volatile uint16_t  g_uart0_rx_count;            /* uart0 receive data number */
 volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
 
 
+typedef struct {
+	uint16_t majorVer;
+	uint16_t minorVer;
+	uint16_t revisionVer;
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t reserved[2];
+}BtVersion;
+
+BtVersion btVersion = {
+	1,0,0,2024,10,11
+};
+
+uint8_t* g_sendArray;
 
 uint8_t result_cmd;
 extern volatile uint8_t ACK;
@@ -466,13 +481,13 @@ uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
 
 uint32_t CheckSum = 0;
 // uint8_t CheckSum[2] = {0x0, 0x0};
-const uint8_t Boot_Inf_Buff[EditionLength] = Edition;//版本号存储
+const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
 extern commu_data_t CmdSendData[SendLength1];
 uint32_t NextPacketNumber = 0;
 
-const uint8_t IC_INF_BUFF[IC_EDITION_LENTH] = IC_EDITION; // 芯片型号存储
+const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
 volatile uint8_t ACK = 0x00;
 
 
@@ -711,17 +726,26 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //        }break;
         case READ_IC_INF: // 读取芯片型号
         {
-            for(i=0;i<EditionLength;i++)
+            for(i=0;i < IC_TYPE_LENTH;i++)
             {
                 CmdSendData[i] = IC_INF_BUFF[i];                
             }
-            CmmuSendLength = IC_EDITION_LENTH;
+            CmmuSendLength = IC_TYPE_LENTH;
             ACK = ERR_NO;
         }break;
         case HEX_INFO:
         {
             ACK = ERR_NO;
         }break;
+		case GET_BT_VERSION:
+		{
+			g_sendArray = (uint8_t*)(&btVersion);
+			for(int i = 0; i < sizeof(BtVersion); i++){
+				CmdSendData[i] = *(g_sendArray + i);
+			}
+			CmmuSendLength = sizeof(BtVersion);
+			ACK = ERR_NO;
+		}
         case ENTER_BOOTMODE: // 握手三次即可开始烧录
         {
             HandShakeValue++;

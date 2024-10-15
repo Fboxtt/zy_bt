@@ -85,11 +85,17 @@ extern volatile uint8_t ACK;
 //#define ENCRYPT_UID_ENABLE					    //使能UID加密功能，使能后会在跳转至APP前进行一次UID解密判断，若不一致就拒绝跳转到APP工作
 //#define FLASH_BUFF_ENABLE						//Flash缓存功能开关，使能后会在FLASH区域开辟一个代码缓存区用于存储传输到来的新代码数据
 
-#define IC_EDITION              "BAT32G13701"
-#define IC_EDITION_LENTH              11
+typedef enum {
+	TYPE_128KB,
+	TYPE_256KB,
+} IC_TYPE_ENUM;
 
-#define Edition                 "BAT32G13701"	//BOOT代码的版本号
-#define EditionLength           11				//版本号长度
+#define IC_TYPE_LENTH					13
+
+#define IC_TYPE_128KB_NAME				"BAT32G137GH48"
+#define IC_TYPE_256KB_NAME				"BAT32G139GH48"
+
+
 //私有协议新增内容
 #define TYPE_FAIL 0xDE//主机命令类型错误
 #define CHECK_FAIL 0xDF //校验错误
