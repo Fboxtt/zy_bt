@@ -112,21 +112,21 @@ typedef enum {
 // #define READ_FLASH              0x23        //读FLASH指定地址
 //主站发送来的控制码类型 私有协议修改内容
 
-#define	READ_IC_INF				0x51		//读取芯片型号
-#define HEX_INFO                0x52        //接收HEX文件信息
+#define	READ_IC_INF				0x51		// 读取芯片型号
+#define HEX_INFO                0x52        // 接收HEX文件信息
 #define GET_BT_VERSION          0x53        // 查询BT的版本
 
 // #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
 // #define	SET_BAUD				0x25		//设置波特率
 #define DOWNLOAD_BUFFER			0x55		// 擦除所有APROM
-#define ENTER_BOOTMODE 			0x56		//进入更新模式，即握手信号
+#define ENTER_BOOTMODE 			0x56		// 进入更新模式，即握手信号
 #define WRITE_FLASH				0x57		// 更新程序命令
 #define REC_ALL_CHECKSUM        0x58		// 发送校验和
 #define READ_FLASH              0x59        // 读FLASH指定地址
 #define ENTER_APP               0x5A        // 进入APP
 
-#define DOWNLOAD_BACKUP			0x5C		// 擦除所有APROM
-
+#define DOWNLOAD_BACKUP			0x5C		// 下载备份
+#define RESTORE_BACKUP			0x5D		// 将备份恢复到APP中
 
 #define ERR_NO                  0x00        // 无异常
 #define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
@@ -137,7 +137,7 @@ typedef enum {
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
 #define ERR_REMAP			    0x24		// 重映射错误
-
+#define ERR_AREA_BLANK				0x25		// 区域内数据为0
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
@@ -206,17 +206,17 @@ uint8_t AppCheckSumCheck(void);
 // flash_operate.h
 
 #define APP_ADDR                0X2000				//APP的起始位置
-#define APP_BUFF_ADDR           0x11000		        //APP缓存区的起始位置
-#define APP_SIZE                (APP_BUFF_ADDR - 0X2000)	//APP代码最大长度
-#define BACKUP_ADDR				0x20000
-#define BACKUP_SIZE				(60 * 1024)			// 60 * 1024 = 0xF000			
+#define APP_SIZE                (40 * 1024)	//APP代码最大长度
+
+#define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        //APP缓存区的起始位置
+#define APP_BUFF_SIZE           APP_SIZE	//APP缓存区最大长度
+
+#define BACKUP_ADDR				(0x2000 + APP_SIZE * 2)
+#define BACKUP_SIZE				APP_SIZE			// 60 * 1024 = 0xF000
 // #define BUFFER_ADDR             0x11000
 // #define BUFFER_SIZE                (0x20000 - BUFFER_ADDR)	//APP代码最大长度
 //#define VECTOR_OFFSET           0x1c
 #define APP_VECTOR_ADDR         APP_ADDR
-
-#define LDROM_ADDR				0X0000				//LDROM的起始位置
-#define LDROM_SIZE				0x2000				//LDROM的大小
 
 #define DATA_ADDR				0x500200			//程序状态标志DATA Flash的起始位置
 #define DATA_SIZE				0x500				//程序状态标志DATA的大小
@@ -246,7 +246,6 @@ uint8_t AppCheckSumCheck(void);
 #define BACKUP_CHECKSUM_ADRESS  0x1F04     		    //上位机发送校验和存储地址
 #define BACKUP_TOTAL_NUM_ADRESS (BACKUP_CHECKSUM_ADRESS + 4)            //缓冲区hex文件大小存储
 
-#define APP_BUFF_SIZE           (0x20000 - APP_BUFF_ADDR)	//APP缓存区最大长度
 #define FLASH_BUFF_ENABLE
 #define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //表示APP缓存区装载完备的数字码，最大14Byte
 

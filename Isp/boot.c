@@ -834,7 +834,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			} else {
 				downBkpCount = 0;
 			}
-			if(BACKUP_ADDR < 0x20000) { // 备份地址不能小于0x20000，不能影响缓冲区和app区域
+			if(BACKUP_ADDR < (88 * 1024)) { // 备份地址不能小于88KB，不能影响缓冲区和app区域
 				if(BACKUP_SIZE > MAX_PACK_NUM) {
 					ACK = ERR_OPERATE;
 				} else {
@@ -937,6 +937,18 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 
             CmmuSendLength = ReadFlashLength;
         }break;
+		case RESTORE_BACKUP:
+		{
+			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) {
+				ACK = ERR_AREA_BLANK;
+				break;
+			}
+			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
+				g_BkpFlag = 1;
+			} else {
+				ACK = ERR_ALL_CHECK;
+			}
+		}
         default:
         {
             CmdSendData[0] = ERR_CHECK;
@@ -989,9 +1001,9 @@ void BootProcess(void)
 			// 如果因为意外使APP损坏，将缓冲区APP复制过来
 			BufferFlag = 1;
 			ResetFlag = 0;
-		} else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
-			g_BkpFlag = 1;
-			ResetFlag = 0;
+		// } else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
+		// 	g_BkpFlag = 1;
+		// 	ResetFlag = 0;
 		}
 		BootWaitTime = 0;
 	}
