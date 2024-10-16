@@ -223,21 +223,28 @@ uint8_t AppCheckSumCheck(void);
 
 #define ONE_PAGE_SIZE           512                 //一页的长度
 
-#define IAP_CHECK_ADRESS 		0x1C00     		    //更新成功数字码存储的起始地址
-#define IAP_CHECK_LENGTH		4		  			//更新成功数字码长度,最大14Byte
+
+
+
+
 #define IAP_CHECK_AREA			APROM_AREA			//标志所处区域
 #define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA //表示APP代码区程序正常的数字码，最大14Byte
 
-#define APP_CHECKSUM_ADRESS     0x1C04     		    //上位机发送校验和存储地址
 #define CHECKSUM_LENGTH         4
-
-#define APP_TOTAL_NUM_ADRESS    (APP_CHECKSUM_ADRESS + 4)     		//hex文件大小存储
 #define TOTAL_NUM_LENGTH        4
+#define IAP_CHECK_LENGTH		4		  			//更新成功数字码长度,最大14Byte
+
+#define IAP_CHECK_ADRESS 		0x1C00     		    //更新成功数字码存储的起始地址
+#define APP_CHECKSUM_ADRESS     0x1C04     		    //上位机发送校验和存储地址
+#define APP_TOTAL_NUM_ADRESS    (APP_CHECKSUM_ADRESS + 4)     		//hex文件大小存储
 
 #define BUFFER_CHECK_ADRESS 	0x1E00     		    //更新成功数字码存储的起始地址
 #define BUFFER_CHECKSUM_ADRESS  0x1E04     		    //上位机发送校验和存储地址
 #define BUFFER_TOTAL_NUM_ADRESS (BUFFER_CHECKSUM_ADRESS + 4)            //缓冲区hex文件大小存储
 
+#define BACKUP_CHECK_ADRESS 	0x1F00     		    //更新成功数字码存储的起始地址
+#define BACKUP_CHECKSUM_ADRESS  0x1F04     		    //上位机发送校验和存储地址
+#define BACKUP_TOTAL_NUM_ADRESS (BACKUP_CHECKSUM_ADRESS + 4)            //缓冲区hex文件大小存储
 
 #define APP_BUFF_SIZE           (0x20000 - APP_BUFF_ADDR)	//APP缓存区最大长度
 #define FLASH_BUFF_ENABLE
@@ -250,12 +257,13 @@ uint8_t AppCheckSumCheck(void);
 
 #define APP_TO_BOOT             0x55
 #define BOOT_TO_APP             0xAA
-#define	APROM_AREA	            0x55				//APROM区
-#define DATA_AREA               0xAA				//DATA区
-#define LDROM_AREA	            0X96				//LDROM区
-#define APROM_BUFF_AREA			0x69				//APP缓存区
 #define UID_ENC_AREA			0x22				//UID密文存储区
-#define BACKUP_AREA				0x5A				//备份区
+#define LDROM_AREA	            0X96				//LDROM区
+#define DATA_AREA               0xAA				//DATA区
+
+#define	APROM_AREA	            0x55				//APROM区
+#define APROM_BUFF_AREA			0x69				//APP缓存区
+#define APROM_BACKUP_AREA		0x5A				//备份区
 
 extern uint8_t IAP_IapLength;	        //用于IAP操作数据长度缓存
 
@@ -398,4 +406,7 @@ extern void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx);
 //extern void PORT_ClrBit(PORT_TypeDef PORTx,PIN_TypeDef PINx);
 extern void HardDriveInit(void);
 extern void system_tick_init(void);
+
+uint8_t CheckSumCheck(int area);
+void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area);
 #endif

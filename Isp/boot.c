@@ -300,7 +300,7 @@ void IAP_Erase_ALL(uint8_t area)
 		k = (APP_SIZE/ONE_PAGE_SIZE);
 		begin_addr = APP_ADDR;
 	}
-	else if(area==BACKUP_AREA)
+	else if(area==APROM_BACKUP_AREA)
 	{
 		k = (BACKUP_SIZE/ONE_PAGE_SIZE);
 		begin_addr = BACKUP_SIZE;
@@ -462,6 +462,19 @@ uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 	return 1;
 }
 #endif
+
+uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
+{
+	uint16_t i;
+	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
+	for(i=0;i<APP_BUFF_SIZE;i++)
+	{
+		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(BACKUP_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
+			return 0;
+		}
+	}
+	return 1;
+}
 /*flash_operate*/
 /*flash_operate*/
 /*flash_operate*/
@@ -472,6 +485,7 @@ uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 /*boot_core.c*/
 uint8_t HandShakeValue;	                            //握手次数存储变量
 uint8_t BufferFlag = 0;								//代表缓冲区校验状态
+uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
 uint8_t ResetFlag = 0;								//表示复位条件达成
 uint8_t CurrState = 0;								//当前芯片的状态
 uint32_t ReadFlashLength = 0;                       //读Flash的长度        
@@ -592,46 +606,53 @@ uint32_t PacketTotalNumRead(uint32_t addr)
 	}
 	return packetTotalNum;
 }
-void AppCheckSumWrite(void)
+
+typedef struct {
+	uint32_t checkAddr;
+	uint32_t numAddr;
+	uint32_t hexAddr;
+} CheckSumStruct;
+
+static uint32_t checkAddr = 0, numAddr = 0, hexAddr = 0; 
+void getCheckPara(int area)
 {
-	All_CheckSum_Write(All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APP_CHECKSUM_ADRESS);
-	PacketTotalNumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), APP_TOTAL_NUM_ADRESS);
+	if(area == APROM_AREA) {
+		checkAddr = APP_CHECKSUM_ADRESS;
+		numAddr = APP_TOTAL_NUM_ADRESS;
+		hexAddr = APP_ADDR;
+	} else if(area == APROM_BUFF_AREA) {
+		checkAddr = BUFFER_CHECKSUM_ADRESS;
+		numAddr = BUFFER_TOTAL_NUM_ADRESS;
+		hexAddr = APP_BUFF_ADDR;
+	} else if(area == APROM_BACKUP_AREA) {
+		checkAddr = BACKUP_CHECKSUM_ADRESS;
+		numAddr = BACKUP_TOTAL_NUM_ADRESS;
+		hexAddr = BACKUP_ADDR;
+	}
 }
-uint8_t AppCheckSumCheck(void)
+
+void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area)
 {
-	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNumRead(APP_TOTAL_NUM_ADRESS);
+	getCheckPara(area);
+	PacketTotalNumWrite(totalNum, numAddr); // app校验和靠读取buffer或者backup，buffer靠外面输入，backup靠外面输入
+	All_CheckSum_Write(chkSum, checkAddr);
+}
+uint8_t CheckSumCheck(int area)
+{
+	uint32_t packetTatolSize = 0;
 	uint16_t calCheckSum = 0;
+
+	getCheckPara(area);
+	packetTatolSize = PACKET_SIZE * PacketTotalNumRead(numAddr);
+	
 	if(packetTatolSize == 0 || packetTatolSize > MAX_PACK_NUM) {
 		return 0;
 	}
 	for(uint32_t i = 0; i < packetTatolSize; i++) {
-		calCheckSum += IAP_ReadOneByte(APP_ADDR+i,IAP_CHECK_AREA);
+		calCheckSum += IAP_ReadOneByte(hexAddr+i,IAP_CHECK_AREA);
 	}
 
-	if(calCheckSum == All_CheckSum_Read(APP_CHECKSUM_ADRESS)) {
-		return 1;
-	} else {
-		All_CheckSum_Write(0x0, APP_CHECKSUM_ADRESS); // 校验和写0
-		return 0;
-	}
-}
-void BufferCheckSumWrite(void)
-{
-	All_CheckSum_Write(CheckSum, BUFFER_CHECKSUM_ADRESS);
-	PacketTotalNumWrite(g_packetTotalNum, BUFFER_TOTAL_NUM_ADRESS);
-}
-uint8_t BufferCheckSumCheck(void)
-{
-	uint32_t packetTatolSize = PACKET_SIZE * PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS);
-	uint16_t calCheckSum = 0;
-	if(packetTatolSize == 0 || packetTatolSize > MAX_PACK_NUM) {
-		return 0;
-	}
-	for(uint32_t i = 0; i < packetTatolSize; i++) {
-		calCheckSum += IAP_ReadOneByte(APP_BUFF_ADDR+i,IAP_CHECK_AREA);
-	}
-
-	if(calCheckSum == All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS)) {
+	if(calCheckSum == All_CheckSum_Read(checkAddr)) {
 		return 1;
 	} else {
 		return 0;
@@ -668,8 +689,8 @@ void BufferExchange()
 	if(BufferFlag == 1) {
 		BufferFlag = 0;
 		if(IAP_Remap() == 1) {
-			AppCheckSumWrite();
-			if(AppCheckSumCheck() == 1)
+			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_BUFF_AREA);
+			if(CheckSumCheck(APROM_AREA) == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
 				ResetFlag = 1;
@@ -680,6 +701,20 @@ void BufferExchange()
 			ACK = ERR_REMAP;
 		}
 		result_cmd = ENTER_APP;
+	} else if(g_BkpFlag == 1) {
+		g_BkpFlag = 0;
+		if(IAP_BkpRemap() == 1) {
+			CheckSumWrite(PacketTotalNumRead(BACKUP_TOTAL_NUM_ADRESS), All_CheckSum_Read(BACKUP_CHECKSUM_ADRESS), APROM_BACKUP_AREA);
+			if(CheckSumCheck(APROM_AREA) == 1)
+			{
+				ACK = ERR_NO; //回应退出了Bootloader
+				ResetFlag = 1;
+			} else {
+				ACK = ERR_ALL_CHECK;
+			}
+		} else {
+			ACK = ERR_REMAP;
+		}
 	}
 }
 void BootCheckReset()
@@ -715,6 +750,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
     CmmuSendLength = 0;	
     ACK = ERR_NO;
+	static char downBkpCount = 0;
     switch(cmd)//根据命令执行相应的动作
     {
 //        case READ_BOOT_CODE_INF: // 读取版本号
@@ -791,10 +827,21 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         }break;
 		case DOWNLOAD_BACKUP:	//擦除APROM所有内容
         {
-			if(BACKUP_ADDR != 0x0000) {
-				IAP_Erase_ALL(BACKUP_AREA);
-				BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+			downBkpCount++;
+			if(downBkpCount < 3) {
 				ACK = ERR_NO;
+				break;
+			} else {
+				downBkpCount = 0;
+			}
+			if(BACKUP_ADDR < 0x20000) { // 备份地址不能小于0x20000，不能影响缓冲区和app区域
+				if(BACKUP_SIZE > MAX_PACK_NUM) {
+					ACK = ERR_OPERATE;
+				} else {
+					IAP_Erase_ALL(APROM_BACKUP_AREA);
+					BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+					ACK = ERR_NO;
+				}
 			} else {
 				ACK = ERR_OPERATE;
 			}
@@ -834,7 +881,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 			CmmuSendLength = PACKET_ID_LENTH;
 		}break;        
-		case REC_ALL_CHECKSUM: //运行用户代码
+		case REC_ALL_CHECKSUM: //接受hex文件校验和
         {
 			for(int i = 0; i < PACKET_ID_LENTH; i++) {
 				CmdSendData[i] = CommuData[i + 7];
@@ -847,12 +894,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			// if(AppCheckSumCheck() == 1)
 			// {
 			// 	ACK = ERR_NO; //回应退出了Bootloader
-			// 	BufferFlag = 1;
 			// } else {
 			// 	ACK = ERR_ALL_CHECK;
 			// }
-			BufferCheckSumWrite();
-			if(BufferCheckSumCheck() == 1)
+			CheckSumWrite(g_packetTotalNum, CheckSum, APROM_BUFF_AREA);
+			g_packetTotalNum = 0;
+			if(CheckSumCheck(APROM_BUFF_AREA) == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
 				BufferFlag = 1;
@@ -936,15 +983,17 @@ void BootProcess(void)
 		CMDBuff = 0; 
 	}
 	if(BootWaitTime > BootWaitTimeLimit) {
-		if(AppCheckSumCheck() == 1) { // 如果时间到，校验App数据，正确则进入APP
+		if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
 			ResetFlag = 1;
-		} else {
-			if(BufferCheckSumCheck() == 1) { // 如果因为意外使APP损坏，将缓冲区APP复制过来
-				BufferFlag = 1;
-			}
+		} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
+			// 如果因为意外使APP损坏，将缓冲区APP复制过来
+			BufferFlag = 1;
 			ResetFlag = 0;
-			BootWaitTime = 0;
+		} else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
+			g_BkpFlag = 1;
+			ResetFlag = 0;
 		}
+		BootWaitTime = 0;
 	}
 	BootCheckReset(); // 跳转函数，条件满足即可跳转入app
 }
