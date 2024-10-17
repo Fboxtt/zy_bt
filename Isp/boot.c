@@ -282,6 +282,7 @@ uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,ui
     FMC->FLOPMD2 = 0x55;  
     *ptr = Write_IAP_IapData;    
     // polling OVER Flag
+	// 这个判断FLSTS值的循环一共有7条汇编指令
     while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0 && FLSTS_flagCount < g_FLSTSMaxCount) {
 		FLSTS_flagCount++;
 	};
@@ -551,7 +552,7 @@ WritableFlag g_flashWritableFlag = {0};
 void BootInit()
 {
 	// UartInit(UartBaud);
-	g_FLSTSMaxCount = 24 / ONE_DISASSEMBLE_COUNT * SystemCoreClock / 1000000 * 2;
+	g_FLSTSMaxCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
 	if(CheckAreaWritable(0x20000 - 512) == 1) { // 确认区域0-0x20000是否可写
 		g_flashWritableFlag.bit.firstArea = 1;
 	}

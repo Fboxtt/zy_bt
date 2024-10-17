@@ -411,6 +411,6 @@ void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area);
 
 uint8_t CheckAreaWritable(uint32_t addr);
 
-#define ONE_DISASSEMBLE_COUNT 2
+#define ONE_DISASSEMBLE_COUNT 7 // 判断一次FLSTS的值需要7个汇编指令
 
 #endif
