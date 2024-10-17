@@ -616,7 +616,6 @@ void BootInit()
 void All_CheckSum_Write(uint32_t checkSum, uint32_t addr)
 {
     unsigned char i;
-    IAP_Erase_512B(addr & 0xff00,IAP_CHECK_AREA);
 	for(i=0;i<CHECKSUM_LENGTH;i++)
 	{
 		IAP_WriteOneByte(addr+i,(checkSum >> (8 * i)),IAP_CHECK_AREA);
@@ -685,6 +684,7 @@ void getCheckPara(int area)
 void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area)
 {
 	getCheckPara(area);
+	IAP_Erase_512B(numAddr & 0xff00,IAP_CHECK_AREA);
 	PacketTotalNumWrite(totalNum, numAddr); // app校验和靠读取buffer或者backup，buffer靠外面输入，backup靠外面输入
 	All_CheckSum_Write(chkSum, checkAddr);
 }

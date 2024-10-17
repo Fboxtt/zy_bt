@@ -235,16 +235,16 @@ uint8_t AppCheckSumCheck(void);
 #define IAP_CHECK_LENGTH		4		  			//更新成功数字码长度,最大14Byte
 
 #define IAP_CHECK_ADRESS 		0x1C00     		    //更新成功数字码存储的起始地址
-#define APP_CHECKSUM_ADRESS     0x1C04     		    //上位机发送校验和存储地址
-#define APP_TOTAL_NUM_ADRESS    (APP_CHECKSUM_ADRESS + 4)     		//hex文件大小存储
+#define APP_TOTAL_NUM_ADRESS	0x1C04     		    //上位机发送校验和存储地址
+#define APP_CHECKSUM_ADRESS		(APP_TOTAL_NUM_ADRESS + 4)     		//hex文件大小存储
 
 #define BUFFER_CHECK_ADRESS 	0x1E00     		    //更新成功数字码存储的起始地址
-#define BUFFER_CHECKSUM_ADRESS  0x1E04     		    //上位机发送校验和存储地址
-#define BUFFER_TOTAL_NUM_ADRESS (BUFFER_CHECKSUM_ADRESS + 4)            //缓冲区hex文件大小存储
+#define BUFFER_TOTAL_NUM_ADRESS	0x1E04     		    //上位机发送校验和存储地址
+#define BUFFER_CHECKSUM_ADRESS	(BUFFER_TOTAL_NUM_ADRESS + 4)            //缓冲区hex文件大小存储
 
 #define BACKUP_CHECK_ADRESS 	0x1F00     		    //更新成功数字码存储的起始地址
-#define BACKUP_CHECKSUM_ADRESS  0x1F04     		    //上位机发送校验和存储地址
-#define BACKUP_TOTAL_NUM_ADRESS (BACKUP_CHECKSUM_ADRESS + 4)            //缓冲区hex文件大小存储
+#define BACKUP_TOTAL_NUM_ADRESS	0x1F04     		    //上位机发送校验和存储地址
+#define BACKUP_CHECKSUM_ADRESS	(BACKUP_TOTAL_NUM_ADRESS + 4)            //缓冲区hex文件大小存储
 
 #define FLASH_BUFF_ENABLE
 #define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //表示APP缓存区装载完备的数字码，最大14Byte
