@@ -115,7 +115,7 @@ typedef enum {
 #define	READ_IC_INF				0x51		// 读取芯片型号
 #define HEX_INFO                0x52        // 接收HEX文件信息
 #define GET_BT_VERSION          0x53        // 查询BT的版本
-
+#define GET_WRITABLE_AREA		0x54		// 查询芯片可写区域
 // #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
 // #define	SET_BAUD				0x25		//设置波特率
 #define DOWNLOAD_BUFFER			0x55		// 擦除所有APROM
@@ -137,7 +137,7 @@ typedef enum {
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
 #define ERR_REMAP			    0x24		// 重映射错误
-#define ERR_AREA_BLANK				0x25		// 区域内数据为0
+#define ERR_AREA_BLANK			0x25		// 区域内数据为0
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
@@ -408,4 +408,9 @@ extern void system_tick_init(void);
 
 uint8_t CheckSumCheck(int area);
 void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area);
+
+uint8_t CheckAreaWritable(uint32_t addr);
+
+#define ONE_DISASSEMBLE_COUNT 2
+
 #endif

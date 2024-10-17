@@ -57,6 +57,9 @@ extern volatile uint8_t ACK;
 
 uint32_t BootWaitTime = 0;
 uint32_t BootWaitTimeLimit = 0;
+
+int g_FLSTSMaxCount = 0;
+
 void UartInit(uint32_t baud)
 {
     SCI0_Init();
@@ -267,6 +270,36 @@ uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t 
     }
 }
 
+uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//写单字节IAP操作
+{
+    uint8_t *ptr;
+    int FLSTS_flagCount = 0;
+    ptr = (uint8_t *) IAP_IapAddr;
+    
+    FMC->FLPROT = 0xF1;
+    
+    FMC->FLOPMD1 = 0xAA;
+    FMC->FLOPMD2 = 0x55;  
+    *ptr = Write_IAP_IapData;    
+    // polling OVER Flag
+    while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0 && FLSTS_flagCount < g_FLSTSMaxCount) {
+		FLSTS_flagCount++;
+	};
+    FMC->FLSTS |= FMC_FLSTS_OVF_Msk;
+
+    FMC->FLPROT = 0x00;
+	if(FLSTS_flagCount >= g_FLSTSMaxCount) {
+		return 0;
+	}
+    if(IAP_ReadOneByte(IAP_IapAddr,area) == Write_IAP_IapData)
+    {
+        return 1;	//写入准确
+    }
+    else
+    {
+        return 0;	//写入有误
+    }
+}
 
 void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
 {
@@ -373,7 +406,7 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint
 }
 
 uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area)	//读单字节IAP操作
-{   
+{
     uint8_t IAP_IapData; 
     IAP_IapData = *(uint32_t *)IAP_IapAddr;
 	return IAP_IapData;
@@ -504,11 +537,28 @@ uint32_t NextPacketNumber = 0;
 const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
 volatile uint8_t ACK = 0x00;
 
+typedef union { // 确认区域是否可写的标志位
+	uint8_t value;
+	struct {
+		uint8_t firstArea:1;
+		uint8_t secondArea:1;
+	}bit;
+}WritableFlag;
+
+WritableFlag g_flashWritableFlag = {0};
 
 /* boot初始化钩子函数，请将初始化代码写入该函数 */
 void BootInit()
 {
 	// UartInit(UartBaud);
+	g_FLSTSMaxCount = 24 / ONE_DISASSEMBLE_COUNT * SystemCoreClock / 1000000 * 2;
+	if(CheckAreaWritable(0x20000 - 512) == 1) { // 确认区域0-0x20000是否可写
+		g_flashWritableFlag.bit.firstArea = 1;
+	}
+	if(CheckAreaWritable(0x40000 - 512) == 1) { // 确认区域0-0x40000是否可写
+		g_flashWritableFlag.bit.secondArea = 1;
+	}
+	
 	CurrState = IAP_CheckAPP();
     if(CurrState==1)//判断APP是否完整，完整则开启定时
     {
@@ -795,6 +845,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             }
             ACK = ERR_NO;
         }break;
+		case GET_WRITABLE_AREA:
+		{
+			CmdSendData[0] = g_flashWritableFlag.value;
+			CmmuSendLength = sizeof(WritableFlag);
+			ACK = ERR_NO;
+		}
 //        case SET_BAUD:
 //        {
 //            cmd_buff = DEAL_SUCCESS;
@@ -939,12 +995,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         }break;
 		case RESTORE_BACKUP:
 		{
-			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) {
+			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) { // 判断BACKUP区域是否有数据
 				ACK = ERR_AREA_BLANK;
 				break;
 			}
-			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
-				g_BkpFlag = 1;
+			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) { // 校验BACKUP区域校验和
+				g_BkpFlag = 1;							// 校验和正确，可以开始迁移HEX数据
 			} else {
 				ACK = ERR_ALL_CHECK;
 			}
@@ -1368,3 +1424,23 @@ void HardDriveInit(void)
 
 }
 
+uint8_t CheckAreaWritable(uint32_t addr)
+{
+	uint8_t ok = 0;
+	uint8_t CheckFlashBuff[512] = {0};
+	for(int i=0;i<512;i++)
+	{
+		CheckFlashBuff[i] = IAP_ReadOneByte(addr + i,IAP_CHECK_AREA);
+	}
+	IAP_Erase_512B(addr & 0xff00,IAP_CHECK_AREA);
+	ok = IAP_WriteOneByte_Check(addr,(0x55),IAP_CHECK_AREA);
+
+	if(ok == 1) {
+		IAP_Erase_512B(addr & 0xff00,IAP_CHECK_AREA);
+		for(int i=0;i<512;i++)
+		{
+			IAP_WriteOneByte_Check(addr + i, CheckFlashBuff[i], IAP_CHECK_AREA);
+		}
+	}
+	return ok;
+}
