@@ -5,6 +5,7 @@
 //  更正日期	: 2024/9/12
 // 	版本		: V1.0
 //************************************************************
+#include "string.h"
 #include "boot.h"
 #include "gpio.h"
 #include "cg_sci.h"
@@ -277,7 +278,6 @@ uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,ui
     ptr = (uint8_t *) IAP_IapAddr;
     
     FMC->FLPROT = 0xF1;
-    
     FMC->FLOPMD1 = 0xAA;
     FMC->FLOPMD2 = 0x55;  
     *ptr = Write_IAP_IapData;    
@@ -323,7 +323,37 @@ void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
     }
     
 }
+void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，充分利用空间
+{
+	uint8_t buff[512] = {0};
+	uint32_t sectorAddr = IAP_IapAddr & 0xfffffe00;
+	if(lenth > 512) {
+		return;
+	}
+	for(int i = 0; i < 512; i++) {
+		buff[i] = *((uint8_t *)sectorAddr++);
+	}
 
+    FMC->FLERMD = 0x10;
+    FMC->FLPROT = 0xF1;
+    FMC->FLOPMD1 = 0x55;
+    FMC->FLOPMD2 = 0xAA;  
+    // Write data to start address of sector to trigger Erase Operation
+    *(uint32_t *) IAP_IapAddr = 0xFFFFFFFF;
+    
+    // polling Erase Over Flag
+    while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0);
+    FMC->FLSTS |= FMC_FLSTS_OVF_Msk;
+    FMC->FLERMD = 0x00;
+    FMC->FLPROT = 0x00;
+    
+    if(FMC->FLSTS & FMC_FLSTS_EVF_Msk)
+    {
+        //printf("\nerror\n");
+    }
+	IAP_WriteMultiByte(IAP_IapAddr,&buff[IAP_IapAddr - sectorAddr],IAP_IapAddr - sectorAddr,IAP_CHECK_AREA);
+	IAP_WriteMultiByte(IAP_IapAddr,&buff[sectorAddr - IAP_IapAddr + 512],512 - lenth + sectorAddr - IAP_IapAddr,IAP_CHECK_AREA);
+}
 void IAP_Erase_ALL(uint8_t area)
 {
     uint16_t i;
@@ -538,13 +568,6 @@ uint32_t NextPacketNumber = 0;
 const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
 volatile uint8_t ACK = 0x00;
 
-typedef union { // 确认区域是否可写的标志位
-	uint8_t value;
-	struct {
-		uint8_t firstArea:1;
-		uint8_t secondArea:1;
-	}bit;
-}WritableFlag;
 
 WritableFlag g_flashWritableFlag = {0};
 
@@ -553,13 +576,15 @@ void BootInit()
 {
 	// UartInit(UartBaud);
 	g_FLSTSMaxCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
-	if(CheckAreaWritable(0x20000 - 512) == 1) { // 确认区域0-0x20000是否可写
-		g_flashWritableFlag.bit.firstArea = 1;
+	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
+		g_flashWritableFlag.bit.appArea = 1;
 	}
-	if(CheckAreaWritable(0x40000 - 512) == 1) { // 确认区域0-0x40000是否可写
-		g_flashWritableFlag.bit.secondArea = 1;
+	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
+		g_flashWritableFlag.bit.bufferArea = 1;
 	}
-	
+	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
+		g_flashWritableFlag.bit.backupArea = 1;
+	}
 	CurrState = IAP_CheckAPP();
     if(CurrState==1)//判断APP是否完整，完整则开启定时
     {
@@ -798,10 +823,11 @@ uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
     uint8_t i;	
+	static char downBkpCount = 0;
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
     CmmuSendLength = 0;	
     ACK = ERR_NO;
-	static char downBkpCount = 0;
+	TVER* hexVer = 0x0;
     switch(cmd)//根据命令执行相应的动作
     {
 //        case READ_BOOT_CODE_INF: // 读取版本号
@@ -811,6 +837,36 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //			IAP_Erase_ALL(APROM_AREA);
 //            ACK = ERR_NO;
 //        }break;
+		case PC_GET_VER_APP:
+		{
+			hexVer = (TVER*)(APP_BUFF_ADDR - 1024);
+			if(g_flashWritableFlag.bit.appArea == 1) {
+				if(CheckSumCheck(APROM_AREA) == 1) {
+					memcpy(&CmdSendData[0], &hexVer, sizeof(TVER));
+					CmmuSendLength = sizeof(TVER);
+					ACK = ERR_NO;
+				} else {
+					ACK = ERR_ALL_CHECK;
+				}
+			} else {
+				ACK = ERR_AREA_NOT_WRITABLE;
+			}
+		}
+		case PC_GET_VER_BACKUP:
+		{
+			hexVer = (TVER*)(BACKUP_ADDR - 1024);
+			if(g_flashWritableFlag.bit.backupArea == 1) {
+				if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
+					memcpy(&CmdSendData[0], &hexVer, sizeof(TVER));
+					CmmuSendLength = sizeof(TVER);
+					ACK = ERR_NO;
+				} else {
+					ACK = ERR_ALL_CHECK;
+				}
+			} else {
+				ACK = ERR_AREA_NOT_WRITABLE;
+			}
+		}
         case READ_IC_INF: // 读取芯片型号
         {
             for(i=0;i < IC_TYPE_LENTH;i++)

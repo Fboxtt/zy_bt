@@ -111,7 +111,8 @@ typedef enum {
 // #define EARSE_ALL				0x06		//擦除所有APROM
 // #define READ_FLASH              0x23        //读FLASH指定地址
 //主站发送来的控制码类型 私有协议修改内容
-
+#define PC_GET_VER_APP			0x16		// 获取APP的版本号
+#define PC_GET_VER_BACKUP		0X18		// 获取BACKUP的版本号
 #define	READ_IC_INF				0x51		// 读取芯片型号
 #define HEX_INFO                0x52        // 接收HEX文件信息
 #define GET_BT_VERSION          0x53        // 查询BT的版本
@@ -138,6 +139,7 @@ typedef enum {
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
 #define ERR_REMAP			    0x24		// 重映射错误
 #define ERR_AREA_BLANK			0x25		// 区域内数据为0
+#define ERR_AREA_NOT_WRITABLE	0x26		// 区域不可写
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
@@ -412,5 +414,28 @@ void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area);
 uint8_t CheckAreaWritable(uint32_t addr);
 
 #define ONE_DISASSEMBLE_COUNT 7 // 判断一次FLSTS的值需要7个汇编指令
+
+typedef struct tagVersion
+{
+	uint16_t	usMajorVer;				    	 
+	uint16_t	usMinorVer;				    	 
+	uint16_t	usRevision;						 
+	uint16_t	usCompileYear;					 
+	uint8_t		ucCompileMonth;			    	 
+	uint8_t		ucCompileDay;					  
+	int8_t    cHWversion[30];					 
+	int8_t    cFuncVersion[40];				 
+}TVER;
+
+typedef union { // 确认区域是否可写的标志位
+	uint8_t value;
+	struct {
+		uint8_t appArea:1;
+		uint8_t bufferArea:1;
+		uint8_t backupArea:1;
+	}bit;
+}WritableFlag;
+
+extern WritableFlag g_flashWritableFlag;
 
 #endif
