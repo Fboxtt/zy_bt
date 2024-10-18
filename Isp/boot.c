@@ -327,6 +327,8 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
 {
 	uint8_t buff[512] = {0};
 	uint32_t sectorAddr = IAP_IapAddr & 0xfffffe00;
+	uint32_t lowLenth = IAP_IapAddr - sectorAddr;
+	uint32_t hignLenth = 512 - lenth - lowLenth;
 	if(lenth > 512) {
 		return;
 	}
@@ -351,8 +353,8 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
     {
         //printf("\nerror\n");
     }
-	IAP_WriteMultiByte(IAP_IapAddr,&buff[IAP_IapAddr - sectorAddr],IAP_IapAddr - sectorAddr,IAP_CHECK_AREA);
-	IAP_WriteMultiByte(IAP_IapAddr,&buff[sectorAddr - IAP_IapAddr + 512],512 - lenth + sectorAddr - IAP_IapAddr,IAP_CHECK_AREA);
+	IAP_WriteMultiByte(IAP_IapAddr, &buff[0], lowLenth, IAP_CHECK_AREA);
+	IAP_WriteMultiByte(IAP_IapAddr, &buff[lowLenth + hignLenth], hignLenth, IAP_CHECK_AREA);
 }
 void IAP_Erase_ALL(uint8_t area)
 {
@@ -455,7 +457,7 @@ void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t 
 void IAP_FlagWrite(uint8_t flag)
 {
     unsigned char i;
-    IAP_Erase_512B(IAP_CHECK_ADRESS,IAP_CHECK_AREA);
+    IAP_Erase_Some(IAP_CHECK_ADRESS,ALL_FLAG_LENTH);
     if(flag==1)
     {        
         for(i=0;i<IAP_CHECK_LENGTH;i++)
@@ -709,7 +711,7 @@ void getCheckPara(int area)
 void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area)
 {
 	getCheckPara(area);
-	IAP_Erase_512B(numAddr & 0xff00,IAP_CHECK_AREA);
+	IAP_Erase_Some(numAddr,ALL_FLAG_LENTH);
 	PacketTotalNumWrite(totalNum, numAddr); // app校验和靠读取buffer或者backup，buffer靠外面输入，backup靠外面输入
 	All_CheckSum_Write(chkSum, checkAddr);
 }
@@ -765,7 +767,7 @@ void BufferExchange()
 	if(BufferFlag == 1) {
 		BufferFlag = 0;
 		if(IAP_Remap() == 1) {
-			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_BUFF_AREA);
+			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_AREA);
 			if(CheckSumCheck(APROM_AREA) == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
