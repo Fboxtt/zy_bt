@@ -333,7 +333,7 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
 		return;
 	}
 	for(int i = 0; i < 512; i++) {
-		buff[i] = *((uint8_t *)sectorAddr++);
+		buff[i] = *((uint8_t *)sectorAddr + i);
 	}
 
     FMC->FLERMD = 0x10;
@@ -353,8 +353,8 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
     {
         //printf("\nerror\n");
     }
-	IAP_WriteMultiByte(IAP_IapAddr, &buff[0], lowLenth, IAP_CHECK_AREA);
-	IAP_WriteMultiByte(IAP_IapAddr, &buff[lowLenth + hignLenth], hignLenth, IAP_CHECK_AREA);
+	IAP_WriteMultiByte(sectorAddr, &buff[0], lowLenth, IAP_CHECK_AREA);
+	IAP_WriteMultiByte(sectorAddr + lowLenth + lenth, &buff[lowLenth + lenth], hignLenth, IAP_CHECK_AREA);
 }
 void IAP_Erase_ALL(uint8_t area)
 {
@@ -1017,6 +1017,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			if(CheckSumCheck(APROM_BUFF_AREA) == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
+				CheckSumWrite(0, 0, APROM_AREA); // 将app区域设置成非法
 				BufferFlag = 1;
 			} else {
 				ACK = ERR_ALL_CHECK;
