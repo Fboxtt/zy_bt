@@ -207,30 +207,29 @@ uint8_t AppCheckSumCheck(void);
 
 // flash_operate.h
 
-#define APP_ADDR                0X2000				//APP的起始位置
-#define APP_SIZE                (40 * 1024)	//APP代码最大长度
+#define APP_ADDR                0X2000							// APP的起始位置
+#define APP_SIZE                (40 * 1024)						// APP代码最大长度
+#define APP_VER_ADDR			(APP_ADDR + APP_SIZE - 1024) 	// 存储app版本号的地址
 
-#define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        //APP缓存区的起始位置
-#define APP_BUFF_SIZE           APP_SIZE	//APP缓存区最大长度
-
-#define BACKUP_ADDR				(0x2000 + APP_SIZE * 2)
-#define BACKUP_SIZE				APP_SIZE			// 60 * 1024 = 0xF000
-// #define BUFFER_ADDR             0x11000
-// #define BUFFER_SIZE                (0x20000 - BUFFER_ADDR)	//APP代码最大长度
-//#define VECTOR_OFFSET           0x1c
+#define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        // APP缓存区的起始位置
+#define APP_BUFF_SIZE           APP_SIZE						// APP缓存区最大长度
 #define APP_VECTOR_ADDR         APP_ADDR
 
-#define DATA_ADDR				0x500200			//程序状态标志DATA Flash的起始位置
-#define DATA_SIZE				0x500				//程序状态标志DATA的大小
+#define BACKUP_ADDR				(0x2000 + APP_SIZE * 2)
+#define BACKUP_SIZE				APP_SIZE						// 60 * 1024 = 0xF000
+#define BACKUP_VER_ADDR			(APP_ADDR + BACKUP_SIZE - 1024) 	// 存储backup版本号的地址
 
-#define ONE_PAGE_SIZE           512                 //一页的长度
+#define DATA_ADDR				0x500200						// 程序状态标志DATA Flash的起始位置
+#define DATA_SIZE				0x500							// 程序状态标志DATA的大小
+
+#define ONE_PAGE_SIZE           512                 			// 一页的长度
 
 
 
 
 
-#define IAP_CHECK_AREA			APROM_AREA			//标志所处区域
-#define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA //表示APP代码区程序正常的数字码，最大14Byte
+#define IAP_CHECK_AREA			APROM_AREA			// 标志所处区域
+#define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA // 表示APP代码区程序正常的数字码，最大14Byte
 
 #define CHECKSUM_LENGTH         4
 #define TOTAL_NUM_LENGTH        4
@@ -350,7 +349,7 @@ MD_STATUS UART1_Init(uint32_t freq, uint32_t baud);
 
 
 //ADC 输入
-#define	 		ADC_PACK_V		  ADC_CHANNEL_6
+#define	 	ADC_PACK_V		ADC_CHANNEL_6
 #define     ADC_TEMP_T3     ADC_CHANNEL_0  
 #define     ADC_TEMP_MOS    ADC_CHANNEL_2
 #define     ADC_TEMP_T5     ADC_CHANNEL_1

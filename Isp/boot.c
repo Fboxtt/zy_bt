@@ -841,7 +841,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //        }break;
 		case PC_GET_VER_APP:
 		{
-			hexVer = (TVER*)(APP_BUFF_ADDR - 1024);
+			hexVer = (TVER*)(APP_VER_ADDR);
 			if(g_flashWritableFlag.bit.appArea == 1) {
 				if(CheckSumCheck(APROM_AREA) == 1) {
 					memcpy(&CmdSendData[0], &hexVer, sizeof(TVER));
@@ -856,7 +856,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		}
 		case PC_GET_VER_BACKUP:
 		{
-			hexVer = (TVER*)(BACKUP_ADDR - 1024);
+			hexVer = (TVER*)(BACKUP_VER_ADDR);
 			if(g_flashWritableFlag.bit.backupArea == 1) {
 				if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
 					memcpy(&CmdSendData[0], &hexVer, sizeof(TVER));
