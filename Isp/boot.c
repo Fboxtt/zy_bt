@@ -844,7 +844,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			hexVer = (TVER*)(APP_VER_ADDR);
 			if(g_flashWritableFlag.bit.appArea == 1) {
 				if(CheckSumCheck(APROM_AREA) == 1) {
-					memcpy(&CmdSendData[0], &hexVer, sizeof(TVER));
+					memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
 					CmmuSendLength = sizeof(TVER);
 					ACK = ERR_NO;
 				} else {
@@ -854,12 +854,13 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				ACK = ERR_AREA_NOT_WRITABLE;
 			}
 		}
+		break;
 		case PC_GET_VER_BACKUP:
 		{
 			hexVer = (TVER*)(BACKUP_VER_ADDR);
 			if(g_flashWritableFlag.bit.backupArea == 1) {
 				if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
-					memcpy(&CmdSendData[0], &hexVer, sizeof(TVER));
+					memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
 					CmmuSendLength = sizeof(TVER);
 					ACK = ERR_NO;
 				} else {
@@ -869,6 +870,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				ACK = ERR_AREA_NOT_WRITABLE;
 			}
 		}
+		break;
         case READ_IC_INF: // ∂¡»°–æ∆¨–Õ∫≈
         {
             for(i=0;i < IC_TYPE_LENTH;i++)
@@ -882,7 +884,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         {
             ACK = ERR_NO;
         }break;
-		case GET_BT_VERSION:
+		case PC_GET_VER_BT:
 		{
 			g_sendArray = (uint8_t*)(&btVersion);
 			for(int i = 0; i < sizeof(BtVersion); i++){

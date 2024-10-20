@@ -115,7 +115,7 @@ typedef enum {
 #define PC_GET_VER_BACKUP		0X18		// 获取BACKUP的版本号
 #define	READ_IC_INF				0x51		// 读取芯片型号
 #define HEX_INFO                0x52        // 接收HEX文件信息
-#define GET_BT_VERSION          0x53        // 查询BT的版本
+#define PC_GET_VER_BT			0x53        // 查询BT的版本
 #define GET_WRITABLE_AREA		0x54		// 查询芯片可写区域
 // #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
 // #define	SET_BAUD				0x25		//设置波特率
