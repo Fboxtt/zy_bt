@@ -820,11 +820,20 @@ void BootCheckReset()
     }
 }
 
+void GetVer(uint32_t addr, int lenth)
+{
+	uint8_t* p_addr = (uint8_t*)addr;
+	// p_addr = (uint8_t*)(&btVersion);
+	for(int i = 0; i < sizeof(BtVersion); i++){
+		CmdSendData[CmmuSendLength + i] = *(p_addr + i);
+	}
+	// CmmuSendLength += sizeof(BtVersion);
+	CmmuSendLength += lenth;
+}
 
 uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
-    uint8_t i;	
 	static char downBkpCount = 0;
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
     CmmuSendLength = 0;	
@@ -855,44 +864,61 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 		}
 		break;
-		case PC_GET_VER_BACKUP:
+		// case PC_GET_VER_BACKUP:
+		// {
+		// 	hexVer = (TVER*)(BACKUP_VER_ADDR);
+		// 	if(g_flashWritableFlag.bit.backupArea == 1) {
+		// 		if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
+		// 			memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
+		// 			CmmuSendLength = sizeof(TVER);
+		// 			ACK = ERR_NO;
+		// 		} else {
+		// 			ACK = ERR_ALL_CHECK;
+		// 		}
+		// 	} else {
+		// 		ACK = ERR_AREA_NOT_WRITABLE;
+		// 	}
+		// }
+		case PC_GET_INF:
 		{
-			hexVer = (TVER*)(BACKUP_VER_ADDR);
-			if(g_flashWritableFlag.bit.backupArea == 1) {
-				if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
-					memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
-					CmmuSendLength = sizeof(TVER);
-					ACK = ERR_NO;
-				} else {
-					ACK = ERR_ALL_CHECK;
-				}
-			} else {
-				ACK = ERR_AREA_NOT_WRITABLE;
-			}
-		}
-		break;
-        case READ_IC_INF: // 读取芯片型号
-        {
-            for(i=0;i < IC_TYPE_LENTH;i++)
+			static int i = 0;
+			// BT版本号获取
+			GetVer((uint32_t)(&btVersion), sizeof(BtVersion));
+			GetVer(APP_VER_ADDR, sizeof(BtVersion));
+			GetVer(APP_BUFF_VER_ADDR, sizeof(BtVersion));
+			GetVer(BACKUP_VER_ADDR, sizeof(BtVersion));
+			for(i=0;i < IC_TYPE_LENTH;i++)
             {
-                CmdSendData[i] = IC_INF_BUFF[i];                
+                CmdSendData[CmmuSendLength + i] = IC_INF_BUFF[i];                
             }
-            CmmuSendLength = IC_TYPE_LENTH;
-            ACK = ERR_NO;
-        }break;
-        case HEX_INFO:
-        {
-            ACK = ERR_NO;
-        }break;
-		case PC_GET_VER_BT:
-		{
-			g_sendArray = (uint8_t*)(&btVersion);
-			for(int i = 0; i < sizeof(BtVersion); i++){
-				CmdSendData[i] = *(g_sendArray + i);
-			}
-			CmmuSendLength = sizeof(BtVersion);
+            CmmuSendLength += IC_TYPE_LENTH;
+			CmdSendData[CmmuSendLength] = g_flashWritableFlag.value;
+			CmmuSendLength += 1;
 			ACK = ERR_NO;
 		}
+		break;
+        // case READ_IC_INF: // 读取芯片型号
+        // {
+        //     for(i=0;i < IC_TYPE_LENTH;i++)
+        //     {
+        //         CmdSendData[i] = IC_INF_BUFF[i];                
+        //     }
+        //     CmmuSendLength = IC_TYPE_LENTH;
+        //     ACK = ERR_NO;
+        // }break;
+        // case HEX_INFO:
+        // {
+        //     ACK = ERR_NO;
+        // }break;
+		// case PC_GET_VER_BT:
+		// {
+		// 	g_sendArray = (uint8_t*)(&btVersion);
+		// 	for(int i = 0; i < sizeof(BtVersion); i++){
+		// 		CmdSendData[i] = *(g_sendArray + i);
+		// 	}
+		// 	CmmuSendLength = sizeof(BtVersion);
+		// 	ACK = ERR_NO;
+		// }
         case ENTER_BOOTMODE: // 握手三次即可开始烧录
         {
             HandShakeValue++;
@@ -906,12 +932,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             }
             ACK = ERR_NO;
         }break;
-		case GET_WRITABLE_AREA:
-		{
-			CmdSendData[0] = g_flashWritableFlag.value;
-			CmmuSendLength = sizeof(WritableFlag);
-			ACK = ERR_NO;
-		}
+		// case GET_WRITABLE_AREA:
+		// {
+		// 	CmdSendData[0] = g_flashWritableFlag.value;
+		// 	CmmuSendLength = sizeof(WritableFlag);
+		// 	ACK = ERR_NO;
+		// }
 //        case SET_BAUD:
 //        {
 //            cmd_buff = DEAL_SUCCESS;

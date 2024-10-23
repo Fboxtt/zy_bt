@@ -112,13 +112,14 @@ typedef enum {
 // #define READ_FLASH              0x23        //读FLASH指定地址
 //主站发送来的控制码类型 私有协议修改内容
 #define PC_GET_VER_APP			0x16		// 获取APP的版本号
-#define PC_GET_VER_BACKUP		0X18		// 获取BACKUP的版本号
-#define	READ_IC_INF				0x51		// 读取芯片型号
-#define HEX_INFO                0x52        // 接收HEX文件信息
-#define PC_GET_VER_BT			0x53        // 查询BT的版本
-#define GET_WRITABLE_AREA		0x54		// 查询芯片可写区域
-// #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
-// #define	SET_BAUD				0x25		//设置波特率
+// #define PC_GET_VER_BACKUP		0X18		// 获取BACKUP的版本号
+// #define	READ_IC_INF				0x51		// 读取芯片型号
+// // #define HEX_INFO                0x52        // 接收HEX文件信息
+// #define PC_GET_VER_BT			0x53        // 查询BT的版本
+// #define GET_WRITABLE_AREA		0x54		// 查询芯片可写区域
+
+#define PC_GET_INF				0x51		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
+
 #define DOWNLOAD_BUFFER			0x55		// 擦除所有APROM
 #define ENTER_BOOTMODE 			0x56		// 进入更新模式，即握手信号
 #define WRITE_FLASH				0x57		// 更新程序命令
@@ -213,11 +214,12 @@ uint8_t AppCheckSumCheck(void);
 
 #define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        // APP缓存区的起始位置
 #define APP_BUFF_SIZE           APP_SIZE						// APP缓存区最大长度
+#define APP_BUFF_VER_ADDR		(APP_BUFF_ADDR + APP_BUFF_SIZE - 1024) 	// 存储app版本号的地址
 #define APP_VECTOR_ADDR         APP_ADDR
 
 #define BACKUP_ADDR				(0x2000 + APP_SIZE * 2)
 #define BACKUP_SIZE				APP_SIZE						// 60 * 1024 = 0xF000
-#define BACKUP_VER_ADDR			(APP_ADDR + BACKUP_SIZE - 1024) 	// 存储backup版本号的地址
+#define BACKUP_VER_ADDR			(BACKUP_ADDR + BACKUP_SIZE - 1024) 	// 存储backup版本号的地址
 
 #define DATA_ADDR				0x500200						// 程序状态标志DATA Flash的起始位置
 #define DATA_SIZE				0x500							// 程序状态标志DATA的大小
