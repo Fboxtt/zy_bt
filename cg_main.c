@@ -222,7 +222,7 @@ void SysTick_Handler(void)
 {
 	WDT->WDTE = 0xAC;
 	P71FlushCount++;
-	if(P71FlushCount / 1000 % 2 == 1) {
+	if(P71FlushCount / 100 % 2 == 1) {
 		PORT->P7 |= _02_Pn1_OUTPUT_1;
 	} else {
 		PORT->P7 &= (~_02_Pn1_OUTPUT_1);

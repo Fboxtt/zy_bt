@@ -15,6 +15,8 @@ typedef enum {
     UART2,
 }uartId;
 
+// #define IN_APP
+
 #define DEBUG_DEVICE 1
 #define BMS_DEVICE 2
 #define DEVICE DEBUG_DEVICE
