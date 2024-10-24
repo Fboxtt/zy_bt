@@ -415,9 +415,16 @@ void IAP_Reset()
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
+	#ifdef IN_APP
+	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+    __set_MSP(*(__IO uint32_t*) BOOT_ADDR);
+	((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to APP
+	#else
 	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
-    ((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
+	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
+	#endif
+    
     
     /* Trap the CPU */
     while(1);
