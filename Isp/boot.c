@@ -824,12 +824,18 @@ void GetVer(uint32_t addr, int lenth)
 {
 	uint8_t* p_addr = (uint8_t*)addr;
 	// p_addr = (uint8_t*)(&btVersion);
-	for(int i = 0; i < sizeof(BtVersion); i++){
+	for(int i = 0; i < lenth; i++){
 		CmdSendData[CmmuSendLength + i] = *(p_addr + i);
 	}
 	// CmmuSendLength += sizeof(BtVersion);
 	CmmuSendLength += lenth;
 }
+
+__asm uint32_t get_pc(void) {
+	mov r0, pc
+	bx lr
+}
+
 
 uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
@@ -881,19 +887,15 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		// }
 		case PC_GET_INF:
 		{
-			static int i = 0;
 			// BT°æ±¾ºÅ»ñÈ¡
 			GetVer((uint32_t)(&btVersion), sizeof(BtVersion));
 			GetVer(APP_VER_ADDR, sizeof(BtVersion));
 			GetVer(APP_BUFF_VER_ADDR, sizeof(BtVersion));
 			GetVer(BACKUP_VER_ADDR, sizeof(BtVersion));
-			for(i=0;i < IC_TYPE_LENTH;i++)
-            {
-                CmdSendData[CmmuSendLength + i] = IC_INF_BUFF[i];                
-            }
-            CmmuSendLength += IC_TYPE_LENTH;
-			CmdSendData[CmmuSendLength] = g_flashWritableFlag.value;
-			CmmuSendLength += 1;
+			GetVer((uint32_t)IC_INF_BUFF, IC_TYPE_LENTH);
+			GetVer((uint32_t)(&g_flashWritableFlag), sizeof(g_flashWritableFlag));
+			uint32_t pcValue = get_pc();
+			GetVer((uint32_t)&pcValue, sizeof(pcValue));
 			ACK = ERR_NO;
 		}
 		break;
