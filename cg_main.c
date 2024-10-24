@@ -175,19 +175,19 @@ void HardFault_Handler()
 void toggle_Init(void)
 {
     // PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
-    PORT->P7 = _02_Pn1_OUTPUT_1;
-    PORT->PU7 = _01_PUn0_PULLUP_ON;
-    PORT->POM7 = _00_POMn1_NCH_OFF;
+    PORT->P7 |= _02_Pn1_OUTPUT_1;
+    PORT->PU7 |= _01_PUn0_PULLUP_ON;
+    PORT->POM7 &= (~_02_POMn1_NCH_ON);
     // PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
-    PORT->PM7 = _00_PMn1_MODE_OUTPUT;
+    PORT->PM7 &= (~_02_PMn1_MODE_INPUT);
 }
 void toggle(void)
 {
 	// PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
 	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
-    PORT->P7 = _02_Pn1_OUTPUT_1;
-	PORT->P7 = _00_Pn1_OUTPUT_0;
-	PORT->P7 = _02_Pn1_OUTPUT_1;
+    PORT->P7 |= _02_Pn1_OUTPUT_1;
+	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
+	PORT->P7 |= _02_Pn1_OUTPUT_1;
 }
 
 
@@ -195,12 +195,11 @@ void toggle(void)
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
-   
 	HardDriveInit();
     BootInit();
-	// toggle_Init();
-	// toggle();
-	// toggle();
+	toggle_Init();
+	toggle();
+	toggle();
 	// Port_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // ÅäÖÃp16 p17
 //	P_Init(PORT7,PIN2,OUTPUT); // 
 //	P_Init(PORT7,PIN3,PULLUP_INPUT); // 
@@ -223,11 +222,11 @@ void SysTick_Handler(void)
 {
 	WDT->WDTE = 0xAC;
 	P71FlushCount++;
-	// if(P71FlushCount / 100 % 2 == 1) {
-	// 	PORT->P7 = _02_Pn1_OUTPUT_1;
-	// } else {
-	// 	PORT->P7 = _00_Pn1_OUTPUT_0;
-	// }
+	if(P71FlushCount / 1000 % 2 == 1) {
+		PORT->P7 |= _02_Pn1_OUTPUT_1;
+	} else {
+		PORT->P7 &= (~_02_Pn1_OUTPUT_1);
+	}
 	g_ticks--;
 	BootWaitTime++;
 }
