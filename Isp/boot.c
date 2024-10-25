@@ -51,6 +51,10 @@ BtVersion btVersion = {
 	1,0,0,2024,10,11
 };
 
+const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
+	1,1,1,2024,10,11
+};
+
 uint8_t* g_sendArray;
 
 uint8_t result_cmd;

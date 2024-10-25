@@ -212,19 +212,20 @@ uint8_t AppCheckSumCheck(void);
 
 #define BOOT_ADDR				0x0000
 #define BOOT_VTOR_ADDR			0x0000
+#define APP_VER_OFFSET			0xD0
 
 #define APP_ADDR                0X2000							// APP的起始位置
 #define APP_SIZE                (40 * 1024)						// APP代码最大长度
-#define APP_VER_ADDR			(APP_ADDR + APP_SIZE - 1024) 	// 存储app版本号的地址
+#define APP_VER_ADDR			(APP_ADDR + APP_VER_OFFSET) 	// 存储app版本号的地址
 
 #define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        // APP缓存区的起始位置
 #define APP_BUFF_SIZE           APP_SIZE						// APP缓存区最大长度
-#define APP_BUFF_VER_ADDR		(APP_BUFF_ADDR + APP_BUFF_SIZE - 1024) 	// 存储app版本号的地址
+#define APP_BUFF_VER_ADDR		(APP_BUFF_ADDR + APP_VER_OFFSET) 	// 存储app版本号的地址
 #define APP_VECTOR_ADDR         APP_ADDR
 
 #define BACKUP_ADDR				(0x2000 + APP_SIZE * 2)
 #define BACKUP_SIZE				APP_SIZE						// 60 * 1024 = 0xF000
-#define BACKUP_VER_ADDR			(BACKUP_ADDR + BACKUP_SIZE - 1024) 	// 存储backup版本号的地址
+#define BACKUP_VER_ADDR			(BACKUP_ADDR + APP_VER_OFFSET) 	// 存储backup版本号的地址
 
 #define DATA_ADDR				0x500200						// 程序状态标志DATA Flash的起始位置
 #define DATA_SIZE				0x500							// 程序状态标志DATA的大小
