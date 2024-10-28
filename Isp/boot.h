@@ -209,10 +209,12 @@ uint8_t AppCheckSumCheck(void);
 /*cg_sci_user.c*/
 
 // flash_operate.h
+#define APP_VER_OFFSET			0xD0
 
 #define BOOT_ADDR				0x0000
 #define BOOT_VTOR_ADDR			0x0000
-#define APP_VER_OFFSET			0xD0
+
+#define BOOT_VER_ADDR			(BOOT_ADDR + APP_VER_OFFSET)
 
 #define APP_ADDR                0X2000							// APP的起始位置
 #define APP_SIZE                (40 * 1024)						// APP代码最大长度
