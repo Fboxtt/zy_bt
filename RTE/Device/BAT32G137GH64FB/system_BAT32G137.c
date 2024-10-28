@@ -44,7 +44,7 @@ typedef enum {
 /***********************************************************************************************************************
 Global variables and functions
 ***********************************************************************************************************************/
-const uint8_t user_opt_data[4] __attribute__((at(0x000000C0))) =
+const uint8_t user_opt_data[4] __attribute__((at(0x000020C0))) =
 {
 	0xFF,
 	0xFF,
@@ -60,7 +60,7 @@ __WEAK uint32_t CLK_GetHocoFreq(void)
 {
 
   uint32_t freq;
-  uint8_t  frqsel   = (*(uint8_t *)0x000000C2U);
+  uint8_t  frqsel   = (*(uint8_t *)0x000020C2U);
            frqsel  &= 0x18;  /* Mask the higher and lower 3 bits */
            frqsel >>= 3;     /* right shift 3 bit */
            
@@ -87,7 +87,7 @@ __WEAK uint32_t CLK_GetCoreFreq(void)
 {
 
   uint32_t freq;
-  uint8_t  frqsel  = (*(uint8_t *)0x000000C2U);
+  uint8_t  frqsel  = (*(uint8_t *)0x000020C2U);
            frqsel &= 0xF8;          /* Mask the lower 3 bits */
            frqsel |= CGC->HOCODIV;  /* Refer the value of HOCODIV */ 
            

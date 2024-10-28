@@ -419,15 +419,15 @@ void IAP_Reset()
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
-	#ifdef IN_APP
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+#ifdef IN_APP
+	__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
     __set_MSP(*(__IO uint32_t*) BOOT_ADDR);
-	((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to APP
-	#else
+	((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to BOOT
+#else
 	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
 	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
-	#endif
+#endif
     
     
     /* Trap the CPU */
@@ -1151,6 +1151,7 @@ void BootProcess(void)
 		result_cmd = BOOT_BOOL_FALSE;
 		CMDBuff = 0; 
 	}
+	#ifndef IN_APP
 	if(BootWaitTime > BootWaitTimeLimit) {
 		if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
 			ResetFlag = 1;
@@ -1164,6 +1165,7 @@ void BootProcess(void)
 		}
 		BootWaitTime = 0;
 	}
+	#endif
 	BootCheckReset(); // 跳转函数，条件满足即可跳转入app
 }
 
