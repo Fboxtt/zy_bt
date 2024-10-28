@@ -47,20 +47,17 @@ typedef struct {
 	uint8_t reserved[2];		// 保留，无用
 }VerStru;
 
-typedef struct {
-	VerStru	btVer;				// bt的版本号
-	VerStru	appVer;				// app的版本号
-	VerStru	bufferVer;			// 缓冲区的版本号
-	VerStru backupVer;			// 备份区的版本号
-	uint8_t icName[15];			// ic的型号名称
-	uint8_t writableArea;		// 芯片区域可写，用于校验flash健康
-	uint32_t pcAddr;			// pc指针，表明程序在bt中还是app中
-}AllVerStru;
-
+#ifndef IN_APP
 const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
 	1,0,0,2024,10,11
 };
+#endif
 
+#ifdef IN_APP
+const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
+	1,1,1,2024,10,11
+};
+#endif
 uint8_t* g_sendArray;
 
 uint8_t result_cmd;
@@ -428,6 +425,8 @@ void IAP_Reset()
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
 	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
 #endif
+    
+    
     /* Trap the CPU */
     while(1);
 }
@@ -897,7 +896,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		case PC_GET_INF:
 		{
 			// BT版本号获取
-			GetVer((uint32_t)(&btVersion), sizeof(VerStru));
+			GetVer(BOOT_VER_ADDR, sizeof(VerStru));
 			GetVer(APP_VER_ADDR, sizeof(VerStru));
 			GetVer(APP_BUFF_VER_ADDR, sizeof(VerStru));
 			GetVer(BACKUP_VER_ADDR, sizeof(VerStru));
@@ -1149,6 +1148,7 @@ void BootProcess(void)
 		result_cmd = BOOT_BOOL_FALSE;
 		CMDBuff = 0; 
 	}
+	#ifndef IN_APP
 	if(BootWaitTime > BootWaitTimeLimit) {
 		if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
 			ResetFlag = 1;
@@ -1162,6 +1162,7 @@ void BootProcess(void)
 		}
 		BootWaitTime = 0;
 	}
+	#endif
 	BootCheckReset(); // 跳转函数，条件满足即可跳转入app
 }
 
