@@ -38,16 +38,26 @@ volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
 
 
 typedef struct {
-	uint16_t majorVer;
-	uint16_t minorVer;
-	uint16_t revisionVer;
-	uint16_t year;
-	uint8_t month;
-	uint8_t day;
-	uint8_t reserved[2];
-}BtVersion;
+	uint16_t majorVer;			// 主版本号
+	uint16_t minorVer;			// 次版本号
+	uint16_t revisionVer;		// 修订版本
+	uint16_t year;				// 年
+	uint8_t month;				// 月
+	uint8_t day;				// 日
+	uint8_t reserved[2];		// 保留，无用
+}VerStru;
 
-BtVersion btVersion = {
+typedef struct {
+	VerStru	btVer;				// bt的版本号
+	VerStru	appVer;				// app的版本号
+	VerStru	bufferVer;			// 缓冲区的版本号
+	VerStru backupVer;			// 备份区的版本号
+	uint8_t icName[15];			// ic的型号名称
+	uint8_t writableArea;		// 芯片区域可写，用于校验flash健康
+	uint32_t pcAddr;			// pc指针，表明程序在bt中还是app中
+}AllVerStru;
+
+const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
 	1,0,0,2024,10,11
 };
 
@@ -406,26 +416,18 @@ void __set_VECTOR_ADDR(uint32_t addr)
 
 void IAP_Reset()
 {	
-    #ifdef ENCRYPT_UID_ENABLE		
-	if(!CheckUID())
-	{
-		return;
-	}
-	#endif
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
-	#ifdef IN_APP
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+#ifdef IN_APP
+	__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
     __set_MSP(*(__IO uint32_t*) BOOT_ADDR);
-	((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to APP
-	#else
+	((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to BOOT
+#else
 	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
 	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
-	#endif
-    
-    
+#endif
     /* Trap the CPU */
     while(1);
 }
@@ -834,7 +836,7 @@ void GetVer(uint32_t addr, int lenth)
 	for(int i = 0; i < lenth; i++){
 		CmdSendData[CmmuSendLength + i] = *(p_addr + i);
 	}
-	// CmmuSendLength += sizeof(BtVersion);
+	// CmmuSendLength += sizeof(VerStru);
 	CmmuSendLength += lenth;
 }
 
@@ -895,10 +897,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		case PC_GET_INF:
 		{
 			// BT版本号获取
-			GetVer((uint32_t)(&btVersion), sizeof(BtVersion));
-			GetVer(APP_VER_ADDR, sizeof(BtVersion));
-			GetVer(APP_BUFF_VER_ADDR, sizeof(BtVersion));
-			GetVer(BACKUP_VER_ADDR, sizeof(BtVersion));
+			GetVer((uint32_t)(&btVersion), sizeof(VerStru));
+			GetVer(APP_VER_ADDR, sizeof(VerStru));
+			GetVer(APP_BUFF_VER_ADDR, sizeof(VerStru));
+			GetVer(BACKUP_VER_ADDR, sizeof(VerStru));
 			GetVer((uint32_t)IC_INF_BUFF, IC_TYPE_LENTH);
 			GetVer((uint32_t)(&g_flashWritableFlag), sizeof(g_flashWritableFlag));
 			uint32_t pcValue = get_pc();
@@ -922,10 +924,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		// case PC_GET_VER_BT:
 		// {
 		// 	g_sendArray = (uint8_t*)(&btVersion);
-		// 	for(int i = 0; i < sizeof(BtVersion); i++){
+		// 	for(int i = 0; i < sizeof(VerStru); i++){
 		// 		CmdSendData[i] = *(g_sendArray + i);
 		// 	}
-		// 	CmmuSendLength = sizeof(BtVersion);
+		// 	CmmuSendLength = sizeof(VerStru);
 		// 	ACK = ERR_NO;
 		// }
         case ENTER_BOOTMODE: // 握手三次即可开始烧录
