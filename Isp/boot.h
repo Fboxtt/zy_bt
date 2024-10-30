@@ -106,17 +106,17 @@ typedef enum {
 //主站发送来的控制码类型 私有协议修改内容
 #define PC_GET_VER_APP			0x16		// 获取APP的版本号
 
-#define PC_GET_INF				0x51		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
+#define PC_GET_INF				0x71		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
 
-#define DOWNLOAD_BUFFER			0x55		// 擦除所有APROM
-#define ENTER_BOOTMODE 			0x56		// 进入更新模式，即握手信号
-#define WRITE_FLASH				0x57		// 更新程序命令
-#define REC_ALL_CHECKSUM        0x58		// 发送校验和
-#define READ_FLASH              0x59        // 读FLASH指定地址
-#define ENTER_APP               0x5A        // 进入APP
+#define DOWNLOAD_BUFFER			0x75		// 擦除所有APROM
+#define ENTER_BOOTMODE 			0x76		// 进入更新模式，即握手信号
+#define WRITE_FLASH				0x77		// 更新程序命令
+#define REC_ALL_CHECKSUM        0x78		// 发送校验和
+#define READ_FLASH              0x79        // 读FLASH指定地址
+#define ENTER_APP               0x7A        // 进入APP
 
-#define DOWNLOAD_BACKUP			0x5C		// 下载备份
-#define RESTORE_BACKUP			0x5D		// 将备份恢复到APP中
+#define DOWNLOAD_BACKUP			0x7C		// 下载备份
+#define RESTORE_BACKUP			0x7D		// 将备份恢复到APP中
 
 #define ERR_NO                  0x00        // 无异常
 #define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
