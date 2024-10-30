@@ -29,6 +29,15 @@ uint8_t CRCchecksum[4];
 
 uint8_t uart_send_flag = 0;
 
+typedef enum {
+	NO_OPERATE = 0x0,
+	DOWNLOADING_BUFF	= 0x55AA55AA,
+	DOWNLOADING_BKP		= 0x0A555AAA,
+	DOWNLOADED_BUFF		= 0x5A5A5555,
+	DOWNLOADED_BKP		= 0x0A5AAAAA,
+}DOWNLOAD_STATUS;
+
+DOWNLOAD_STATUS g_downLoadStatus = NO_OPERATE;
 
 volatile uint8_t * gp_uart0_tx_address;         /* uart0 send buffer address */
 volatile uint16_t  g_uart0_tx_count;            /* uart0 send data number */
@@ -55,7 +64,7 @@ const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
 
 #ifdef IN_APP
 const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
-	1,1,1,2024,10,11
+	2,3,4,2025,11,12
 };
 #endif
 uint8_t* g_sendArray;
@@ -976,6 +985,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         {
 			IAP_Erase_ALL(APROM_BUFF_AREA);
 			BeginAddr = APP_BUFF_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+			g_downLoadStatus = DOWNLOADING_BUFF;
             ACK = ERR_NO;
         }break;
 		case DOWNLOAD_BACKUP:	//擦除APROM所有内容
@@ -993,6 +1003,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				} else {
 					IAP_Erase_ALL(APROM_BACKUP_AREA);
 					BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+					g_downLoadStatus = DOWNLOADING_BKP;
 					ACK = ERR_NO;
 				}
 			} else {
@@ -1050,16 +1061,32 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			// } else {
 			// 	ACK = ERR_ALL_CHECK;
 			// }
-			CheckSumWrite(g_packetTotalNum, CheckSum, APROM_BUFF_AREA);
-			g_packetTotalNum = 0;
-			if(CheckSumCheck(APROM_BUFF_AREA) == 1)
-			{
-				ACK = ERR_NO; //回应退出了Bootloader
-				CheckSumWrite(0, 0, APROM_AREA); // 将app区域设置成非法
-				BufferFlag = 1;
-			} else {
-				ACK = ERR_ALL_CHECK;
+			if(g_downLoadStatus == DOWNLOADING_BUFF) {
+				CheckSumWrite(g_packetTotalNum, CheckSum, APROM_BUFF_AREA);
+				g_packetTotalNum = 0;
+				if(CheckSumCheck(APROM_BUFF_AREA) == 1)
+				{
+					ACK = ERR_NO; //回应退出了Bootloader
+					CheckSumWrite(0, 0, APROM_AREA); // 将app区域设置成非法
+					BufferFlag = 1;
+					g_downLoadStatus = DOWNLOADED_BUFF;
+				} else {
+					ACK = ERR_ALL_CHECK;
+				}
+			} else if(g_downLoadStatus == DOWNLOADING_BKP){
+				CheckSumWrite(g_packetTotalNum, CheckSum, APROM_BACKUP_AREA);
+				g_packetTotalNum = 0;
+				if(CheckSumCheck(APROM_BACKUP_AREA) == 1)
+				{
+					ACK = ERR_NO; //回应退出了Bootloader
+					g_downLoadStatus = DOWNLOADED_BUFF;
+				} else {
+					ACK = ERR_ALL_CHECK;
+				}
+			} else if(g_downLoadStatus == DOWNLOADED_BUFF || g_downLoadStatus == DOWNLOADED_BKP) {
+				ACK = ERR_DOWNLOAD_DONE;
 			}
+
         }break;        
 //        case ENTER_APPMODE: //运行用户代码
 //        {
