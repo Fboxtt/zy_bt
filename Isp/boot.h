@@ -92,7 +92,7 @@ typedef enum {
 	TYPE_256KB,
 } IC_TYPE_ENUM;
 
-#define IC_TYPE_LENTH					13
+#define IC_TYPE_LENTH					15
 
 #define IC_TYPE_128KB_NAME				"BAT32G137GH48"
 #define IC_TYPE_256KB_NAME				"BAT32G139GH48"
@@ -102,23 +102,9 @@ typedef enum {
 #define TYPE_FAIL 0xDE//主机命令类型错误
 #define CHECK_FAIL 0xDF //校验错误
 
-// //主站发送来的控制码类型
-// #define ENTER_BOOTMODE 			0x01		//进入更新模式，即握手信号
-// #define ENTER_APPMODE			0x0f		//跳转执行用户程序
-// #define WRITE_FLASH				0x22		//更新程序命令
-// #define SET_ADDRESS			    0x30		//设置MCU开始更新的地址
-// #define	SET_BAUD				0x25		//设置波特率
-// #define	READ_IC_INF				0x03		//读取芯片型号
-// #define	READ_BOOT_CODE_INF		0x04		//读取Boot代码版本号
-// #define EARSE_ALL				0x06		//擦除所有APROM
-// #define READ_FLASH              0x23        //读FLASH指定地址
+
 //主站发送来的控制码类型 私有协议修改内容
 #define PC_GET_VER_APP			0x16		// 获取APP的版本号
-// #define PC_GET_VER_BACKUP		0X18		// 获取BACKUP的版本号
-// #define	READ_IC_INF				0x51		// 读取芯片型号
-// // #define HEX_INFO                0x52        // 接收HEX文件信息
-// #define PC_GET_VER_BT			0x53        // 查询BT的版本
-// #define GET_WRITABLE_AREA		0x54		// 查询芯片可写区域
 
 #define PC_GET_INF				0x51		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
 
@@ -143,6 +129,7 @@ typedef enum {
 #define ERR_REMAP			    0x24		// 重映射错误
 #define ERR_AREA_BLANK			0x25		// 区域内数据为0
 #define ERR_AREA_NOT_WRITABLE	0x26		// 区域不可写
+#define ERR_DOWNLOAD_DONE		0x27		// 烧录已完成，请重新开始
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
