@@ -64,7 +64,7 @@ const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
 
 #ifdef IN_APP
 const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
-	2,3,4,2025,11,12
+	3,4,5,2025,11,12
 };
 #endif
 uint8_t* g_sendArray;
@@ -385,7 +385,7 @@ void IAP_Erase_ALL(uint8_t area)
 	else if(area==APROM_BACKUP_AREA)
 	{
 		k = (BACKUP_SIZE/ONE_PAGE_SIZE);
-		begin_addr = BACKUP_SIZE;
+		begin_addr = BACKUP_ADDR;
 		area = APROM_AREA;
 	}
 	#ifdef FLASH_BUFF_ENABLE
