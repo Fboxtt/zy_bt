@@ -997,7 +997,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			} else {
 				downBkpCount = 0;
 			}
-			if(BACKUP_ADDR < (88 * 1024)) { // 备份地址不能小于88KB，不能影响缓冲区和app区域
+			if(BACKUP_ADDR >= (88 * 1024)) { // 备份地址不能小于88KB，不能影响缓冲区和app区域
 				if(BACKUP_SIZE > MAX_PACK_NUM) {
 					ACK = ERR_OPERATE;
 				} else {
