@@ -1126,6 +1126,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) { // 校验BACKUP区域校验和
 				g_BkpFlag = 1;							// 校验和正确，可以开始迁移HEX数据
+				ACK = ERR_NO;
 			} else {
 				ACK = ERR_ALL_CHECK;
 			}
