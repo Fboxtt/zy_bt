@@ -779,7 +779,7 @@ void ReplyEnterBoot(void)
 	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
 }
 
-void BufferExchange()
+void AppRestore()
 {
 	if(BufferFlag == 1) {
 		BufferFlag = 0;
@@ -841,11 +841,24 @@ void BootCheckReset()
 void GetVer(uint32_t addr, int lenth)
 {
 	uint8_t* p_addr = (uint8_t*)addr;
-	// p_addr = (uint8_t*)(&btVersion);
-	for(int i = 0; i < lenth; i++){
-		CmdSendData[CmmuSendLength + i] = *(p_addr + i);
+	uint32_t area = 0;
+	switch(addr) {
+		case APP_VER_ADDR: 		area 	= APROM_AREA; 			break;
+		case APP_BUFF_VER_ADDR: area 	= APROM_BUFF_AREA;		break;
+		case BACKUP_VER_ADDR: 	area 	= APROM_BACKUP_AREA; 	break;
 	}
-	// CmmuSendLength += sizeof(VerStru);
+	// 烧录区需要判断检验和
+	// 如果校验和不正确，则不返回版本号，经测试后功能可用。
+	if(area == 0 || CheckSumCheck(area) == 1) {
+		for(int i = 0; i < lenth; i++) {
+			CmdSendData[CmmuSendLength + i] = *(p_addr + i);
+		}
+	} else {
+		for(int i = 0; i < lenth; i++) {
+			CmdSendData[CmmuSendLength + i] = 0xff;
+		}
+	}
+
 	CmmuSendLength += lenth;
 }
 
@@ -906,14 +919,14 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		case PC_GET_INF:
 		{
 			// BT版本号获取
-			GetVer(BOOT_VER_ADDR, sizeof(VerStru));
-			GetVer(APP_VER_ADDR, sizeof(VerStru));
-			GetVer(APP_BUFF_VER_ADDR, sizeof(VerStru));
-			GetVer(BACKUP_VER_ADDR, sizeof(VerStru));
-			GetVer((uint32_t)IC_INF_BUFF, IC_TYPE_LENTH);
-			GetVer((uint32_t)(&g_flashWritableFlag), sizeof(g_flashWritableFlag));
 			uint32_t pcValue = get_pc();
-			GetVer((uint32_t)&pcValue, sizeof(pcValue));
+			GetVer(BOOT_VER_ADDR,					sizeof(VerStru));
+			GetVer(APP_VER_ADDR,					sizeof(VerStru));
+			GetVer(APP_BUFF_VER_ADDR, 				sizeof(VerStru));
+			GetVer(BACKUP_VER_ADDR, 				sizeof(VerStru));
+			GetVer((uint32_t)IC_INF_BUFF, 			IC_TYPE_LENTH);
+			GetVer((uint32_t)(&g_flashWritableFlag),sizeof(g_flashWritableFlag));
+			GetVer((uint32_t)&pcValue, 				sizeof(pcValue));
 			ACK = ERR_NO;
 		}
 		break;
@@ -1166,7 +1179,7 @@ void BootWaitTimeInit(void)
 
 void BootProcess(void)
 {
-	BufferExchange();
+	AppRestore();
 	if(UartReceFlag)
 	{
 		CMDBuff = AnalysisData();  // 分析从中断函数总获取的数据包， 返回cmd       

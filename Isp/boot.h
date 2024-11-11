@@ -176,7 +176,7 @@ extern uint32_t NewBaud;							 //新波特率存储
 extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
 extern boot_bool_t ResetFlag;
 extern void BootCheckReset(void);		//检测是否有复位信号
-extern void BufferExchange(void);
+extern void AppRestore(void);
 extern uint8_t CheckUID(void);
 void BootInit(void);
 boot_cmd_t BootCmdRun(boot_cmd_t cmd);
@@ -260,6 +260,7 @@ uint8_t AppCheckSumCheck(void);
 #define LDROM_AREA	            0X96				//LDROM区
 #define DATA_AREA               0xAA				//DATA区
 
+#define BOOT_AREA				0x9A				//BOOT区
 #define	APROM_AREA	            0x55				//APROM区
 #define APROM_BUFF_AREA			0x69				//APP缓存区
 #define APROM_BACKUP_AREA		0x5A				//备份区
