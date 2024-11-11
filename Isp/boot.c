@@ -799,7 +799,8 @@ void BufferExchange()
 	} else if(g_BkpFlag == 1) {
 		g_BkpFlag = 0;
 		if(IAP_BkpRemap() == 1) {
-			CheckSumWrite(PacketTotalNumRead(BACKUP_TOTAL_NUM_ADRESS), All_CheckSum_Read(BACKUP_CHECKSUM_ADRESS), APROM_BACKUP_AREA);
+			// 从备份区中读取校验和数据，并写入到APP区域中
+			CheckSumWrite(PacketTotalNumRead(BACKUP_TOTAL_NUM_ADRESS), All_CheckSum_Read(BACKUP_CHECKSUM_ADRESS), APROM_AREA);
 			if(CheckSumCheck(APROM_AREA) == 1)
 			{
 				ACK = ERR_NO; //回应退出了Bootloader
@@ -1131,9 +1132,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				ACK = ERR_ALL_CHECK;
 			}
 		}
+		break;
         default:
         {
-            CmdSendData[0] = ERR_CHECK;
+            // CmdSendData[0] = ERR_CHECK;
             CmmuSendLength = 0;
             ACK = ERR_CMD_ID;
         }
