@@ -93,12 +93,6 @@ void UartSendOneByte(uint8_t input_data)
     {
         ;
     }
-//    while(!UartSendFlag);
-//    UartSendFlag = 0;
-//    while (SCI0->SSR00 & (_0040_SCI_UNDER_EXECUTE | _0020_SCI_VALID_STORED))
-//    {
-//        ;
-//    }
 }
 #define SLAVE_ADDRESS 0x00//设备地址
 void UartReceData(uartId id)//接收数据帧
@@ -255,8 +249,6 @@ static void uart0_interrupt_receive(void)
     UartReceData(id);
 }
 
-/*flash_operate*/
-/*flash_operate*/
 /*flash_operate*/
 const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP可正常运行状态。
 const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//代码缓存区代码就绪状态。
@@ -566,7 +558,6 @@ uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
 /*boot_core.c*/
 /*boot_core.c*/
 /*boot_core.c*/
-uint8_t HandShakeValue;	                            //握手次数存储变量
 uint8_t BufferFlag = 0;								//代表缓冲区校验状态
 uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
 uint8_t ResetFlag = 0;								//表示复位条件达成
@@ -867,11 +858,26 @@ __asm uint32_t get_pc(void) {
 	bx lr
 }
 
+typedef enum {
+	ENTER_CMD = 0xA,
+	BUFFER_CMD = 0xB,
+	BACKUP_CMD = 0XC,
+	BUFFER_FLAG = 0xAAAB,
+	BACKUP_FLAG  = 0xACCC,
+}SHAKE_FLAG;
+
+static uint32_t g_shakehandFlag = 0x0;
+void SetShakehandFlag(SHAKE_FLAG flag)
+{
+	
+	g_shakehandFlag |= flag;
+	g_shakehandFlag = g_shakehandFlag << 8;
+}
+
 
 uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
-	static char downBkpCount = 0;
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
     CmmuSendLength = 0;	
     ACK = ERR_NO;
@@ -954,15 +960,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		// }
         case ENTER_BOOTMODE: // 握手三次即可开始烧录
         {
-            HandShakeValue++;
-            if(HandShakeValue>=HandShakes)
-            {
-               /* 关闭时钟 */
-//               BaseTimeSystemInit(BOOT_DISABLE);
-			   #ifndef FLASH_BUFF_ENABLE
-               IAP_FlagWrite(0);//将APP完成标志去掉，如果更新过程失败则下次上电一直维持在BOOT等待更新
-			   #endif
-            }
+			SetShakehandFlag(ENTER_CMD);
+			/* 关闭时钟 */
+//          BaseTimeSystemInit(BOOT_DISABLE);
+			#ifndef FLASH_BUFF_ENABLE
+			IAP_FlagWrite(0);//将APP完成标志去掉，如果更新过程失败则下次上电一直维持在BOOT等待更新
+			#endif
             ACK = ERR_NO;
         }break;
 		// case GET_WRITABLE_AREA:
@@ -997,19 +1000,22 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //        }break;
         case DOWNLOAD_BUFFER:	//擦除APROM所有内容
         {
+			SetShakehandFlag(BUFFER_CMD);
+			if(g_shakehandFlag == BUFFER_FLAG) {
+				ACK = ERR_NO;
+				break;
+			}
 			IAP_Erase_ALL(APROM_BUFF_AREA);
 			BeginAddr = APP_BUFF_ADDR; // 地址修改成缓冲区地址为writeflash做准备
 			g_downLoadStatus = DOWNLOADING_BUFF;
-            ACK = ERR_NO;
+			ACK = ERR_NO;
         }break;
 		case DOWNLOAD_BACKUP:	//擦除APROM所有内容
         {
-			downBkpCount++;
-			if(downBkpCount < 3) {
+			SetShakehandFlag(BACKUP_CMD);
+			if(g_shakehandFlag != BACKUP_FLAG) {
 				ACK = ERR_NO;
 				break;
-			} else {
-				downBkpCount = 0;
 			}
 			if(BACKUP_ADDR >= (88 * 1024)) { // 备份地址不能小于88KB，不能影响缓冲区和app区域
 				if(BACKUP_SIZE > MAX_PACK_NUM) {

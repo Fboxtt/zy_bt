@@ -123,6 +123,7 @@ typedef enum {
 #define ERR_CMD_ID              0x04        // 没有命令
 #define ERR_CHECK               0x06        // 主机某个包校验和错误
 #define ERR_OPERATE             0x07        // 未能完成主机要求的操作
+#define ERR_SHAKEHAND			0x20 		// 握手次数错误
 #define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
@@ -157,7 +158,6 @@ extern uint32_t BootWaitTimeLimit;
 #define  RETURN_FLASH_RAM	    0x05		//选择RAM
 #define  RETURN_FLASH_UID       0x06		//选择UID
 
-#define HandShakes				3			 //握手次数设置
 
 #define BOOT_BOOL_TRUE     1
 #define BOOT_BOOL_FALSE    0
@@ -169,8 +169,8 @@ extern uint32_t BootWaitTimeLimit;
 // #define CommunicationLength1    (64+2+8)
 extern boot_length_t CmmuLength;		             //接收数据长度
 extern boot_cmd_t CMDBuff;		                     //命令存储缓存
-extern boot_data_t CommuData[ReceiveLength1];	 //通讯接收缓存
-extern boot_data_t CmdSendData[SendLength1];//发送缓存
+extern boot_data_t CommuData[ReceiveLength1];	 	//通讯接收缓存
+extern boot_data_t CmdSendData[SendLength1];		//发送缓存
 extern boot_length_t CmmuSendLength;		         //接收数据长度
 extern uint32_t NewBaud;							 //新波特率存储													
 extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
