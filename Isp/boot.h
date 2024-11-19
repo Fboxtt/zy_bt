@@ -204,7 +204,7 @@ uint8_t AppCheckSumCheck(void);
 #define BOOT_VER_ADDR			(BOOT_ADDR + APP_VER_OFFSET)
 
 #define APP_ADDR                0X2000							// APP的起始位置
-#define APP_SIZE                (40 * 1024)						// APP代码最大长度
+#define APP_SIZE                (60 * 1024)						// APP代码最大长度
 #define APP_VER_ADDR			(APP_ADDR + APP_VER_OFFSET) 	// 存储app版本号的地址
 
 #define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        // APP缓存区的起始位置

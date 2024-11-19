@@ -1,9 +1,9 @@
 //************************************************************
 //  Copyright (c) 
-//	ÎÄ¼þÃû³Æ	: boot.c
-//	Ä£¿é¹¦ÄÜ	: bootÖ÷Òª¹¦ÄÜÎÄ¼þ
-//  ¸üÕýÈÕÆÚ	: 2024/9/12
-// 	°æ±¾		: V1.0
+//	æ–‡ä»¶åç§°	: boot.c
+//	æ¨¡å—åŠŸèƒ½	: bootä¸»è¦åŠŸèƒ½æ–‡ä»¶
+//  æ›´æ­£æ—¥æœŸ	: 2024/9/12
+// 	ç‰ˆæœ¬		: V1.0
 //************************************************************
 #include "string.h"
 #include "boot.h"
@@ -13,18 +13,18 @@
 #include "base_time_system.h"
 #include "clk.h"
 
-uint32_t CmmuReadNumber;	//Í¨Ñ¶µ±Ç°¶ÁÈ¡Êý¾ÝÎªÒ»Ö¡ÖÐµÄµÚ¼¸¸öÊý
-uint8_t UartReceFlag;				//UART0½ÓÊÕÍêÒ»Ö¡±êÖ¾Î»
-uint8_t UartSendFlag;				//UART0·¢ËÍÍêÒ»Byte±êÖ¾Î»
+uint32_t CmmuReadNumber;	//é€šè®¯å½“å‰è¯»å–æ•°æ®ä¸ºä¸€å¸§ä¸­çš„ç¬¬å‡ ä¸ªæ•°
+uint8_t UartReceFlag;				//UART0æŽ¥æ”¶å®Œä¸€å¸§æ ‡å¿—ä½
+uint8_t UartSendFlag;				//UART0å‘é€å®Œä¸€Byteæ ‡å¿—ä½
 
 
 
-uint8_t CommunicationCheckNumber;			//Ð£ÑéÎ»
-commu_length_t CmmuLength;						//½ÓÊÕÊý¾Ý³¤¶È
-uint8_t CMDBuff;								//ÃüÁî´æ´¢»º´æ
-commu_data_t CommuData[ReceiveLength1];	//Í¨Ñ¶½ÓÊÕ»º´æ
-commu_data_t CmdSendData[SendLength1];	//·¢ËÍ»º´æ
-commu_length_t CmmuSendLength;		            //·¢ËÍÊý¾Ý³¤¶È
+uint8_t CommunicationCheckNumber;			//æ ¡éªŒä½
+commu_length_t CmmuLength;						//æŽ¥æ”¶æ•°æ®é•¿åº¦
+uint8_t CMDBuff;								//å‘½ä»¤å­˜å‚¨ç¼“å­˜
+commu_data_t CommuData[ReceiveLength1];	//é€šè®¯æŽ¥æ”¶ç¼“å­˜
+commu_data_t CmdSendData[SendLength1];	//å‘é€ç¼“å­˜
+commu_length_t CmmuSendLength;		            //å‘é€æ•°æ®é•¿åº¦
 uint8_t CRCchecksum[4];
 
 uint8_t uart_send_flag = 0;
@@ -47,13 +47,13 @@ volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
 
 
 typedef struct {
-	uint16_t majorVer;			// Ö÷°æ±¾ºÅ
-	uint16_t minorVer;			// ´Î°æ±¾ºÅ
-	uint16_t revisionVer;		// ÐÞ¶©°æ±¾
-	uint16_t year;				// Äê
-	uint8_t month;				// ÔÂ
-	uint8_t day;				// ÈÕ
-	uint8_t reserved[2];		// ±£Áô£¬ÎÞÓÃ
+	uint16_t majorVer;			// ä¸»ç‰ˆæœ¬å·
+	uint16_t minorVer;			// æ¬¡ç‰ˆæœ¬å·
+	uint16_t revisionVer;		// ä¿®è®¢ç‰ˆæœ¬
+	uint16_t year;				// å¹´
+	uint8_t month;				// æœˆ
+	uint8_t day;				// æ—¥
+	uint8_t reserved[2];		// ä¿ç•™ï¼Œæ— ç”¨
 }VerStru;
 
 #ifndef IN_APP
@@ -88,23 +88,23 @@ void UartInit(uint32_t baud)
 void UartSendOneByte(uint8_t input_data)
 {
     SCI0->TXD1 = input_data;
-	//×èÈû£¬µÈµ½±êÖ¾Î»ÇåÁã¼´¿É·¢ËÍÏÂ¸öÊý¾Ý
+	//é˜»å¡žï¼Œç­‰åˆ°æ ‡å¿—ä½æ¸…é›¶å³å¯å‘é€ä¸‹ä¸ªæ•°æ®
 	while (SCI0->SSR02 & (_0040_SCI_UNDER_EXECUTE | _0020_SCI_VALID_STORED))
     {
         ;
     }
 }
-#define SLAVE_ADDRESS 0x00//Éè±¸µØÖ·
-void UartReceData(uartId id)//½ÓÊÕÊý¾ÝÖ¡
+#define SLAVE_ADDRESS 0x00//è®¾å¤‡åœ°å€
+void UartReceData(uartId id)//æŽ¥æ”¶æ•°æ®å¸§
 {
 	if(!UartReceFlag)
 	{		
 		if(id == UART0) {
-			CommuData[CmmuReadNumber] = SCI0->RXD0;		//½«½ÓÊÕÊý¾ÝÔØÈë»º´æ
+			CommuData[CmmuReadNumber] = SCI0->RXD0;		//å°†æŽ¥æ”¶æ•°æ®è½½å…¥ç¼“å­˜
 		}else if(id == UART1) {
-			CommuData[CmmuReadNumber] = SCI0->RXD1;		//½«½ÓÊÕÊý¾ÝÔØÈë»º´æ
+			CommuData[CmmuReadNumber] = SCI0->RXD1;		//å°†æŽ¥æ”¶æ•°æ®è½½å…¥ç¼“å­˜
 		}else if(id == UART2) {
-			CommuData[CmmuReadNumber] = SCI1->RXD2;		//½«½ÓÊÕÊý¾ÝÔØÈë»º´æ
+			CommuData[CmmuReadNumber] = SCI1->RXD2;		//å°†æŽ¥æ”¶æ•°æ®è½½å…¥ç¼“å­˜
 		}
 
 		if(CommuData[0] == SLAVE_ADDRESS)
@@ -112,10 +112,10 @@ void UartReceData(uartId id)//½ÓÊÕÊý¾ÝÖ¡
 			CmmuReadNumber++;
 		}
 		if(CmmuReadNumber >= 3) {
-			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //Êý¾ÝÊýÁ¿³¬¹ý256µÄ»°ÐèÒªÐÞ¸ÄCmmuReadNumberÀàÐÍ
+			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //æ•°æ®æ•°é‡è¶…è¿‡256çš„è¯éœ€è¦ä¿®æ”¹CmmuReadNumberç±»åž‹
 			{
-				/* ¿ªÆô¿´ÃÅ¹·ºÍÇå¹· */
-				UartReceFlag = 1;	  //±íÊ¾½ÓÊÕµ½Ò»Ö¡Êý¾Ý
+				/* å¼€å¯çœ‹é—¨ç‹—å’Œæ¸…ç‹— */
+				UartReceFlag = 1;	  //è¡¨ç¤ºæŽ¥æ”¶åˆ°ä¸€å¸§æ•°æ®
 			}
 		}
 
@@ -123,35 +123,35 @@ void UartReceData(uartId id)//½ÓÊÕÊý¾ÝÖ¡
 }
 void ClearCommu()
 {
-    CommuData[0] = 0; //Çå³ý»º³åÇøÊý¾ÝÍ·£¬×¼±¸ÏÂ´Î´®¿ÚÊý¾Ýµ½À´
-    CmmuReadNumber = 0; //ÖØÐÂ¼ÆÊý£¬×¼±¸ÏÂ´Î´®¿ÚÊý¾Ýµ½À´
-    UartReceFlag = 0; //Çå³ý´«ÊäÍê³É±êÖ¾
+    CommuData[0] = 0; //æ¸…é™¤ç¼“å†²åŒºæ•°æ®å¤´ï¼Œå‡†å¤‡ä¸‹æ¬¡ä¸²å£æ•°æ®åˆ°æ¥
+    CmmuReadNumber = 0; //é‡æ–°è®¡æ•°ï¼Œå‡†å¤‡ä¸‹æ¬¡ä¸²å£æ•°æ®åˆ°æ¥
+    UartReceFlag = 0; //æ¸…é™¤ä¼ è¾“å®Œæˆæ ‡å¿—
 }
 
 void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 {
 	uint8_t i;
 	uint8_t check_sum = 0;
-	UartSendOneByte(SEND_ADDRESS);	//·¢ËÍÖ¡Í·
+	UartSendOneByte(SEND_ADDRESS);	//å‘é€å¸§å¤´
 	
-	UartSendOneByte((Data_len + 5) >> 8);		 				 		//·¢ËÍÊý¾ÝÓò³¤¶È¸ß8Î»
-	UartSendOneByte(Data_len + 5);		 			 	//·¢ËÍÊý¾ÝÓò³¤¶ÈµÍ8Î»
-	UartSendOneByte(SEND_BMS_TYPE);					//·¢ËÍµ¥°åÀàÐÍÂë
-	UartSendOneByte(Command);					 	//·¢ËÍ¿ØÖÆÂë
-	UartSendOneByte(SEND_SHAKE_1);					//ÎÕÊÖ×Ö1
-	UartSendOneByte(SEND_SHAKE_2);					//ÎÕÊÖ×Ö1
-	UartSendOneByte(ACK);							//·¢ËÍÓ¦´ðÂë
+	UartSendOneByte((Data_len + 5) >> 8);		 				 		//å‘é€æ•°æ®åŸŸé•¿åº¦é«˜8ä½
+	UartSendOneByte(Data_len + 5);		 			 	//å‘é€æ•°æ®åŸŸé•¿åº¦ä½Ž8ä½
+	UartSendOneByte(SEND_BMS_TYPE);					//å‘é€å•æ¿ç±»åž‹ç 
+	UartSendOneByte(Command);					 	//å‘é€æŽ§åˆ¶ç 
+	UartSendOneByte(SEND_SHAKE_1);					//æ¡æ‰‹å­—1
+	UartSendOneByte(SEND_SHAKE_2);					//æ¡æ‰‹å­—1
+	UartSendOneByte(ACK);							//å‘é€åº”ç­”ç 
 	check_sum = ((Data_len + 5) >> 8) + (Data_len + 5) + SEND_BMS_TYPE + Command + SEND_SHAKE_1 + SEND_SHAKE_2 + ACK;
-	for(i=0;i<Data_len;i++)	  					 	//·¢ËÍÊý¾ÝÓò
+	for(i=0;i<Data_len;i++)	  					 	//å‘é€æ•°æ®åŸŸ
 	{
 		UartSendOneByte(*(Data+i));
 		check_sum+=	*(Data+i);
 	}	
-	UartSendOneByte(check_sum);						//·¢ËÍÐ£ÑéÎ»µÍ8Î»
-	// UartSendOneByte(CommunicationCommandEnd);		//·¢ËÍÖ¡Î²   
+	UartSendOneByte(check_sum);						//å‘é€æ ¡éªŒä½ä½Ž8ä½
+	// UartSendOneByte(CommunicationCommandEnd);		//å‘é€å¸§å°¾   
 }
 
-uint8_t AnalysisData()//·ÖÎö½ÓÊÕÖ¡µÄÊý¾Ý
+uint8_t AnalysisData()//åˆ†æžæŽ¥æ”¶å¸§çš„æ•°æ®
 {
 	volatile uint8_t cmd = NO_CMD;
     uint32_t data_len;
@@ -161,7 +161,7 @@ uint8_t AnalysisData()//·ÖÎö½ÓÊÕÖ¡µÄÊý¾Ý
 	cmd = CommuData[4];
 
 	ACK = ERR_NO;
-	//¼ÆËãµ¥°åÀàÐÍµ½Êý¾ÝÎ»µÄÐ£ÑéºÍ
+	//è®¡ç®—å•æ¿ç±»åž‹åˆ°æ•°æ®ä½çš„æ ¡éªŒå’Œ
 	for(i=1; i<data_len + 3; i++)
 	{
 	   check_sum+=CommuData[i];
@@ -172,15 +172,15 @@ uint8_t AnalysisData()//·ÖÎö½ÓÊÕÖ¡µÄÊý¾Ý
 	if(cmd != WRITE_FLASH && cmd != REC_ALL_CHECKSUM && CmmuReadNumber != 8) {
 		ACK = ERR_CMD_LEN;
 	}
-	//Ð£Ñé³É¹¦,ÌáÈ¡¿ØÖÆÂë
+	//æ ¡éªŒæˆåŠŸ,æå–æŽ§åˆ¶ç 
 	if(check_sum!=(CommuData[3 + data_len]))
 	{
         ACK = ERR_CHECK;
 	}
 	if(cmd == WRITE_FLASH) {
-		CmmuLength = data_len - TYPE_TO_DATA_LENTH;//È¡³¤¶È
+		CmmuLength = data_len - TYPE_TO_DATA_LENTH;//å–é•¿åº¦
 	} else {
-		CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//È¡³¤¶È
+		CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//å–é•¿åº¦
 	}
 
     return cmd;
@@ -191,14 +191,14 @@ void IRQ11_Handler(void) __attribute__((alias("uart0_interrupt_receive")));
 static void uart0_callback_sendend(void)
 {
     /* Start user code. Do not edit comment generated here */
-    UartSendFlag=1; 	 //BootLoader¡¤???¡À¨º??
+    UartSendFlag=1; 	 //BootLoaderÂ·???Â±Ãª??
     uart_send_flag=1;
     /* End user code. Do not edit comment generated here */
 }
 static void uart1_callback_sendend(void)
 {
     /* Start user code. Do not edit comment generated here */
-    UartSendFlag=1; 	 //BootLoader¡¤???¡À¨º??
+    UartSendFlag=1; 	 //BootLoaderÂ·???Â±Ãª??
     uart_send_flag=1;
     /* End user code. Do not edit comment generated here */
 }
@@ -250,9 +250,9 @@ static void uart0_interrupt_receive(void)
 }
 
 /*flash_operate*/
-const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP¿ÉÕý³£ÔËÐÐ×´Ì¬¡£
-const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//´úÂë»º´æÇø´úÂë¾ÍÐ÷×´Ì¬¡£
-uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//Ð´µ¥×Ö½ÚIAP²Ù×÷
+const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APPå¯æ­£å¸¸è¿è¡ŒçŠ¶æ€ã€‚
+const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//ä»£ç ç¼“å­˜åŒºä»£ç å°±ç»ªçŠ¶æ€ã€‚
+uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//å†™å•å­—èŠ‚IAPæ“ä½œ
 {
     uint8_t *ptr;
     
@@ -271,15 +271,15 @@ uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t 
 	
     if(IAP_ReadOneByte(IAP_IapAddr,area) == Write_IAP_IapData)
     {
-        return 1;	//Ð´Èë×¼È·
+        return 1;	//å†™å…¥å‡†ç¡®
     }
     else
     {
-        return 0;	//Ð´ÈëÓÐÎó
+        return 0;	//å†™å…¥æœ‰è¯¯
     }
 }
 
-uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//Ð´µ¥×Ö½ÚIAP²Ù×÷
+uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//å†™å•å­—èŠ‚IAPæ“ä½œ
 {
     uint8_t *ptr;
     int FLSTS_flagCount = 0;
@@ -290,7 +290,7 @@ uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,ui
     FMC->FLOPMD2 = 0x55;  
     *ptr = Write_IAP_IapData;    
     // polling OVER Flag
-	// Õâ¸öÅÐ¶ÏFLSTSÖµµÄÑ­»·Ò»¹²ÓÐ7Ìõ»ã±àÖ¸Áî
+	// è¿™ä¸ªåˆ¤æ–­FLSTSå€¼çš„å¾ªçŽ¯ä¸€å…±æœ‰7æ¡æ±‡ç¼–æŒ‡ä»¤
     while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0 && FLSTS_flagCount < g_FLSTSMaxCount) {
 		FLSTS_flagCount++;
 	};
@@ -302,15 +302,15 @@ uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,ui
 	}
     if(IAP_ReadOneByte(IAP_IapAddr,area) == Write_IAP_IapData)
     {
-        return 1;	//Ð´Èë×¼È·
+        return 1;	//å†™å…¥å‡†ç¡®
     }
     else
     {
-        return 0;	//Ð´ÈëÓÐÎó
+        return 0;	//å†™å…¥æœ‰è¯¯
     }
 }
 
-void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//²Á³ýÒ»¸ö¿é£¨512B£©
+void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//æ“¦é™¤ä¸€ä¸ªå—ï¼ˆ512Bï¼‰
 {
     FMC->FLERMD = 0x10;
     FMC->FLPROT = 0xF1;
@@ -331,7 +331,7 @@ void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//²Á³ýÒ»¸ö¿é£¨512B£©
     }
     
 }
-void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// ²Á³ý²¢¼ÇÂ¼²¿·ÖÊý¾Ý£¬³ä·ÖÀûÓÃ¿Õ¼ä
+void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// æ“¦é™¤å¹¶è®°å½•éƒ¨åˆ†æ•°æ®ï¼Œå……åˆ†åˆ©ç”¨ç©ºé—´
 {
 	uint8_t buff[512] = {0};
 	uint32_t sectorAddr = IAP_IapAddr & 0xfffffe00;
@@ -418,11 +418,11 @@ void IAP_Reset()
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
 #ifdef IN_APP
-	__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // ÐèÒªÅäÖÃÏòÁ¿±í£¬ÒòÎªÊµ²â·¢ÏÖapp·¢ÉúÖÐ¶ÏÒÀÈ»»áÌøµ½btµÄsystick
+	__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // éœ€è¦é…ç½®å‘é‡è¡¨ï¼Œå› ä¸ºå®žæµ‹å‘çŽ°appå‘ç”Ÿä¸­æ–­ä¾ç„¶ä¼šè·³åˆ°btçš„systick
     __set_MSP(*(__IO uint32_t*) BOOT_ADDR);
 	((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to BOOT
 #else
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // ÐèÒªÅäÖÃÏòÁ¿±í£¬ÒòÎªÊµ²â·¢ÏÖapp·¢ÉúÖÐ¶ÏÒÀÈ»»áÌøµ½btµÄsystick
+	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // éœ€è¦é…ç½®å‘é‡è¡¨ï¼Œå› ä¸ºå®žæµ‹å‘çŽ°appå‘ç”Ÿä¸­æ–­ä¾ç„¶ä¼šè·³åˆ°btçš„systick
     __set_MSP(*(__IO uint32_t*) APP_ADDR);
 	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
 #endif
@@ -432,14 +432,14 @@ void IAP_Reset()
     while(1);
 }
 
-uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area)	//Ð´¶à×Ö½ÚIAP²Ù×÷
+uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area)	//å†™å¤šå­—èŠ‚IAPæ“ä½œ
 {
 	uint32_t i;
 	uint8_t Write_IAP_IapData;
 	for(i=0;i<len;i++)
 	{
 		Write_IAP_IapData = buff[i];
-        if(IAP_WriteOneByte(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//ÅÐ¶ÏÐ´ÈëÊÇ·ñÕýÈ·
+        if(IAP_WriteOneByte(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//åˆ¤æ–­å†™å…¥æ˜¯å¦æ­£ç¡®
 		{
 			return 0;
 		}			
@@ -447,7 +447,7 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint
 	return 1;
 }
 
-uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area)	//¶Áµ¥×Ö½ÚIAP²Ù×÷
+uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area)	//è¯»å•å­—èŠ‚IAPæ“ä½œ
 {
     uint8_t IAP_IapData; 
     IAP_IapData = *(uint32_t *)IAP_IapAddr;
@@ -524,10 +524,10 @@ void IAP_ReadEncUID(uint8_t* buff)
 	}
 }
 #ifdef FLASH_BUFF_ENABLE
-uint8_t IAP_Remap()//½«»º´æÇøµÄ´úÂë×°ÔØÈçÔËÐÐÇø
+uint8_t IAP_Remap()//å°†ç¼“å­˜åŒºçš„ä»£ç è£…è½½å¦‚è¿è¡ŒåŒº
 {
 	uint16_t i;
-	IAP_Erase_ALL(APROM_AREA);//²Á³ýAPPÔËÐÐÇø´úÂë
+	IAP_Erase_ALL(APROM_AREA);//æ“¦é™¤APPè¿è¡ŒåŒºä»£ç 
 	for(i=0;i<APP_BUFF_SIZE;i++)
 	{
 		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
@@ -538,10 +538,10 @@ uint8_t IAP_Remap()//½«»º´æÇøµÄ´úÂë×°ÔØÈçÔËÐÐÇø
 }
 #endif
 
-uint8_t IAP_BkpRemap()//½«»º´æÇøµÄ´úÂë×°ÔØÈçÔËÐÐÇø
+uint8_t IAP_BkpRemap()//å°†ç¼“å­˜åŒºçš„ä»£ç è£…è½½å¦‚è¿è¡ŒåŒº
 {
 	uint16_t i;
-	IAP_Erase_ALL(APROM_AREA);//²Á³ýAPPÔËÐÐÇø´úÂë
+	IAP_Erase_ALL(APROM_AREA);//æ“¦é™¤APPè¿è¡ŒåŒºä»£ç 
 	for(i=0;i<APP_BUFF_SIZE;i++)
 	{
 		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(BACKUP_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
@@ -558,53 +558,53 @@ uint8_t IAP_BkpRemap()//½«»º´æÇøµÄ´úÂë×°ÔØÈçÔËÐÐÇø
 /*boot_core.c*/
 /*boot_core.c*/
 /*boot_core.c*/
-uint8_t BufferFlag = 0;								//´ú±í»º³åÇøÐ£Ñé×´Ì¬
-uint8_t g_BkpFlag = 0;								//´ú±í±¸·ÝÇøµÄÐ£Ñé×´Ì¬
-uint8_t ResetFlag = 0;								//±íÊ¾¸´Î»Ìõ¼þ´ï³É
-uint8_t CurrState = 0;								//µ±Ç°Ð¾Æ¬µÄ×´Ì¬
-uint32_t ReadFlashLength = 0;                       //¶ÁFlashµÄ³¤¶È        
-uint32_t ReadFlashAddr = 0;							//¶ÁFlashµÄÆðÊ¼µØÖ·
+uint8_t BufferFlag = 0;								//ä»£è¡¨ç¼“å†²åŒºæ ¡éªŒçŠ¶æ€
+uint8_t g_BkpFlag = 0;								//ä»£è¡¨å¤‡ä»½åŒºçš„æ ¡éªŒçŠ¶æ€
+uint8_t ResetFlag = 0;								//è¡¨ç¤ºå¤ä½æ¡ä»¶è¾¾æˆ
+uint8_t CurrState = 0;								//å½“å‰èŠ¯ç‰‡çš„çŠ¶æ€
+uint32_t ReadFlashLength = 0;                       //è¯»Flashçš„é•¿åº¦        
+uint32_t ReadFlashAddr = 0;							//è¯»Flashçš„èµ·å§‹åœ°å€
 
-uint32_t g_packetTotalNum = 0;								//ÉÕÂ¼ÎÄ¼þÊý¾Ý°üµÄÊýÁ¿
+uint32_t g_packetTotalNum = 0;								//çƒ§å½•æ–‡ä»¶æ•°æ®åŒ…çš„æ•°é‡
 
 uint32_t CheckSum = 0;
 // uint8_t CheckSum[2] = {0x0, 0x0};
-const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//°æ±¾ºÅ´æ´¢
-boot_addr_t BeginAddr = APP_ADDR;				    //ÆðÊ¼µØÖ·´æ´¢
-uint32_t NewBaud = UartBaud;						//´æ´¢ÐÂ²¨ÌØÂÊµÄ±äÁ¿
+const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//ç‰ˆæœ¬å·å­˜å‚¨
+boot_addr_t BeginAddr = APP_ADDR;				    //èµ·å§‹åœ°å€å­˜å‚¨
+uint32_t NewBaud = UartBaud;						//å­˜å‚¨æ–°æ³¢ç‰¹çŽ‡çš„å˜é‡
 extern commu_data_t CmdSendData[SendLength1];
 uint32_t NextPacketNumber = 0;
 
-const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // Ð¾Æ¬ÐÍºÅ´æ´¢
+const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // èŠ¯ç‰‡åž‹å·å­˜å‚¨
 volatile uint8_t ACK = 0x00;
 
 
 WritableFlag g_flashWritableFlag = {0};
 
-/* boot³õÊ¼»¯¹³×Óº¯Êý£¬Çë½«³õÊ¼»¯´úÂëÐ´Èë¸Ãº¯Êý */
+/* bootåˆå§‹åŒ–é’©å­å‡½æ•°ï¼Œè¯·å°†åˆå§‹åŒ–ä»£ç å†™å…¥è¯¥å‡½æ•° */
 void BootInit()
 {
 	// UartInit(UartBaud);
 	g_FLSTSMaxCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
-	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // È·ÈÏÇøÓòAPPÊÇ·ñ¿ÉÐ´
+	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // ç¡®è®¤åŒºåŸŸAPPæ˜¯å¦å¯å†™
 		g_flashWritableFlag.bit.appArea = 1;
 	}
-	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // È·ÈÏÇøÓòBUFFÊÇ·ñ¿ÉÐ´
+	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // ç¡®è®¤åŒºåŸŸBUFFæ˜¯å¦å¯å†™
 		g_flashWritableFlag.bit.bufferArea = 1;
 	}
-	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // È·ÈÏÇøÓòBACKUPÊÇ·ñ¿ÉÐ´
+	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // ç¡®è®¤åŒºåŸŸBACKUPæ˜¯å¦å¯å†™
 		g_flashWritableFlag.bit.backupArea = 1;
 	}
 	CurrState = IAP_CheckAPP();
-    if(CurrState==1)//ÅÐ¶ÏAPPÊÇ·ñÍêÕû£¬ÍêÕûÔò¿ªÆô¶¨Ê±
+    if(CurrState==1)//åˆ¤æ–­APPæ˜¯å¦å®Œæ•´ï¼Œå®Œæ•´åˆ™å¼€å¯å®šæ—¶
     {
 //        BaseTimeSystemInit(BOOT_ENABLE);
     }
 	#ifdef FLASH_BUFF_ENABLE
-	else if(CurrState==2)//½«»º´æÇø¼ÓÔØµ½ÔËÐÐÇøºóÖ±½ÓÔËÐÐAPP
+	else if(CurrState==2)//å°†ç¼“å­˜åŒºåŠ è½½åˆ°è¿è¡ŒåŒºåŽç›´æŽ¥è¿è¡ŒAPP
 	{
-		// IAP_Remap();//½«´úÂë»º´æÇøµÄÄÚÈÝ¼ÓÔØÈë³ÌÐòÔËÐÐÇø
-		// IAP_FlagWrite(1);//ÉèÖÃÎªAPP¿ÉÔËÐÐÌ¬
+		// IAP_Remap();//å°†ä»£ç ç¼“å­˜åŒºçš„å†…å®¹åŠ è½½å…¥ç¨‹åºè¿è¡ŒåŒº
+		// IAP_FlagWrite(1);//è®¾ç½®ä¸ºAPPå¯è¿è¡Œæ€
 //        IAP_Reset();
 	}
 	#endif
@@ -625,7 +625,7 @@ void BootInit()
 //	{
 //		return;
 //	}
-//    //ARMÎªÐ¡¶ËÄ£Ê½ÐèÒª½«Ã¿¸ö×ÖµÄ¸ßÎ»ºÍµÍÎ»¶Ôµ÷
+//    //ARMä¸ºå°ç«¯æ¨¡å¼éœ€è¦å°†æ¯ä¸ªå­—çš„é«˜ä½å’Œä½Žä½å¯¹è°ƒ
 //    for(i=0;i<(CmmuLength/4);i=i+1)
 //	{		
 //        for(k=0;k<4;k++)
@@ -720,7 +720,7 @@ void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area)
 {
 	getCheckPara(area);
 	IAP_Erase_Some(numAddr,ALL_FLAG_LENTH);
-	PacketTotalNumWrite(totalNum, numAddr); // appÐ£ÑéºÍ¿¿¶ÁÈ¡buffer»òÕßbackup£¬buffer¿¿ÍâÃæÊäÈë£¬backup¿¿ÍâÃæÊäÈë
+	PacketTotalNumWrite(totalNum, numAddr); // appæ ¡éªŒå’Œé è¯»å–bufferæˆ–è€…backupï¼Œbufferé å¤–é¢è¾“å…¥ï¼Œbackupé å¤–é¢è¾“å…¥
 	All_CheckSum_Write(chkSum, checkAddr);
 }
 uint8_t CheckSumCheck(int area)
@@ -767,7 +767,7 @@ uint8_t CheckUID()
 void ReplyEnterBoot(void)
 {
 	CmmuSendLength = 0;
-	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // »ØÓ¦ÉÏÎ»»ú
+	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // å›žåº”ä¸Šä½æœº
 }
 
 void AppRestore()
@@ -778,7 +778,7 @@ void AppRestore()
 			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_AREA);
 			if(CheckSumCheck(APROM_AREA) == 1)
 			{
-				ACK = ERR_NO; //»ØÓ¦ÍË³öÁËBootloader
+				ACK = ERR_NO; //å›žåº”é€€å‡ºäº†Bootloader
 				ResetFlag = 1;
 			} else {
 				ACK = ERR_ALL_CHECK;
@@ -790,11 +790,11 @@ void AppRestore()
 	} else if(g_BkpFlag == 1) {
 		g_BkpFlag = 0;
 		if(IAP_BkpRemap() == 1) {
-			// ´Ó±¸·ÝÇøÖÐ¶ÁÈ¡Ð£ÑéºÍÊý¾Ý£¬²¢Ð´Èëµ½APPÇøÓòÖÐ
+			// ä»Žå¤‡ä»½åŒºä¸­è¯»å–æ ¡éªŒå’Œæ•°æ®ï¼Œå¹¶å†™å…¥åˆ°APPåŒºåŸŸä¸­
 			CheckSumWrite(PacketTotalNumRead(BACKUP_TOTAL_NUM_ADRESS), All_CheckSum_Read(BACKUP_CHECKSUM_ADRESS), APROM_AREA);
 			if(CheckSumCheck(APROM_AREA) == 1)
 			{
-				ACK = ERR_NO; //»ØÓ¦ÍË³öÁËBootloader
+				ACK = ERR_NO; //å›žåº”é€€å‡ºäº†Bootloader
 				ResetFlag = 1;
 			} else {
 				ACK = ERR_ALL_CHECK;
@@ -809,23 +809,23 @@ void BootCheckReset()
     if(ResetFlag==1)
     {
         ResetFlag = 0;	
-		BaseTimeSystemInit(BOOT_DISABLE);//¹Ø±Õ¶¨Ê±Æ÷
+		BaseTimeSystemInit(BOOT_DISABLE);//å…³é—­å®šæ—¶å™¨
 
 		// #ifdef FLASH_BUFF_ENABLE
 		// if(CurrState == 2)
 		// {
-		// 	IAP_FlagWrite(2);//´úÂë»º´æÇø¾ÍÐ÷±êÖ¾
+		// 	IAP_FlagWrite(2);//ä»£ç ç¼“å­˜åŒºå°±ç»ªæ ‡å¿—
 		// 	//IAP_Remap();
 		// }
 		// if(CurrState == 0)
 		// {
-		// 	IAP_FlagWrite(2);//APP¿ÉÕý³£ÔËÐÐ±êÖ¾
+		// 	IAP_FlagWrite(2);//APPå¯æ­£å¸¸è¿è¡Œæ ‡å¿—
 		// }
 		// #else
-        // IAP_FlagWrite(1);//APP¿ÉÕý³£ÔËÐÐ±êÖ¾
+        // IAP_FlagWrite(1);//APPå¯æ­£å¸¸è¿è¡Œæ ‡å¿—
 		// #endif	
 					
-        IAP_Reset();//¸´Î»½øÈëAPP
+        IAP_Reset();//å¤ä½è¿›å…¥APP
     }
 }
 
@@ -838,8 +838,8 @@ void GetVer(uint32_t addr, int lenth)
 		case APP_BUFF_VER_ADDR: area 	= APROM_BUFF_AREA;		break;
 		case BACKUP_VER_ADDR: 	area 	= APROM_BACKUP_AREA; 	break;
 	}
-	// ÉÕÂ¼ÇøÐèÒªÅÐ¶Ï¼ìÑéºÍ
-	// Èç¹ûÐ£ÑéºÍ²»ÕýÈ·£¬Ôò²»·µ»Ø°æ±¾ºÅ£¬¾­²âÊÔºó¹¦ÄÜ¿ÉÓÃ¡£
+	// çƒ§å½•åŒºéœ€è¦åˆ¤æ–­æ£€éªŒå’Œ
+	// å¦‚æžœæ ¡éªŒå’Œä¸æ­£ç¡®ï¼Œåˆ™ä¸è¿”å›žç‰ˆæœ¬å·ï¼Œç»æµ‹è¯•åŽåŠŸèƒ½å¯ç”¨ã€‚
 	if(area == 0 || CheckSumCheck(area) == 1) {
 		for(int i = 0; i < lenth; i++) {
 			CmdSendData[CmmuSendLength + i] = *(p_addr + i);
@@ -878,16 +878,16 @@ void SetShakehandFlag(SHAKE_FLAG flag)
 uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
-    // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//ÃüÁîÖ´ÐÐ½á¹û»º´æ
+    // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//å‘½ä»¤æ‰§è¡Œç»“æžœç¼“å­˜
     CmmuSendLength = 0;	
     ACK = ERR_NO;
 	TVER* hexVer = 0x0;
-    switch(cmd)//¸ù¾ÝÃüÁîÖ´ÐÐÏàÓ¦µÄ¶¯×÷
+    switch(cmd)//æ ¹æ®å‘½ä»¤æ‰§è¡Œç›¸åº”çš„åŠ¨ä½œ
     {
-//        case READ_BOOT_CODE_INF: // ¶ÁÈ¡°æ±¾ºÅ
+//        case READ_BOOT_CODE_INF: // è¯»å–ç‰ˆæœ¬å·
 //        {
 //			
-//			// BeginAddr = APP_ADDR; // µØÖ·ÐÞ¸Ä³É»º³åÇøµØÖ·Îªwriteflash×ö×¼±¸
+//			// BeginAddr = APP_ADDR; // åœ°å€ä¿®æ”¹æˆç¼“å†²åŒºåœ°å€ä¸ºwriteflashåšå‡†å¤‡
 //			IAP_Erase_ALL(APROM_AREA);
 //            ACK = ERR_NO;
 //        }break;
@@ -924,7 +924,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		// }
 		case PC_GET_INF:
 		{
-			// BT°æ±¾ºÅ»ñÈ¡
+			// BTç‰ˆæœ¬å·èŽ·å–
 			uint32_t pcValue = get_pc();
 			GetVer(BOOT_VER_ADDR,					sizeof(VerStru));
 			GetVer(APP_VER_ADDR,					sizeof(VerStru));
@@ -936,7 +936,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			ACK = ERR_NO;
 		}
 		break;
-        // case READ_IC_INF: // ¶ÁÈ¡Ð¾Æ¬ÐÍºÅ
+        // case READ_IC_INF: // è¯»å–èŠ¯ç‰‡åž‹å·
         // {
         //     for(i=0;i < IC_TYPE_LENTH;i++)
         //     {
@@ -958,13 +958,13 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		// 	CmmuSendLength = sizeof(VerStru);
 		// 	ACK = ERR_NO;
 		// }
-        case ENTER_BOOTMODE: // ÎÕÊÖÈý´Î¼´¿É¿ªÊ¼ÉÕÂ¼
+        case ENTER_BOOTMODE: // æ¡æ‰‹ä¸‰æ¬¡å³å¯å¼€å§‹çƒ§å½•
         {
 			SetShakehandFlag(ENTER_CMD);
-			/* ¹Ø±ÕÊ±ÖÓ */
+			/* å…³é—­æ—¶é’Ÿ */
 //          BaseTimeSystemInit(BOOT_DISABLE);
 			#ifndef FLASH_BUFF_ENABLE
-			IAP_FlagWrite(0);//½«APPÍê³É±êÖ¾È¥µô£¬Èç¹û¸üÐÂ¹ý³ÌÊ§°ÜÔòÏÂ´ÎÉÏµçÒ»Ö±Î¬³ÖÔÚBOOTµÈ´ý¸üÐÂ
+			IAP_FlagWrite(0);//å°†APPå®Œæˆæ ‡å¿—åŽ»æŽ‰ï¼Œå¦‚æžœæ›´æ–°è¿‡ç¨‹å¤±è´¥åˆ™ä¸‹æ¬¡ä¸Šç”µä¸€ç›´ç»´æŒåœ¨BOOTç­‰å¾…æ›´æ–°
 			#endif
             ACK = ERR_NO;
         }break;
@@ -980,7 +980,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
 //        }break;
 
-//        case SET_ADDRESS://ÉèÖÃ»ùµØÖ·ÅäÖÃÃüÁî
+//        case SET_ADDRESS://è®¾ç½®åŸºåœ°å€é…ç½®å‘½ä»¤
 //        {
 //            //BeginAddr = CommuData[6]*256+CommuData[7];
 //			BeginAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
@@ -993,12 +993,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //            {
 //                temp = APROM_AREA;
 //                #ifdef FLASH_BUFF_ENABLE
-//                BeginAddr = APP_BUFF_ADDR;//½«´úÂë´«µ½»º´æÇøÈ¥
+//                BeginAddr = APP_BUFF_ADDR;//å°†ä»£ç ä¼ åˆ°ç¼“å­˜åŒºåŽ»
 //                #endif		
 //            }            			
 //            cmd_buff = DEAL_SUCCESS;			
 //        }break;
-        case DOWNLOAD_BUFFER:	//²Á³ýAPROMËùÓÐÄÚÈÝ
+        case DOWNLOAD_BUFFER:	//æ“¦é™¤APROMæ‰€æœ‰å†…å®¹
         {
 			SetShakehandFlag(BUFFER_CMD);
 			if(g_shakehandFlag == BUFFER_FLAG) {
@@ -1006,23 +1006,23 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				break;
 			}
 			IAP_Erase_ALL(APROM_BUFF_AREA);
-			BeginAddr = APP_BUFF_ADDR; // µØÖ·ÐÞ¸Ä³É»º³åÇøµØÖ·Îªwriteflash×ö×¼±¸
+			BeginAddr = APP_BUFF_ADDR; // åœ°å€ä¿®æ”¹æˆç¼“å†²åŒºåœ°å€ä¸ºwriteflashåšå‡†å¤‡
 			g_downLoadStatus = DOWNLOADING_BUFF;
 			ACK = ERR_NO;
         }break;
-		case DOWNLOAD_BACKUP:	//²Á³ýAPROMËùÓÐÄÚÈÝ
+		case DOWNLOAD_BACKUP:	//æ“¦é™¤APROMæ‰€æœ‰å†…å®¹
         {
 			SetShakehandFlag(BACKUP_CMD);
 			if(g_shakehandFlag != BACKUP_FLAG) {
 				ACK = ERR_NO;
 				break;
 			}
-			if(BACKUP_ADDR >= (88 * 1024)) { // ±¸·ÝµØÖ·²»ÄÜÐ¡ÓÚ88KB£¬²»ÄÜÓ°Ïì»º³åÇøºÍappÇøÓò
+			if(BACKUP_ADDR >= (88 * 1024)) { // å¤‡ä»½åœ°å€ä¸èƒ½å°äºŽ88KBï¼Œä¸èƒ½å½±å“ç¼“å†²åŒºå’ŒappåŒºåŸŸ
 				if(BACKUP_SIZE > MAX_PACK_NUM) {
 					ACK = ERR_OPERATE;
 				} else {
 					IAP_Erase_ALL(APROM_BACKUP_AREA);
-					BeginAddr = BACKUP_ADDR; // µØÖ·ÐÞ¸Ä³É»º³åÇøµØÖ·Îªwriteflash×ö×¼±¸
+					BeginAddr = BACKUP_ADDR; // åœ°å€ä¿®æ”¹æˆç¼“å†²åŒºåœ°å€ä¸ºwriteflashåšå‡†å¤‡
 					g_downLoadStatus = DOWNLOADING_BKP;
 					ACK = ERR_NO;
 				}
@@ -1030,7 +1030,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				ACK = ERR_OPERATE;
 			}
         }break;
-		case WRITE_FLASH:// Ð´Èëapp£¬³É¹¦ºó½øÈëapp
+		case WRITE_FLASH:// å†™å…¥appï¼ŒæˆåŠŸåŽè¿›å…¥app
 		{
 			#ifdef ENCRYPT_ENABLE
 			if(temp==UID_ENC_AREA)
@@ -1065,7 +1065,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 			CmmuSendLength = PACKET_ID_LENTH;
 		}break;        
-		case REC_ALL_CHECKSUM: //½ÓÊÜhexÎÄ¼þÐ£ÑéºÍ
+		case REC_ALL_CHECKSUM: //æŽ¥å—hexæ–‡ä»¶æ ¡éªŒå’Œ
         {
 			for(int i = 0; i < PACKET_ID_LENTH; i++) {
 				CmdSendData[i] = CommuData[i + 7];
@@ -1077,7 +1077,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			// PacketTotalNumWrite(g_packetTotalNum, APP_TOTAL_NUM_ADRESS);
 			// if(AppCheckSumCheck() == 1)
 			// {
-			// 	ACK = ERR_NO; //»ØÓ¦ÍË³öÁËBootloader
+			// 	ACK = ERR_NO; //å›žåº”é€€å‡ºäº†Bootloader
 			// } else {
 			// 	ACK = ERR_ALL_CHECK;
 			// }
@@ -1086,8 +1086,8 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				g_packetTotalNum = 0;
 				if(CheckSumCheck(APROM_BUFF_AREA) == 1)
 				{
-					ACK = ERR_NO; //»ØÓ¦ÍË³öÁËBootloader
-					CheckSumWrite(0, 0, APROM_AREA); // ½«appÇøÓòÉèÖÃ³É·Ç·¨
+					ACK = ERR_NO; //å›žåº”é€€å‡ºäº†Bootloader
+					CheckSumWrite(0, 0, APROM_AREA); // å°†appåŒºåŸŸè®¾ç½®æˆéžæ³•
 					BufferFlag = 1;
 					g_downLoadStatus = DOWNLOADED_BUFF;
 				} else {
@@ -1098,7 +1098,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				g_packetTotalNum = 0;
 				if(CheckSumCheck(APROM_BACKUP_AREA) == 1)
 				{
-					ACK = ERR_NO; //»ØÓ¦ÍË³öÁËBootloader
+					ACK = ERR_NO; //å›žåº”é€€å‡ºäº†Bootloader
 					g_downLoadStatus = DOWNLOADED_BUFF;
 				} else {
 					ACK = ERR_ALL_CHECK;
@@ -1108,19 +1108,19 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 
         }break;        
-//        case ENTER_APPMODE: //ÔËÐÐÓÃ»§´úÂë
+//        case ENTER_APPMODE: //è¿è¡Œç”¨æˆ·ä»£ç 
 //        {
-//            cmd_buff = DEAL_SUCCESS; //»ØÓ¦ÍË³öÁËBootloader 
+//            cmd_buff = DEAL_SUCCESS; //å›žåº”é€€å‡ºäº†Bootloader 
 //            #ifdef FLASH_BUFF_ENABLE            
-//			CurrState = 2;//±íÊ¾´úÂë»º´æÒÑÏÂÔØÍê³É
+//			CurrState = 2;//è¡¨ç¤ºä»£ç ç¼“å­˜å·²ä¸‹è½½å®Œæˆ
 //            #endif
 //            ResetFlag = 1;
 //        }break;        
-        case NO_CMD://ÎÞ²Ù×÷
+        case NO_CMD://æ— æ“ä½œ
         {
             ACK = ERR_CMD_ID;
         }break;
-        case READ_FLASH: // ¶ÁÈ¡flash£¬ÔÝÎ´Ê¹ÓÃ´Ë¹¦ÄÜ
+        case READ_FLASH: // è¯»å–flashï¼Œæš‚æœªä½¿ç”¨æ­¤åŠŸèƒ½
         {            
 			//ReadFlashAddr = CommuData[6]*256+CommuData[7];
             ReadFlashAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
@@ -1140,12 +1140,12 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         }break;
 		case RESTORE_BACKUP:
 		{
-			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) { // ÅÐ¶ÏBACKUPÇøÓòÊÇ·ñÓÐÊý¾Ý
+			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) { // åˆ¤æ–­BACKUPåŒºåŸŸæ˜¯å¦æœ‰æ•°æ®
 				ACK = ERR_AREA_BLANK;
 				break;
 			}
-			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) { // Ð£ÑéBACKUPÇøÓòÐ£ÑéºÍ
-				g_BkpFlag = 1;							// Ð£ÑéºÍÕýÈ·£¬¿ÉÒÔ¿ªÊ¼Ç¨ÒÆHEXÊý¾Ý
+			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) { // æ ¡éªŒBACKUPåŒºåŸŸæ ¡éªŒå’Œ
+				g_BkpFlag = 1;							// æ ¡éªŒå’Œæ­£ç¡®ï¼Œå¯ä»¥å¼€å§‹è¿ç§»HEXæ•°æ®
 				ACK = ERR_NO;
 			} else {
 				ACK = ERR_ALL_CHECK;
@@ -1178,7 +1178,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 
 void BootWaitTimeInit(void)
 {
-	BootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // ½øÈëAPPµÈ´ý¿ªÊ¼¼ÆÊ±
+	BootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // è¿›å…¥APPç­‰å¾…å¼€å§‹è®¡æ—¶
 	BootWaitTime = 0;
 }
 
@@ -1188,21 +1188,21 @@ void BootProcess(void)
 	AppRestore();
 	if(UartReceFlag)
 	{
-		CMDBuff = AnalysisData();  // ·ÖÎö´ÓÖÐ¶Ïº¯Êý×Ü»ñÈ¡µÄÊý¾Ý°ü£¬ ·µ»Øcmd       
+		CMDBuff = AnalysisData();  // åˆ†æžä»Žä¸­æ–­å‡½æ•°æ€»èŽ·å–çš„æ•°æ®åŒ…ï¼Œ è¿”å›žcmd       
 		ClearCommu();
 		if (ACK == ERR_NO) {
-			result_cmd = BootCmdRun(CMDBuff);  // ¸ù¾ÝcmdÔËÐÐÏìÓ¦º¯Êý
+			result_cmd = BootCmdRun(CMDBuff);  // æ ¹æ®cmdè¿è¡Œå“åº”å‡½æ•°
 		}
-		CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // »ØÓ¦ÉÏÎ»»ú
+		CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // å›žåº”ä¸Šä½æœº
 		result_cmd = BOOT_BOOL_FALSE;
 		CMDBuff = 0; 
 	}
 	#ifndef IN_APP
 	if(BootWaitTime > BootWaitTimeLimit) {
-		if(CheckSumCheck(APROM_AREA) == 1) { // Èç¹ûÊ±¼äµ½£¬Ð£ÑéAppÊý¾Ý£¬ÕýÈ·Ôò½øÈëAPP
+		if(CheckSumCheck(APROM_AREA) == 1) { // å¦‚æžœæ—¶é—´åˆ°ï¼Œæ ¡éªŒAppæ•°æ®ï¼Œæ­£ç¡®åˆ™è¿›å…¥APP
 			ResetFlag = 1;
 		} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
-			// Èç¹ûÒòÎªÒâÍâÊ¹APPËð»µ£¬½«»º³åÇøAPP¸´ÖÆ¹ýÀ´
+			// å¦‚æžœå› ä¸ºæ„å¤–ä½¿APPæŸåï¼Œå°†ç¼“å†²åŒºAPPå¤åˆ¶è¿‡æ¥
 			BufferFlag = 1;
 			ResetFlag = 0;
 		// } else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
@@ -1212,7 +1212,7 @@ void BootProcess(void)
 		BootWaitTime = 0;
 	}
 	#endif
-	BootCheckReset(); // Ìø×ªº¯Êý£¬Ìõ¼þÂú×ã¼´¿ÉÌø×ªÈëapp
+	BootCheckReset(); // è·³è½¬å‡½æ•°ï¼Œæ¡ä»¶æ»¡è¶³å³å¯è·³è½¬å…¥app
 }
 
 void UART1_Start(void)
@@ -1224,7 +1224,7 @@ void UART1_Start(void)
     INTC_ClearPendingIRQ(SR1_IRQn); /* clear INTSR1 interrupt flag */
     NVIC_ClearPendingIRQ(ST1_IRQn); /* clear INTST1 interrupt flag */
     NVIC_ClearPendingIRQ(SR1_IRQn); /* clear INTSR1 interrupt flag */
-    INTC_DisableIRQ(ST1_IRQn);       /* enable INTST1 interrupt */	// È¡Ïû·¢ËÍÖÐ¶Ï
+    INTC_DisableIRQ(ST1_IRQn);       /* enable INTST1 interrupt */	// å–æ¶ˆå‘é€ä¸­æ–­
     INTC_EnableIRQ(SR1_IRQn);       /* enable INTSR1 interrupt */
 }
 
@@ -1252,7 +1252,7 @@ MD_STATUS UART1_Init(uint32_t freq, uint32_t baud)
     MD_STATUS status;
     CGC->PER0 |= CGC_PER0_SCI0EN_Msk;
 	
-	SCI0->SPS0 &= ~SCI0_SPS0_PRS00_Msk;	//Ñ¡ÔñÍ¨µÀ0µÄ´®¿ÚÊ±ÖÓ£»
+	SCI0->SPS0 &= ~SCI0_SPS0_PRS00_Msk;	//é€‰æ‹©é€šé“0çš„ä¸²å£æ—¶é’Ÿï¼›
 	//SCI0->SPS0 &= ~SCI0_SPS0_PRS00_Msk;
     
     SCI0->ST0 |= _0008_SCI_CH3_STOP_TRG_ON | _0004_SCI_CH2_STOP_TRG_ON;
@@ -1282,7 +1282,7 @@ MD_STATUS UART1_Init(uint32_t freq, uint32_t baud)
     SCI0->SOL0 &= (uint16_t)~_0004_SCI_CHANNEL2_INVERTED;
     SCI0->SOE0 |= _0004_SCI_CH2_OUTPUT_ENABLE;
     /* Set TxD1 pin */
-    TXD1_PORT_SETTING();	//ÖØ¶¨Î»µ½P72/P73
+    TXD1_PORT_SETTING();	//é‡å®šä½åˆ°P72/P73
     /* Set RxD1 pin */
     RXD1_PORT_SETTING();
     /* UART1 Start, Setting baud rate */
@@ -1372,7 +1372,7 @@ TGPIO PIN_CEN 	= {PORT1,PIN7,OUTPUT};		//ok
 TGPIO PIN_RED   = {PORT12,PIN0,OUTPUT};		//ok
 TGPIO PIN_GREEN = {PORT4,PIN1,OUTPUT};		//ok
 
-TGPIO PIN_FUSE_EN 	= {PORT1,PIN1,OUTPUT};	//Î´²âÊÔ
+TGPIO PIN_FUSE_EN 	= {PORT1,PIN1,OUTPUT};	//æœªæµ‹è¯•
 
 
 
@@ -1385,49 +1385,49 @@ TGPIO PIN_DEBUG ={PORT14,PIN6,OUTPUT};
 
 
 /********************************************************************************
-GPIO²Ù×÷¶¨Òå,ËùÓÐÒý½ÅµçÆ½ÐèÒª¶¨Òå
+GPIOæ“ä½œå®šä¹‰,æ‰€æœ‰å¼•è„šç”µå¹³éœ€è¦å®šä¹‰
 ********************************************************************************/
-//¶¨ÒåµçÔ´¿ØÖÆ
+//å®šä¹‰ç”µæºæŽ§åˆ¶
 #define  	VB_ON		(PORT_SetBit(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin))	 
 #define		VB_OFF		(PORT_ClrBit(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin))
 #define 	IS_VB_ON	(PORT_GetBit(PIN_VBCTL.emGPIOx,PIN_VBCTL.emPin))
 
-//¶¨Òå°´¼üÊäÈë
+//å®šä¹‰æŒ‰é”®è¾“å…¥
 #define		IS_SWITCH_PUSH	((PORT_GetBit(PIN_SW.emGPIOx,PIN_SW.emPin)))
 
-//¼ÓÈÈÆ÷¿ªÆôÓë¹Ø±Õ
+//åŠ çƒ­å™¨å¼€å¯ä¸Žå…³é—­
 #define  	HEAT_ON		(PORT_SetBit(PIN_HEATE_N.emGPIOx,	PIN_HEATE_N.emPin))	 
 #define		HEAT_OFF	(PORT_ClrBit(PIN_HEATE_N.emGPIOx,	PIN_HEATE_N.emPin))
 #define		IS_HEAT_EN	((PORT_GetBit(PIN_HEATE_N.emGPIOx,PIN_HEATE_N.emPin)))
 
-//ÂÌµÆLED
+//ç»¿ç¯LED
 #define		GREEN_ON		(PORT_ClrBit  (PIN_GREEN.emGPIOx,	PIN_GREEN.emPin))
 #define		GREEN_OFF		(PORT_SetBit(PIN_GREEN.emGPIOx,	PIN_GREEN.emPin))
 #define		IS_GREEN_ON		(!PORT_GetBit(PIN_GREEN.emGPIOx,PIN_GREEN.GPIO_Pin))
 #define		GREEN_REVERSE	(PORT_ToggleBit(PIN_GREEN.emGPIOx,	PIN_GREEN.emPin))	
 
-//ºìµÆLED
+//çº¢ç¯LED
 #define		RED_ON			(PORT_ClrBit(PIN_RED.emGPIOx,	PIN_RED.emPin))
 #define		RED_OFF			(PORT_SetBit(PIN_RED.emGPIOx,	PIN_RED.emPin))
 #define		IS_RED_ON		(!PORT_GetBit(PIN_RED.emGPIOx,PIN_RED.emPin))
 #define		RED_REVERSE		(PORT_ToggleBit(PIN_RED.emGPIOx,	PIN_RED.emPin))		
 #define		LED_ALL_REVERSE	{GREEN_REVERSE;RED_REVERSE}	
 
-//·ÂÕæLED
+//ä»¿çœŸLED
 #define		DEBUG_LED_ON		(PORT_SetBit(PIN_DEBUG.emGPIOx,	PIN_DEBUG.emPin))
 #define		DEBUG_LED_OFF		(PORT_ClrBit(PIN_DEBUG.emGPIOx,	PIN_DEBUG.emPin))
 
-//¼ÓÈÈÆ÷±£ÏÕË¿¿ØÖÆ£¬¸ßÓÐÐ§
+//åŠ çƒ­å™¨ä¿é™©ä¸æŽ§åˆ¶ï¼Œé«˜æœ‰æ•ˆ
 //#define 	HEATFUSE_ON		(PORT_ClrBit(PIN_HEATFUSE_EN.emGPIOx,	PIN_HEATFUSE_EN.emPin))
 //#define 	HEATFUSE_OFF	(PORT_SetBit(PIN_HEATFUSE_EN.emGPIOx,	PIN_HEATFUSE_EN.emPin))
 //#define		IS_HEATFUSE_OFF  ((PORT_GetBit(PIN_HEATFUSE_EN.emGPIOx,PIN_HEATFUSE_EN.emPin)))
 
-//Èý¶Ë±£ÏÕË¿¿ØÖÆ,¸ßÎ»ÈÛ¶Ï
+//ä¸‰ç«¯ä¿é™©ä¸æŽ§åˆ¶,é«˜ä½ç†”æ–­
 #define	  FUSE_OFF	(PORT_SetBit(PIN_FUSE_EN.emGPIOx,	PIN_FUSE_EN.emPin))
 #define		FUSE_ON	    (PORT_ClrBit(PIN_FUSE_EN.emGPIOx,	PIN_FUSE_EN.emPin))
 #define		IS_FUSE_OFF	(PORT_GetBit(PIN_FUSE_EN.emGPIOx,PIN_FUSE_EN.emPin))
 
-//485·¢ËÍÊ¹ÄÜ
+//485å‘é€ä½¿èƒ½
 //#define		RS485_SEND_ENABLE	(PORT_SetBit(PIN_485DE.emGPIOx,	PIN_485DE.emPin))
 //#define		RS485_SEND_DISABLE	(PORT_ClrBit(PIN_485DE.emGPIOx,	PIN_485DE.emPin))
 
@@ -1435,27 +1435,27 @@ GPIO²Ù×÷¶¨Òå,ËùÓÐÒý½ÅµçÆ½ÐèÒª¶¨Òå
 //#define		PACKADC_DISABLE	(PORT_ClrBit(PIN_PACKADC_EN.emGPIOx,	PIN_PACKADC_EN.emPin))
 //#define		PACKADC_ENABLE	(PORT_SetBit(PIN_PACKADC_EN.emGPIOx,	PIN_PACKADC_EN.emPin))
 
-//³äµçÏÞÁ÷
+//å……ç”µé™æµ
 #define 	C_ON		(PORT_SetBit(PIN_CEN.emGPIOx,	PIN_CEN.emPin))
 #define 	C_OFF		(PORT_ClrBit(PIN_CEN.emGPIOx,	PIN_CEN.emPin))
 #define		IS_C_ON		(PORT_GetBit(PIN_CEN.emGPIOx,PIN_CEN.emPin))
 
-//·ÅµçÏÞÁ÷
+//æ”¾ç”µé™æµ
 #define 	CD_ON		(PORT_SetBit(PIN_CDEN.emGPIOx,	PIN_CDEN.emPin))
 #define 	CD_OFF		(PORT_ClrBit(PIN_CDEN.emGPIOx,	PIN_CDEN.emPin))
 #define		IS_CD_ON	(PORT_GetBit(PIN_CDEN.emGPIOx,PIN_CDEN.emPin))
 
-//3V3 485µçÔ´Ê¹ÄÜ
-#define 	PIN_COM3V3_ON		(PORT_SetBit(PIN_COM3V3_EN.emGPIOx,	PIN_COM3V3_EN.emPin))  //µçÔ´¹Ø±Õ
-#define 	PIN_COM3V3_OFF		(PORT_ClrBit(PIN_COM3V3_EN.emGPIOx,	PIN_COM3V3_EN.emPin))  //µçÔ´¿ªÆô
+//3V3 485ç”µæºä½¿èƒ½
+#define 	PIN_COM3V3_ON		(PORT_SetBit(PIN_COM3V3_EN.emGPIOx,	PIN_COM3V3_EN.emPin))  //ç”µæºå…³é—­
+#define 	PIN_COM3V3_OFF		(PORT_ClrBit(PIN_COM3V3_EN.emGPIOx,	PIN_COM3V3_EN.emPin))  //ç”µæºå¼€å¯
 #define		IS_COM3V3_ON	((PORT_GetBit(PIN_COM3V3_EN.emGPIOx,PIN_COM3V3_EN.emPin)))
 
-//5V ¸ôÀëµçÔ´Ê¹ÄÜ
+//5V éš”ç¦»ç”µæºä½¿èƒ½
 #define 	PIN_COM5V_ON		(PORT_SetBit(PIN_COM5V_EN.emGPIOx,	PIN_COM5V_EN.emPin))
 #define 	PIN_COM5V_OFF		(PORT_ClrBit(PIN_COM5V_EN.emGPIOx,	PIN_COM5V_EN.emPin))
 #define		IS_PIN_COM5V_ON		((PORT_GetBit(PIN_COM5V_EN.emGPIOx,PIN_COM5V_EN.emPin)))
 
-//AFE¹©µçÄ£Ê½
+//AFEä¾›ç”µæ¨¡å¼
 //#define		REGOUT_ON		(PORT_ClrBit(PIN_REGOUT_EN.emGPIOx,	PIN_REGOUT_EN.emPin))	
 //#define		REGOUT_OFF		(PORT_SetBit(PIN_REGOUT_EN.emGPIOx,	PIN_REGOUT_EN.emPin))
 //#define		IS_REGOUT_ON	(!(PORT_GetBit(PIN_REGOUT_EN.emGPIOx,PIN_REGOUT_EN.emPin)))
@@ -1467,14 +1467,14 @@ GPIO²Ù×÷¶¨Òå,ËùÓÐÒý½ÅµçÆ½ÐèÒª¶¨Òå
   */
 void GPIO_Config(void)
 {
-	//ÊäÈë
+	//è¾“å…¥
 	PORT_Init(PIN_SW.emGPIOx,		PIN_SW.emPin,		PIN_SW.emMode);	
 	PORT_Init(PIN_ALERT.emGPIOx,	PIN_ALERT.emPin,	PIN_ALERT.emMode);	
-	PORT_Init(PORT5,PIN1,INPUT);    //485»½ÐÑ
+	PORT_Init(PORT5,PIN1,INPUT);    //485å”¤é†’
   PORT_Init(PORT14,PIN0,PULLUP_INPUT);
 	//PORT_Init(PIN_REV.emGPIOx,		PIN_REV.emPin,		PIN_REV.emMode);
   	
-	//Êä³ö
+	//è¾“å‡º
 	PORT_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode);
 	VB_ON;
    
@@ -1518,7 +1518,7 @@ void GPIO_Config(void)
 	//PORT_Init(PIN_485DE.emGPIOx,	PIN_485DE.emPin,	PIN_485DE.emMode);
 	//RS485_SEND_DISABLE;
 	
-	//Î´Ê¹ÓÃ¹Ü½ÅÅäÖÃ
+	//æœªä½¿ç”¨ç®¡è„šé…ç½®
 	PORT_Init(PORT13,PIN6,OUTPUT);
 	PORT_Init(PORT7,PIN5,OUTPUT); 
 	PORT_Init(PORT7,PIN4,OUTPUT); 
@@ -1581,11 +1581,11 @@ uint8_t CheckAreaWritable(uint32_t addr)
 	{
 		CheckFlashBuff[i] = IAP_ReadOneByte(addr + i,IAP_CHECK_AREA);
 	}
-	IAP_Erase_512B(addr & 0xff00,IAP_CHECK_AREA);
+	IAP_Erase_512B(addr & 0xffffff00,IAP_CHECK_AREA);
 	ok = IAP_WriteOneByte_Check(addr,(0x55),IAP_CHECK_AREA);
 
 	if(ok == 1) {
-		IAP_Erase_512B(addr & 0xff00,IAP_CHECK_AREA);
+		IAP_Erase_512B(addr & 0xffffff00,IAP_CHECK_AREA);
 		for(int i=0;i<512;i++)
 		{
 			IAP_WriteOneByte_Check(addr + i, CheckFlashBuff[i], IAP_CHECK_AREA);
