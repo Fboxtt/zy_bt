@@ -1536,14 +1536,14 @@ void GPIO_Config(void)
 
 }
 
-void Clock_Config(void)
-{	
-	CLK_Osc_Setting(OSC_PORT, OSC_PORT); /* MainOSC/SubOSC enable */
-	CLK_MainOsc_Setting(OSC_PORT,OSC_OVER_10M);   //OSC_PORT  OSC_OSCILLATOR
-	CLK_Fclk_Select(MAINCLK_FIH);//select FMX   MAINCLK_FIH   MAINCLK_FMX
-//	while((CGC->CKC & CGC_CKC_MCS_Msk) == 0);
-	SystemCoreClock = 8000000;  //12000000
-}
+//void Clock_Config(void)
+//{	
+//	CLK_Osc_Setting(OSC_PORT, OSC_PORT); /* MainOSC/SubOSC enable */
+//	CLK_MainOsc_Setting(OSC_PORT,OSC_OVER_10M);   //OSC_PORT  OSC_OSCILLATOR
+//	CLK_Fclk_Select(MAINCLK_FIH);//select FMX   MAINCLK_FIH   MAINCLK_FMX
+////	while((CGC->CKC & CGC_CKC_MCS_Msk) == 0);
+//	SystemCoreClock = 8000000;  //12000000
+//}
 /********************************************************************************************************
 **????		:   void HardDriveInit(void)
 **????      :   ?

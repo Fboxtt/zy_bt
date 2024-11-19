@@ -19,7 +19,7 @@ typedef enum {
 
 #define DEBUG_DEVICE 1
 #define BMS_DEVICE 2
-#define DEVICE DEBUG_DEVICE
+#define DEVICE BMS_DEVICE
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
 #define SEND_PACKET_LENTH           2
