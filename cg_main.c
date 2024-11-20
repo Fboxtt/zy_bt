@@ -33,9 +33,9 @@ Pragma directive
 /*
     P50->RX0
     P51->TX0
-    ³õÊ¼²¨ÌØÂÊ->9600
-    ÏµÍ³Ö÷Æµ->48M
-    RST->Ê¹ÄÜ
+    åˆå§‹æ³¢ç‰¹ç‡->9600
+    ç³»ç»Ÿä¸»é¢‘->48M
+    RST->ä½¿èƒ½
 */
 /* End user code. Do not edit comment generated here */
 
@@ -193,11 +193,16 @@ void toggle(void)
 
 void Clock_Config(void)
 {	
+	uint32_t msCnt = 0;
+	
 	CLK_Osc_Setting(OSC_OSCILLATOR, OSC_OSCILLATOR); /* MainOSC/SubOSC enable */
 	CLK_MainOsc_Setting(OSC_OSCILLATOR,OSC_OVER_10M);
 	CLK_Fclk_Select(MAINCLK_FMX);//select FMX
 	while((CGC->CKC & CGC_CKC_MCS_Msk) == 0);
-	SystemCoreClock = 12000000;  //12000000
+	
+	SystemCoreClock = 12000000;  		//12000000 å¤–éƒ¨æ™¶æŒ¯è¾“å…¥12M
+	msCnt = SystemCoreClock / 1000;; 	// count value of 1ms
+	SysTick_Config(msCnt); 				//ç³»ç»Ÿè®¡æ•°å™¨åˆå§‹åŒ–
 }
 
 int main(void)
@@ -208,11 +213,11 @@ int main(void)
 	toggle_Init();
 	toggle();
 	toggle();
-	// Port_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // ÅäÖÃp16 p17
+	// Port_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode); // é…ç½®p16 p17
 //	P_Init(PORT7,PIN2,OUTPUT); // 
 //	P_Init(PORT7,PIN3,PULLUP_INPUT); // 
-	// Port_Init(PORT2,PIN3,OUTPUT); // ÅäÖÃP23Òı½Å
-	// VB_ON; // ´ò¿ªVBÊ¹ÄÜRS485
+	// Port_Init(PORT2,PIN3,OUTPUT); // é…ç½®P23å¼•è„š
+	// VB_ON; // æ‰“å¼€VBä½¿èƒ½RS485
 	BootWaitTimeInit();    
 //	ReplyEnterBoot();       
 	
