@@ -132,6 +132,7 @@ typedef enum {
 #define ERR_AREA_NOT_WRITABLE	0x26		// 区域不可写
 #define ERR_DOWNLOAD_DONE		0x27		// 烧录已完成，请重新开始
 #define ERR_ERASE				0x28		// 擦除错误
+#define ERR_NO_SHAKE_SUCCESS	0x29		// 握手成功
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 

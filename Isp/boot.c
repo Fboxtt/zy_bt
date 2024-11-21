@@ -13,6 +13,9 @@
 #include "base_time_system.h"
 #include "clk.h"
 
+uint32_t* g_restoreBufferFlag = (uint32_t*)0x20000000; // 把强制恢复标志位保存在sram内的起始地址
+uint32_t* g_restoreBackupFlag = (uint32_t*)0x20000004; // 把强制恢复标志位保存在sram内的起始地址
+
 uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位
 uint8_t UartSendFlag;				//UART0发送完一Byte标志位
@@ -76,6 +79,11 @@ uint32_t BootWaitTime = 0;
 uint32_t BootWaitTimeLimit = 0;
 
 int g_FLSTSMaxCount = 0;
+
+__asm uint32_t get_pc(void) {
+	mov r0, pc
+	bx lr
+}
 
 void UartInit(uint32_t baud)
 {
@@ -428,17 +436,15 @@ void IAP_Reset()
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
-#ifdef IN_APP
-	__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
-    __set_MSP(*(__IO uint32_t*) BOOT_ADDR);
-	((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to BOOT
-#else
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
-    __set_MSP(*(__IO uint32_t*) APP_ADDR);
-	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
-#endif
-    
-    
+	if(get_pc() >= APP_ADDR) {
+		__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+		__set_MSP(*(__IO uint32_t*) BOOT_ADDR);
+		((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to BOOT
+	} else {
+		__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+		__set_MSP(*(__IO uint32_t*) APP_ADDR);
+		((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
+	}
     /* Trap the CPU */
     while(1);
 }
@@ -569,7 +575,6 @@ uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
 /*boot_core.c*/
 /*boot_core.c*/
 /*boot_core.c*/
-uint8_t BufferFlag = 0;								//代表缓冲区校验状态
 uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
 uint8_t ResetFlag = 0;								//表示复位条件达成
 uint8_t CurrState = 0;								//当前芯片的状态
@@ -783,8 +788,12 @@ void ReplyEnterBoot(void)
 
 void AppRestore()
 {
-	if(BufferFlag == 1) {
-		BufferFlag = 0;
+	if(ResetFlag == 1) {
+		// 复位优先级高于恢复优先级
+		return;
+	}
+	if(*g_restoreBufferFlag == 0x55AA5A5A) {
+		g_restoreBufferFlag = 0;
 		if(IAP_Remap() == 1) {
 			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_AREA);
 			if(CheckSumCheck(APROM_AREA) == 1)
@@ -798,8 +807,8 @@ void AppRestore()
 			ACK = ERR_REMAP;
 		}
 		result_cmd = ENTER_APP;
-	} else if(g_BkpFlag == 1) {
-		g_BkpFlag = 0;
+	} else if(*g_restoreBackupFlag == 0xA5A5A5A5) {
+		g_restoreBackupFlag = 0;
 		if(IAP_BkpRemap() == 1) {
 			// 从备份区中读取校验和数据，并写入到APP区域中
 			CheckSumWrite(PacketTotalNumRead(BACKUP_TOTAL_NUM_ADRESS), All_CheckSum_Read(BACKUP_CHECKSUM_ADRESS), APROM_AREA);
@@ -864,10 +873,6 @@ void GetVer(uint32_t addr, int lenth)
 	CmmuSendLength += lenth;
 }
 
-__asm uint32_t get_pc(void) {
-	mov r0, pc
-	bx lr
-}
 
 typedef enum {
 	ENTER_CMD = 0xA,
@@ -877,12 +882,11 @@ typedef enum {
 	BACKUP_FLAG  = 0xACCC,
 }SHAKE_FLAG;
 
-static uint32_t g_shakehandFlag = 0x0;
+static uint16_t g_shakehandFlag = 0x0;
 void SetShakehandFlag(SHAKE_FLAG flag)
 {
-	
+	g_shakehandFlag = g_shakehandFlag << 4;
 	g_shakehandFlag |= flag;
-	g_shakehandFlag = g_shakehandFlag << 8;
 }
 
 
@@ -979,40 +983,17 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			#endif
             ACK = ERR_NO;
         }break;
-		// case GET_WRITABLE_AREA:
-		// {
-		// 	CmdSendData[0] = g_flashWritableFlag.value;
-		// 	CmmuSendLength = sizeof(WritableFlag);
-		// 	ACK = ERR_NO;
-		// }
+
 //        case SET_BAUD:
 //        {
 //            cmd_buff = DEAL_SUCCESS;
 //			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
 //        }break;
 
-//        case SET_ADDRESS://设置基地址配置命令
-//        {
-//            //BeginAddr = CommuData[6]*256+CommuData[7];
-//			BeginAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
-//            //if((CommuData[4])==RETURN_FLASH_UID)
-//            if(BeginAddr==UID_ENC_ADRESS)
-//            {
-//                temp = UID_ENC_AREA;
-//            }
-//            else
-//            {
-//                temp = APROM_AREA;
-//                #ifdef FLASH_BUFF_ENABLE
-//                BeginAddr = APP_BUFF_ADDR;//将代码传到缓存区去
-//                #endif		
-//            }            			
-//            cmd_buff = DEAL_SUCCESS;			
-//        }break;
         case DOWNLOAD_BUFFER:	//擦除APROM所有内容
         {
 			SetShakehandFlag(BUFFER_CMD);
-			if(g_shakehandFlag == BUFFER_FLAG) {
+			if(g_shakehandFlag != BUFFER_FLAG) {
 				ACK = ERR_NO;
 				break;
 			}
@@ -1022,7 +1003,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 			BeginAddr = APP_BUFF_ADDR; // 地址修改成缓冲区地址为writeflash做准备
 			g_downLoadStatus = DOWNLOADING_BUFF;
-			ACK = ERR_NO;
+			ACK = ERR_NO_SHAKE_SUCCESS;
         }break;
 		case DOWNLOAD_BACKUP:	//擦除APROM所有内容
         {
@@ -1041,7 +1022,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 					}
 					BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
 					g_downLoadStatus = DOWNLOADING_BKP;
-					ACK = ERR_NO;
+					ACK = ERR_NO_SHAKE_SUCCESS;
 				}
 			} else {
 				ACK = ERR_OPERATE;
@@ -1049,6 +1030,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
         }break;
 		case WRITE_FLASH:// 写入app，成功后进入app
 		{
+			if(g_downLoadStatus != DOWNLOADING_BUFF && g_downLoadStatus != DOWNLOADING_BKP) {
+				ACK = ERR_SHAKEHAND;
+				break;
+			}
 			#ifdef ENCRYPT_ENABLE
 			if(temp==UID_ENC_AREA)
 			{
@@ -1105,7 +1090,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				{
 					ACK = ERR_NO; //回应退出了Bootloader
 					CheckSumWrite(0, 0, APROM_AREA); // 将app区域设置成非法
-					BufferFlag = 1;
+					*g_restoreBufferFlag = 0x55AA5A5A;
 					g_downLoadStatus = DOWNLOADED_BUFF;
 				} else {
 					ACK = ERR_ALL_CHECK;
@@ -1131,7 +1116,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //            #ifdef FLASH_BUFF_ENABLE            
 //			CurrState = 2;//表示代码缓存已下载完成
 //            #endif
-//            ResetFlag = 1;
+//            g_restoreBufferFlag = 0x55AA5A5A;
 //        }break;        
         case NO_CMD://无操作
         {
@@ -1156,13 +1141,17 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
             CmmuSendLength = ReadFlashLength;
         }break;
 		case RESTORE_BACKUP:
+		// 恢复备份区流程 1下载 2强制恢复命令 3跳转到bt 4恢复 5跳转到app
 		{
 			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) { // 判断BACKUP区域是否有数据
 				ACK = ERR_AREA_BLANK;
 				break;
 			}
 			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) { // 校验BACKUP区域校验和
-				g_BkpFlag = 1;							// 校验和正确，可以开始迁移HEX数据
+				if(get_pc() >= APP_ADDR) {
+					ResetFlag = 1;						// 如果
+				}
+				*g_restoreBackupFlag = 0xA5A5A5A5;		// 设置标志位，进入bt后开始恢复backup区
 				ACK = ERR_NO;
 			} else {
 				ACK = ERR_ALL_CHECK;
@@ -1220,11 +1209,10 @@ void BootProcess(void)
 			ResetFlag = 1;
 		} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
 			// 如果因为意外使APP损坏，将缓冲区APP复制过来
-			BufferFlag = 1;
-			ResetFlag = 0;
+			*g_restoreBufferFlag = 0x55AA5A5A;
 		// } else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
 		// 	g_BkpFlag = 1;
-		// 	ResetFlag = 0;
+		// 	g_restoreBackupFlag = 0;
 		}
 		BootWaitTime = 0;
 	}
