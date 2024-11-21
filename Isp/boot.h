@@ -131,6 +131,7 @@ typedef enum {
 #define ERR_AREA_BLANK			0x25		// 区域内数据为0
 #define ERR_AREA_NOT_WRITABLE	0x26		// 区域不可写
 #define ERR_DOWNLOAD_DONE		0x27		// 烧录已完成，请重新开始
+#define ERR_ERASE				0x28		// 擦除错误
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
@@ -271,8 +272,8 @@ extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t l
 extern void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area); //读多字节IAP操作
 extern uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area);  //读单字节IAP操作
 extern void IAP_Reset(void);			 		                    //复位启动								
-extern void IAP_Erase_ALL(uint8_t area);						    //将目标区域全擦
-extern void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（512B）
+extern uint8_t IAP_Erase_ALL(uint8_t area);						    //将目标区域全擦
+extern uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（512B）
 extern void IAP_FlagWrite(uint8_t flag);
 extern uint8_t IAP_CheckAPP(void);
 extern void IAP_ReadEncUID(uint8_t* buff);
