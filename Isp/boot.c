@@ -33,14 +33,14 @@ uint8_t CRCchecksum[4];
 uint8_t uart_send_flag = 0;
 
 typedef enum {
-	NO_OPERATE = 0x0,
+	NO_DOWNLOADING = 0x0,
 	DOWNLOADING_BUFF	= 0x55AA55AA,
 	DOWNLOADING_BKP		= 0x0A555AAA,
 	DOWNLOADED_BUFF		= 0x5A5A5555,
 	DOWNLOADED_BKP		= 0x0A5AAAAA,
 }DOWNLOAD_STATUS;
 
-DOWNLOAD_STATUS g_downLoadStatus = NO_OPERATE;
+DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
 
 volatile uint8_t * gp_uart0_tx_address;         /* uart0 send buffer address */
 volatile uint16_t  g_uart0_tx_count;            /* uart0 send data number */
@@ -849,6 +849,18 @@ void BootCheckReset()
     }
 }
 
+// void logDebug(char* data, int lenth) {
+// 	UartSendOneByte('\n');
+// 	UartSendOneByte('d');
+// 	UartSendOneByte('b');
+// 	UartSendOneByte('=');
+// 	for(int i = 0; i < lenth; i++)
+// 	{
+// 		UartSendOneByte(*(data + i));
+// 	}
+// 	UartSendOneByte('\n');
+// }
+
 void GetVer(uint32_t addr, int lenth)
 {
 	uint8_t* p_addr = (uint8_t*)addr;
@@ -897,6 +909,19 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
     CmmuSendLength = 0;	
     ACK = ERR_NO;
 	TVER* hexVer = 0x0;
+	switch(cmd)
+	{
+		case ENTER_BOOTMODE:
+		case DOWNLOAD_BUFFER:
+		case DOWNLOAD_BACKUP:
+		{
+			// 如果下载HEX中出现握手指令，则需要重新握手
+			if(g_shakehandFlag == BUFFER_FLAG || g_shakehandFlag == BACKUP_FLAG) {
+				g_shakehandFlag = 0;
+				g_downLoadStatus =  NO_DOWNLOADING;
+			}
+		}break;
+	}
     switch(cmd)//根据命令执行相应的动作
     {
 //        case READ_BOOT_CODE_INF: // 读取版本号
@@ -949,6 +974,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			GetVer((uint32_t)(&g_flashWritableFlag),sizeof(g_flashWritableFlag));
 			GetVer((uint32_t)&pcValue, 				sizeof(pcValue));
 			ACK = ERR_NO;
+			// logDebug((char*)&DBG->DBGSTOPCR, sizeof(DBG->DBGSTOPCR));
 		}
 		break;
         // case READ_IC_INF: // 读取芯片型号
@@ -1012,21 +1038,17 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				ACK = ERR_NO;
 				break;
 			}
-			if(BACKUP_ADDR >= (88 * 1024)) { // 备份地址不能小于88KB，不能影响缓冲区和app区域
-				if(BACKUP_SIZE > MAX_PACK_NUM) {
-					ACK = ERR_OPERATE;
-				} else {
-					if(IAP_Erase_ALL(APROM_BACKUP_AREA) == 0) {
-						ACK = ERR_ERASE;
-						break;
-					}
-					BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
-					g_downLoadStatus = DOWNLOADING_BKP;
-					ACK = ERR_NO_SHAKE_SUCCESS;
-				}
-			} else {
+			if(BACKUP_ADDR < (88 * 1024) || BACKUP_SIZE > MAX_PACK_NUM) { // 备份地址不能小于88KB，不能影响缓冲区和app区域
 				ACK = ERR_OPERATE;
+				break;
 			}
+			if(IAP_Erase_ALL(APROM_BACKUP_AREA) == 0) {
+				ACK = ERR_ERASE;
+				break;
+			}
+			BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+			g_downLoadStatus = DOWNLOADING_BKP;
+			ACK = ERR_NO_SHAKE_SUCCESS;
         }break;
 		case WRITE_FLASH:// 写入app，成功后进入app
 		{
