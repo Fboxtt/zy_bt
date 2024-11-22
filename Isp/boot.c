@@ -608,9 +608,9 @@ void BootInit()
 	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
 		g_flashWritableFlag.bit.bufferArea = 1;
 	}
-	// if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
-	// 	g_flashWritableFlag.bit.backupArea = 1;
-	// }
+	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
+		g_flashWritableFlag.bit.backupArea = 1;
+	}
 	CurrState = IAP_CheckAPP();
     if(CurrState==1)//判断APP是否完整，完整则开启定时
     {
@@ -965,7 +965,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		case PC_GET_INF:
 		{
 			// BT版本号获取
-			uint32_t pcValue = get_pc();
+			volatile uint32_t pcValue = get_pc();
 			GetVer(BOOT_VER_ADDR,					sizeof(VerStru));
 			GetVer(APP_VER_ADDR,					sizeof(VerStru));
 			GetVer(APP_BUFF_VER_ADDR, 				sizeof(VerStru));
