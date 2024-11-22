@@ -792,6 +792,7 @@ void AppRestore()
 		// 复位优先级高于恢复优先级
 		return;
 	}
+	#ifndef IN_APP
 	if(*g_restoreBufferFlag == 0x55AA5A5A) {
 		g_restoreBufferFlag = 0;
 		if(IAP_Remap() == 1) {
@@ -823,6 +824,7 @@ void AppRestore()
 			ACK = ERR_REMAP;
 		}
 	}
+	#endif
 }
 void BootCheckReset()
 {
@@ -965,7 +967,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		case PC_GET_INF:
 		{
 			// BT版本号获取
-			uint32_t pcValue = get_pc();
+			volatile uint32_t pcValue = get_pc();
 			GetVer(BOOT_VER_ADDR,					sizeof(VerStru));
 			GetVer(APP_VER_ADDR,					sizeof(VerStru));
 			GetVer(APP_BUFF_VER_ADDR, 				sizeof(VerStru));
@@ -1111,7 +1113,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				if(CheckSumCheck(APROM_BUFF_AREA) == 1)
 				{
 					ACK = ERR_NO; //回应退出了Bootloader
-					CheckSumWrite(0, 0, APROM_AREA); 	// 将app区域设置成非法
+//					CheckSumWrite(0, 0, APROM_AREA); 	// 将app区域设置成非法
+					#ifdef IN_APP
+					ResetFlag = 1;						// 需要进入bt中
+					#endif
 					*g_restoreBufferFlag = 0x55AA5A5A;	// 设置恢复缓冲区标志位,等待跳入bt中
 					g_downLoadStatus = DOWNLOADED_BUFF;	// 修改下载状态
 					g_shakehandFlag = 0x0;				// 清除握手成功标志位
