@@ -1111,9 +1111,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				if(CheckSumCheck(APROM_BUFF_AREA) == 1)
 				{
 					ACK = ERR_NO; //回应退出了Bootloader
-					CheckSumWrite(0, 0, APROM_AREA); // 将app区域设置成非法
-					*g_restoreBufferFlag = 0x55AA5A5A;
-					g_downLoadStatus = DOWNLOADED_BUFF;
+					CheckSumWrite(0, 0, APROM_AREA); 	// 将app区域设置成非法
+					*g_restoreBufferFlag = 0x55AA5A5A;	// 设置恢复缓冲区标志位,等待跳入bt中
+					g_downLoadStatus = DOWNLOADED_BUFF;	// 修改下载状态
+					g_shakehandFlag = 0x0;				// 清除握手成功标志位
 				} else {
 					ACK = ERR_ALL_CHECK;
 				}
@@ -1124,6 +1125,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 				{
 					ACK = ERR_NO; //回应退出了Bootloader
 					g_downLoadStatus = DOWNLOADED_BUFF;
+					g_shakehandFlag = 0x0;
 				} else {
 					ACK = ERR_ALL_CHECK;
 				}
