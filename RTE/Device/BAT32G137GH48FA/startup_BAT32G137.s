@@ -1,10 +1,32 @@
-;/***********************************************************************************************************************
-;* File Name    : startup_BAT32G137.s
-;* Device(s)    : BAT32G137GH64FB
-;* Tool-Chain   : ARMCC
-;* Description  : This is start up file for ARMCC.
-;* Creation Date: 2022/1/28
-;***********************************************************************************************************************/
+;/**************************************************************************//**
+; * @file     startup_BAT32G137.s
+; * @brief    CMSIS Cortex-M ARMv6-M based Core Device Startup File for
+; *           Device BAT32G137
+; * @version  V1.00
+; * @date     2019/04/24
+; ******************************************************************************/
+;/*
+; * Copyright (c) 2009-2016 ARM Limited. All rights reserved.
+; *
+; * SPDX-License-Identifier: Apache-2.0
+; *
+; * Licensed under the Apache License, Version 2.0 (the License); you may
+; * not use this file except in compliance with the License.
+; * You may obtain a copy of the License at
+; *
+; * www.apache.org/licenses/LICENSE-2.0
+; *
+; * Unless required by applicable law or agreed to in writing, software
+; * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+; * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; * See the License for the specific language governing permissions and
+; * limitations under the License.
+; */
+;/*
+
+;//-------- <<< Use Configuration Wizard in Context Menu >>> ------------------
+;*/
+
 
 ; <h> Stack Configuration
 ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
@@ -57,40 +79,40 @@ __Vectors       DCD     __initial_sp              ; Top of Stack
                 DCD     PendSV_Handler            ; PendSV Handler
                 DCD     SysTick_Handler           ; SysTick Handler
 
-; External Interrupts
+                ; External Interrupts
 ; ToDo:  Add here the vectors for the device specific external interrupts handler
-                DCD     IRQ00_Handler       	  ;  IRQ0 
-                DCD     IRQ01_Handler       	  ;  IRQ1 
-                DCD     IRQ02_Handler       	  ;  IRQ2 
-                DCD     IRQ03_Handler       	  ;  IRQ3 
-                DCD     IRQ04_Handler       	  ;  IRQ4 
-                DCD     IRQ05_Handler       	  ;  IRQ5 
-                DCD     IRQ06_Handler       	  ;  IRQ6 
-                DCD     IRQ07_Handler       	  ;  IRQ7 
-                DCD     IRQ08_Handler       	  ;  IRQ8 
-                DCD     IRQ09_Handler       	  ;  IRQ9 
-                DCD     IRQ10_Handler       	  ;  IRQ10
-                DCD     IRQ11_Handler       	  ;  IRQ11
-                DCD     IRQ12_Handler       	  ;  IRQ12
-                DCD     IRQ13_Handler       	  ;  IRQ13
-                DCD     IRQ14_Handler       	  ;  IRQ14
-                DCD     IRQ15_Handler       	  ;  IRQ15
-                DCD     IRQ16_Handler       	  ;  IRQ16
-                DCD     IRQ17_Handler       	  ;  IRQ17
-                DCD     IRQ18_Handler       	  ;  IRQ18
-                DCD     IRQ19_Handler       	  ;  IRQ19
-                DCD     IRQ20_Handler       	  ;  IRQ20
-                DCD     IRQ21_Handler       	  ;  IRQ21
-                DCD     IRQ22_Handler       	  ;  IRQ22
-                DCD     IRQ23_Handler       	  ;  IRQ23
-                DCD     IRQ24_Handler       	  ;  IRQ24
-                DCD     IRQ25_Handler       	  ;  IRQ25
-                DCD     IRQ26_Handler       	  ;  IRQ26
-                DCD     IRQ27_Handler       	  ;  IRQ27
-                DCD     IRQ28_Handler       	  ;  IRQ28
-                DCD     IRQ29_Handler       	  ;  IRQ29
-                DCD     IRQ30_Handler       	  ;  IRQ30
-                DCD     IRQ31_Handler       	  ;  IRQ31
+                DCD     IRQ00_Handler       	  ;  LVI IRQ 
+                DCD     IRQ01_Handler       	  ;  INTP0 or INTP6  IRQ 
+                DCD     IRQ02_Handler       	  ;  INTP1 or INTP7  IRQ 
+                DCD     IRQ03_Handler       	  ;  INTP2 or INTP8  IRQ 
+                DCD     IRQ04_Handler       	  ;  INTP3 or INTP9  IRQ 
+                DCD     IRQ05_Handler       	  ;  INTP4 or INTP10 IRQ 
+                DCD     IRQ06_Handler       	  ;  INTP5 or INTP11 IRQ 
+                DCD     IRQ07_Handler       	  ;  ST2/SPI20/IIC20 IRQ
+                DCD     IRQ08_Handler       	  ;  SR2/SPI21/IIC21 IRQ
+                DCD     IRQ09_Handler       	  ;  SRE2 IRQ 
+                DCD     IRQ10_Handler       	  ;  ST0/SPI00/IIC00 IRQ
+                DCD     IRQ11_Handler       	  ;  SR0/SPI01/IIC01 IRQ
+                DCD     IRQ12_Handler       	  ;  SRE0 or TM01H IRQ 
+                DCD     IRQ13_Handler       	  ;  ST1/SPI10/IIC10 IRQ
+                DCD     IRQ14_Handler       	  ;  SR1/SPI11/IIC11 IRQ
+                DCD     IRQ15_Handler       	  ;  SRE1 or TM03H IRQ 
+                DCD     IRQ16_Handler       	  ;  IICA or DIV IRQ
+                DCD     IRQ17_Handler       	  ;  TM00 IRQ
+                DCD     IRQ18_Handler       	  ;  TM01 IRQ
+                DCD     IRQ19_Handler       	  ;  TM02 IRQ
+                DCD     IRQ20_Handler       	  ;  TM03 IRQ
+                DCD     IRQ21_Handler       	  ;  ADC IRQ
+                DCD     IRQ22_Handler       	  ;  RTC or IT IRQ
+                DCD     IRQ23_Handler       	  ;  KEY IRQ
+                DCD     IRQ24_Handler       	  ;  CMP0 IRQ
+                DCD     IRQ25_Handler       	  ;  CMP1 IRQ
+                DCD     IRQ26_Handler       	  ;  TMA IRQ
+                DCD     IRQ27_Handler       	  ;  TMM0 IRQ
+                DCD     IRQ28_Handler       	  ;  TMM1 IRQ
+                DCD     IRQ29_Handler       	  ;  TMB IRQ
+                DCD     IRQ30_Handler       	  ;  TMC IRQ
+                DCD     IRQ31_Handler       	  ;  FMC IRQ
 __Vectors_End
 
 __Vectors_Size  EQU     __Vectors_End - __Vectors
@@ -350,4 +372,3 @@ __user_initial_stackheap PROC
 
 
                 END
-

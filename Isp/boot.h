@@ -19,7 +19,7 @@ typedef enum {
 
 #define DEBUG_DEVICE 1
 #define BMS_DEVICE 2
-#define DEVICE DEBUG_DEVICE
+#define DEVICE BMS_DEVICE
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
 #define SEND_PACKET_LENTH           2
@@ -123,6 +123,7 @@ typedef enum {
 #define ERR_CMD_ID              0x04        // 没有命令
 #define ERR_CHECK               0x06        // 主机某个包校验和错误
 #define ERR_OPERATE             0x07        // 未能完成主机要求的操作
+#define ERR_SHAKEHAND			0x20 		// 握手次数错误
 #define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
 #define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
 #define ERR_ALL_CHECK			0x23		// 总包校验和错误
@@ -130,6 +131,8 @@ typedef enum {
 #define ERR_AREA_BLANK			0x25		// 区域内数据为0
 #define ERR_AREA_NOT_WRITABLE	0x26		// 区域不可写
 #define ERR_DOWNLOAD_DONE		0x27		// 烧录已完成，请重新开始
+#define ERR_ERASE				0x28		// 擦除错误
+#define ERR_NO_SHAKE_SUCCESS	0x29		// 握手成功
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
@@ -157,7 +160,6 @@ extern uint32_t BootWaitTimeLimit;
 #define  RETURN_FLASH_RAM	    0x05		//选择RAM
 #define  RETURN_FLASH_UID       0x06		//选择UID
 
-#define HandShakes				3			 //握手次数设置
 
 #define BOOT_BOOL_TRUE     1
 #define BOOT_BOOL_FALSE    0
@@ -169,14 +171,14 @@ extern uint32_t BootWaitTimeLimit;
 // #define CommunicationLength1    (64+2+8)
 extern boot_length_t CmmuLength;		             //接收数据长度
 extern boot_cmd_t CMDBuff;		                     //命令存储缓存
-extern boot_data_t CommuData[ReceiveLength1];	 //通讯接收缓存
-extern boot_data_t CmdSendData[SendLength1];//发送缓存
+extern boot_data_t CommuData[ReceiveLength1];	 	//通讯接收缓存
+extern boot_data_t CmdSendData[SendLength1];		//发送缓存
 extern boot_length_t CmmuSendLength;		         //接收数据长度
 extern uint32_t NewBaud;							 //新波特率存储													
 extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
 extern boot_bool_t ResetFlag;
 extern void BootCheckReset(void);		//检测是否有复位信号
-extern void BufferExchange(void);
+extern void AppRestore(void);
 extern uint8_t CheckUID(void);
 void BootInit(void);
 boot_cmd_t BootCmdRun(boot_cmd_t cmd);
@@ -204,7 +206,7 @@ uint8_t AppCheckSumCheck(void);
 #define BOOT_VER_ADDR			(BOOT_ADDR + APP_VER_OFFSET)
 
 #define APP_ADDR                0X2000							// APP的起始位置
-#define APP_SIZE                (40 * 1024)						// APP代码最大长度
+#define APP_SIZE                (60 * 1024)						// APP代码最大长度
 #define APP_VER_ADDR			(APP_ADDR + APP_VER_OFFSET) 	// 存储app版本号的地址
 
 #define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        // APP缓存区的起始位置
@@ -260,6 +262,7 @@ uint8_t AppCheckSumCheck(void);
 #define LDROM_AREA	            0X96				//LDROM区
 #define DATA_AREA               0xAA				//DATA区
 
+#define BOOT_AREA				0x9A				//BOOT区
 #define	APROM_AREA	            0x55				//APROM区
 #define APROM_BUFF_AREA			0x69				//APP缓存区
 #define APROM_BACKUP_AREA		0x5A				//备份区
@@ -270,8 +273,8 @@ extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t l
 extern void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area); //读多字节IAP操作
 extern uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area);  //读单字节IAP操作
 extern void IAP_Reset(void);			 		                    //复位启动								
-extern void IAP_Erase_ALL(uint8_t area);						    //将目标区域全擦
-extern void IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（512B）
+extern uint8_t IAP_Erase_ALL(uint8_t area);						    //将目标区域全擦
+extern uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（512B）
 extern void IAP_FlagWrite(uint8_t flag);
 extern uint8_t IAP_CheckAPP(void);
 extern void IAP_ReadEncUID(uint8_t* buff);

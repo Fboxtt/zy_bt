@@ -17,6 +17,7 @@ Includes
 #include "cg_tma.h"
 #include "cg_wdt.h"
 #include "cg_sci.h"
+#include "clk.h"
 /* Start user code for include. Do not edit comment generated here */
 #include <stdio.h>
 #include "boot_core.h"
@@ -190,7 +191,19 @@ void toggle(void)
 	PORT->P7 |= _02_Pn1_OUTPUT_1;
 }
 
-
+void Clock_Config(void)
+{	
+	uint32_t msCnt = 0;
+	
+	CLK_Osc_Setting(OSC_OSCILLATOR, OSC_OSCILLATOR); /* MainOSC/SubOSC enable */
+	CLK_MainOsc_Setting(OSC_OSCILLATOR,OSC_OVER_10M);
+	CLK_Fclk_Select(MAINCLK_FMX);//select FMX
+	while((CGC->CKC & CGC_CKC_MCS_Msk) == 0);
+	
+	SystemCoreClock = 12000000;  		//12000000 外部晶振输入12M
+	msCnt = SystemCoreClock / 1000;; 	// count value of 1ms
+	SysTick_Config(msCnt); 				//系统计数器初始化
+}
 
 int main(void)
 {
