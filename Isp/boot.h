@@ -10,6 +10,15 @@
 #include "cg_sci.h"
 #include "cg_macrodriver.h"
 #include "gpio.h"
+
+#define DEBUG_DEVICE 1
+#define BMS_BT_DEVICE 2
+// #define BMS_APP_DEVICE 3
+#define DEVICE BMS_APP_DEVICE
+
+#ifdef BMS_APP_DEVICE
+#include "sci.h"
+#endif
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
@@ -33,9 +42,6 @@ typedef enum {
 
 // #define IN_APP
 
-#define DEBUG_DEVICE 1
-#define BMS_DEVICE 2
-#define DEVICE BMS_DEVICE
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
 #define SEND_PACKET_LENTH           2
@@ -98,7 +104,7 @@ extern volatile uint8_t ACK;
 #define boot_cmd_t  	uint8_t         	//命令的数据类型
 #define boot_flag_t 	uint8_t    	        //外部标志类型 
 
-#define READ_FLASH_ENABLE						//使能后允许执行读FLASH操作
+#define PC_GET_READ_FLASH_ENABLE						//使能后允许执行读FLASH操作
 //#define ENCRYPT_ENABLE						    //使能通讯加密，使能后会对接收的更新数据进行解密操作	
 //#define ENCRYPT_UID_ENABLE					    //使能UID加密功能，使能后会在跳转至APP前进行一次UID解密判断，若不一致就拒绝跳转到APP工作
 //#define FLASH_BUFF_ENABLE						//Flash缓存功能开关，使能后会在FLASH区域开辟一个代码缓存区用于存储传输到来的新代码数据
@@ -120,24 +126,27 @@ typedef enum {
 
 
 //主站发送来的控制码类型 私有协议修改内容
-#define PC_GET_VER_APP			0x16		// 获取APP的版本号
+#ifndef BMS_APP_DEVICE
+#define PC_GET_VER			0x16		// 获取APP的版本号
 
-#define PC_GET_INF				0x71		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
+#endif
 
-#define DOWNLOAD_BUFFER			0x75		// 擦除所有APROM
-#define ENTER_BOOTMODE 			0x76		// 进入更新模式，即握手信号
-#define WRITE_FLASH				0x77		// 更新程序命令
-#define REC_ALL_CHECKSUM        0x78		// 发送校验和
-#define READ_FLASH              0x79        // 读FLASH指定地址
-#define ENTER_APP               0x7A        // 进入APP
+#define PC_GET_INF					0x71		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
 
-#define DOWNLOAD_BACKUP			0x7C		// 下载备份
-#define RESTORE_BACKUP			0x7D		// 将备份恢复到APP中
+#define PC_SET_DOWNLOAD_BUFFER		0x75		// 擦除所有APROM
+#define PC_SHAKE_ENTER_BOOTMODE 	0x76		// 进入更新模式，即握手信号
+#define PC_SET_WRITE_FLASH			0x77		// 更新程序命令
+#define PC_SET_ALL_CHECKSUM        	0x78		// 发送校验和
+#define PC_GET_READ_FLASH           0x79        // 读FLASH指定地址
+#define BMS_SHAKE_ENTER_APP         0x7A        // 进入APP
+
+#define PC_SET_DOWNLOAD_BACKUP			0x7C		// 下载备份
+#define PC_SET_RESTORE_BACKUP			0x7D		// 将备份恢复到APP中
 
 #define ERR_NO                  0x00        // 无异常
 #define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
 #define ERR_CMD_ID              0x04        // 没有命令
-#define ERR_CHECK               0x06        // 主机某个包校验和错误
+#define ERR_CHKSUM               0x06        // 主机某个包校验和错误
 #define ERR_OPERATE             0x07        // 未能完成主机要求的操作
 #define ERR_SHAKEHAND			0x20 		// 握手次数错误
 #define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
@@ -149,6 +158,7 @@ typedef enum {
 #define ERR_DOWNLOAD_DONE		0x27		// 烧录已完成，请重新开始
 #define ERR_ERASE				0x28		// 擦除错误
 #define ERR_NO_SHAKE_SUCCESS	0x29		// 握手成功
+
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
@@ -256,13 +266,16 @@ uint8_t AppCheckSumCheck(void);
 #define APP_TOTAL_NUM_ADRESS	0x1E04     		    //上位机发送校验和存储地址
 #define APP_CHECKSUM_ADRESS		(APP_TOTAL_NUM_ADRESS + 4)     		//hex文件大小存储
 
+
 #define BUFFER_CHECK_ADRESS 	0x1E80     		    //更新成功数字码存储的起始地址
 #define BUFFER_TOTAL_NUM_ADRESS	0x1E84     		    //上位机发送校验和存储地址
 #define BUFFER_CHECKSUM_ADRESS	(BUFFER_TOTAL_NUM_ADRESS + 4)            //缓冲区hex文件大小存储
+#define BUFFER_RESTORE_ADDRESS	(BUFFER_CHECKSUM_ADRESS + 4)
 
 #define BACKUP_CHECK_ADRESS 	0x1F00     		    //更新成功数字码存储的起始地址
 #define BACKUP_TOTAL_NUM_ADRESS	0x1F04     		    //上位机发送校验和存储地址
 #define BACKUP_CHECKSUM_ADRESS	(BACKUP_TOTAL_NUM_ADRESS + 4)            //缓冲区hex文件大小存储
+#define BACKUP_RESTORE_ADDRESS	(BACKUP_CHECKSUM_ADRESS + 4)
 
 #define FLASH_BUFF_ENABLE
 #define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //表示APP缓存区装载完备的数字码，最大14Byte
@@ -362,7 +375,7 @@ MD_STATUS UART1_Init(uint32_t freq, uint32_t baud);
 //	OPENDRAIN_OUTPUT,
 //	
 //}PIN_ModeDef;
-
+#ifndef BMS_APP_DEVICE
 
 //ADC 输入
 #define	 	ADC_PACK_V		ADC_CHANNEL_6
@@ -398,7 +411,7 @@ extern TGPIO PIN_WAKE;
 extern TGPIO PIN_COM3V3_EN;	 
 extern TGPIO PIN_COM5V_EN;	 
 extern TGPIO PIN_REGOUT_EN;	 
-
+#endif
 
 
 extern void ADC_Config(void);
@@ -432,6 +445,7 @@ uint8_t CheckAreaWritable(uint32_t addr);
 
 #define ONE_DISASSEMBLE_COUNT 7 // 判断一次FLSTS的值需要7个汇编指令
 
+#ifndef BMS_APP_DEVICE
 typedef struct tagVersion
 {
 	uint16_t	usMajorVer;				    	 
@@ -443,7 +457,7 @@ typedef struct tagVersion
 	int8_t    cHWversion[30];					 
 	int8_t    cFuncVersion[40];				 
 }TVER;
-
+#endif
 typedef union { // 确认区域是否可写的标志位
 	uint8_t value;
 	struct {
@@ -454,5 +468,6 @@ typedef union { // 确认区域是否可写的标志位
 }WritableFlag;
 
 extern WritableFlag g_flashWritableFlag;
+#define ReadInt(x) *(uint32_t*)(x)
 
 #endif

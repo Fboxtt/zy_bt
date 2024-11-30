@@ -55,7 +55,7 @@ void system_tick_init()
 {
     uint32_t msCnt; 	// count value of 1ms
     g_ticks = 1000; 	// 1000ms
-	SystemCoreClockUpdate();
+	// SystemCoreClockUpdate();
 	msCnt = SystemCoreClock / 1000;
 	SysTick_Config(msCnt); 
 }

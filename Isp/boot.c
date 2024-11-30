@@ -13,8 +13,8 @@
 #include "base_time_system.h"
 #include "clk.h"
 
-uint32_t* g_restoreBufferFlag = (uint32_t*)0x20000000; // 把强制恢复标志位保存在sram内的起始地址
-uint32_t* g_restoreBackupFlag = (uint32_t*)0x20000004; // 把强制恢复标志位保存在sram内的起始地址
+// uint32_t* g_restoreBufferFlag = (uint32_t*)0x20000000; // 把强制恢复标志位保存在sram内的起始地址
+// uint32_t* g_restoreBackupFlag = (uint32_t*)0x20000004; // 把强制恢复标志位保存在sram内的起始地址
 
 uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位
@@ -38,17 +38,18 @@ typedef enum {
 	DOWNLOADING_BKP		= 0x0A555AAA,
 	DOWNLOADED_BUFF		= 0x5A5A5555,
 	DOWNLOADED_BKP		= 0x0A5AAAAA,
+	RESTORE_BUFF		= 0x5AA56699,
+	RESTORE_BKP 		= 0x69695A5A,
 }DOWNLOAD_STATUS;
 
 DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
-
+#ifndef BMS_APP_DEVICE
 volatile uint8_t * gp_uart0_tx_address;         /* uart0 send buffer address */
 volatile uint16_t  g_uart0_tx_count;            /* uart0 send data number */
 volatile uint8_t * gp_uart0_rx_address;         /* uart0 receive buffer address */
 volatile uint16_t  g_uart0_rx_count;            /* uart0 receive data number */
 volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
-
-
+#endif
 typedef struct {
 	uint16_t majorVer;			// 主版本号
 	uint16_t minorVer;			// 次版本号
@@ -65,10 +66,12 @@ const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
 };
 #endif
 
+#ifndef BMS_APP_DEVICE
 #ifdef IN_APP
 const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
 	1,1,1,2024,10,11
 };
+#endif
 #endif
 uint8_t* g_sendArray;
 
@@ -84,7 +87,7 @@ __asm uint32_t get_pc(void) {
 	mov r0, pc
 	bx lr
 }
-
+#ifndef BMS_APP_DEVICE
 void UartInit(uint32_t baud)
 {
     SCI0_Init();
@@ -102,6 +105,8 @@ void UartSendOneByte(uint8_t input_data)
         ;
     }
 }
+
+#endif 
 #define SLAVE_ADDRESS 0x00//设备地址
 void UartReceData(uartId id)//接收数据帧
 {
@@ -135,6 +140,7 @@ void ClearCommu()
     CmmuReadNumber = 0; //重新计数，准备下次串口数据到来
     UartReceFlag = 0; //清除传输完成标志
 }
+
 
 void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
 {
@@ -177,15 +183,15 @@ uint8_t AnalysisData()//分析接收帧的数据
 	if((cmd&0x80) != 0) {
 		ACK = ERR_CMD_ID;
 	}
-	if(cmd != WRITE_FLASH && cmd != REC_ALL_CHECKSUM && CmmuReadNumber != 8) {
+	if(cmd != PC_SET_WRITE_FLASH && cmd != PC_SET_ALL_CHECKSUM && CmmuReadNumber != 8) {
 		ACK = ERR_CMD_LEN;
 	}
 	//校验成功,提取控制码
 	if(check_sum!=(CommuData[3 + data_len]))
 	{
-        ACK = ERR_CHECK;
+        ACK = ERR_ALL_CHECK;
 	}
-	if(cmd == WRITE_FLASH) {
+	if(cmd == PC_SET_WRITE_FLASH) {
 		CmmuLength = data_len - TYPE_TO_DATA_LENTH;//取长度
 	} else {
 		CmmuLength = data_len - TYPE_TO_SHAKE_LENTH;//取长度
@@ -193,6 +199,8 @@ uint8_t AnalysisData()//分析接收帧的数据
 
     return cmd;
 }
+
+#ifndef BMS_APP_DEVICE
 void IRQ10_Handler(void) __attribute__((alias("uart0_interrupt_send")));
 void IRQ11_Handler(void) __attribute__((alias("uart0_interrupt_receive")));
 
@@ -227,13 +235,14 @@ static void uart0_interrupt_send(void)
 
 static void uart0_interrupt_receive(void)
 {
-    INTC_ClearPendingIRQ(SR0_IRQn); /* clear INTSR0 interrupt flag */
-    uartId id = UART0;
+	uartId id = UART0;
+
+    
 	// interrupt_receive(UART0);
 
-        volatile uint8_t rx_data;
+    volatile uint8_t rx_data;
     volatile uint8_t err_type;
-    
+    INTC_ClearPendingIRQ(SR0_IRQn); /* clear INTSR0 interrupt flag */
     if(id == UART0) {
         err_type = (uint8_t)(SCI0->SSR01 & 0x0007U);
         SCI0->SIR01 = (uint16_t)err_type;
@@ -256,7 +265,7 @@ static void uart0_interrupt_receive(void)
 
     UartReceData(id);
 }
-
+#endif
 /*flash_operate*/
 const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP可正常运行状态。
 const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//代码缓存区代码就绪状态。
@@ -353,10 +362,11 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
 	uint32_t sectorAddr = IAP_IapAddr & 0xfffffe00;
 	uint32_t lowLenth = IAP_IapAddr - sectorAddr;
 	uint32_t hignLenth = 512 - lenth - lowLenth;
+	int i = 0;
 	if(lenth > 512) {
 		return;
 	}
-	for(int i = 0; i < 512; i++) {
+	for(i = 0; i < 512; i++) {
 		buff[i] = *((uint8_t *)sectorAddr + i);
 	}
 
@@ -437,9 +447,10 @@ void IAP_Reset()
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
 	INTC_DisableIRQ(SR0_IRQn);
 	if(get_pc() >= APP_ADDR) {
-		__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
-		__set_MSP(*(__IO uint32_t*) BOOT_ADDR);
-		((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to BOOT
+//		__set_VECTOR_ADDR(BOOT_VTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+//		__set_MSP(*(__IO uint32_t*) BOOT_ADDR);
+//		((void (*)()) (*(volatile unsigned long *)(BOOT_ADDR+0x04)))();//to BOOT
+		NVIC_SystemReset();
 	} else {
 		__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
 		__set_MSP(*(__IO uint32_t*) APP_ADDR);
@@ -596,10 +607,15 @@ volatile uint8_t ACK = 0x00;
 
 
 WritableFlag g_flashWritableFlag = {0};
-
+#ifdef BMS_APP_DEVICE
+	uint8_t g_resetHandlerByid;
+#endif
 /* boot初始化钩子函数，请将初始化代码写入该函数 */
 void BootInit()
 {
+#ifdef BMS_APP_DEVICE
+	g_resetHandlerByid = SetQuickTask(IAP_Reset,NULL,TASK_SUSPEND);
+#endif
 	// UartInit(UartBaud);
 	g_FLSTSMaxCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
 	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
@@ -611,7 +627,7 @@ void BootInit()
 	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
 		g_flashWritableFlag.bit.backupArea = 1;
 	}
-	CurrState = IAP_CheckAPP();
+	// CurrState = IAP_CheckAPP();
     if(CurrState==1)//判断APP是否完整，完整则开启定时
     {
 //        BaseTimeSystemInit(BOOT_ENABLE);
@@ -674,9 +690,10 @@ void All_CheckSum_Write(uint32_t checkSum, uint32_t addr)
 
 }
 
-void PacketTotalNumWrite(uint32_t packetTotalNum, uint32_t addr)
+void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr)
 {
-	for(uint32_t i = 0;i < TOTAL_NUM_LENGTH; i++)
+	int i = 0;
+	for(i = 0;i < TOTAL_NUM_LENGTH; i++)
 	{
 		IAP_WriteOneByte(addr + i, (packetTotalNum >> (8 * i)), IAP_CHECK_AREA);
 	}
@@ -698,7 +715,8 @@ uint32_t All_CheckSum_Read(uint32_t addr)
 uint32_t PacketTotalNumRead(uint32_t addr)
 {
     uint32_t packetTotalNum = 0;
-    for(uint32_t i = 0; i<TOTAL_NUM_LENGTH; i++)
+	int i;
+    for(i = 0; i<TOTAL_NUM_LENGTH; i++)
     {
         packetTotalNum += (IAP_ReadOneByte(addr+i,IAP_CHECK_AREA) << (8 * i));
     }
@@ -736,21 +754,21 @@ void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area)
 {
 	getCheckPara(area);
 	IAP_Erase_Some(numAddr,ALL_FLAG_LENTH);
-	PacketTotalNumWrite(totalNum, numAddr); // app校验和靠读取buffer或者backup，buffer靠外面输入，backup靠外面输入
+	uint32ValWrite(totalNum, numAddr); // app校验和靠读取buffer或者backup，buffer靠外面输入，backup靠外面输入
 	All_CheckSum_Write(chkSum, checkAddr);
 }
 uint8_t CheckSumCheck(int area)
 {
 	uint32_t packetTatolSize = 0;
 	uint16_t calCheckSum = 0;
-
+	int i;
 	getCheckPara(area);
 	packetTatolSize = PACKET_SIZE * PacketTotalNumRead(numAddr);
 	
 	if(packetTatolSize == 0 || packetTatolSize > MAX_PACK_NUM) {
 		return 0;
 	}
-	for(uint32_t i = 0; i < packetTatolSize; i++) {
+	for(i = 0; i < packetTatolSize; i++) {
 		calCheckSum += IAP_ReadOneByte(hexAddr+i,IAP_CHECK_AREA);
 	}
 
@@ -793,12 +811,12 @@ void AppRestore()
 		return;
 	}
 	#ifndef IN_APP
-	if(*g_restoreBufferFlag == 0x55AA5A5A) {
-		g_restoreBufferFlag = 0;
+	if(ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF) {
 		if(IAP_Remap() == 1) {
 			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_AREA);
 			if(CheckSumCheck(APROM_AREA) == 1)
 			{
+				IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
 				ACK = ERR_NO; //回应退出了Bootloader
 				ResetFlag = 1;
 			} else {
@@ -807,14 +825,14 @@ void AppRestore()
 		} else {
 			ACK = ERR_REMAP;
 		}
-		result_cmd = ENTER_APP;
-	} else if(*g_restoreBackupFlag == 0xA5A5A5A5) {
-		g_restoreBackupFlag = 0;
+		result_cmd = BMS_SHAKE_ENTER_APP;
+	} else if(ReadInt(BACKUP_RESTORE_ADDRESS) == RESTORE_BKP) {
 		if(IAP_BkpRemap() == 1) {
 			// 从备份区中读取校验和数据，并写入到APP区域中
 			CheckSumWrite(PacketTotalNumRead(BACKUP_TOTAL_NUM_ADRESS), All_CheckSum_Read(BACKUP_CHECKSUM_ADRESS), APROM_AREA);
 			if(CheckSumCheck(APROM_AREA) == 1)
 			{
+				IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4); // 成功恢复数据后才会清楚标志位，但是如果清楚不成功可能造成反复进入，所以需要APP中不复位
 				ACK = ERR_NO; //回应退出了Bootloader
 				ResetFlag = 1;
 			} else {
@@ -831,8 +849,9 @@ void BootCheckReset()
     if(ResetFlag==1)
     {
         ResetFlag = 0;	
+		#ifndef BMS_APP_DEVICE
 		BaseTimeSystemInit(BOOT_DISABLE);//关闭定时器
-
+		#endif
 		// #ifdef FLASH_BUFF_ENABLE
 		// if(CurrState == 2)
 		// {
@@ -867,6 +886,7 @@ void GetVer(uint32_t addr, int lenth)
 {
 	uint8_t* p_addr = (uint8_t*)addr;
 	uint32_t area = 0;
+	int i;
 	switch(addr) {
 		case APP_VER_ADDR: 		area 	= APROM_AREA; 			break;
 		case APP_BUFF_VER_ADDR: area 	= APROM_BUFF_AREA;		break;
@@ -875,11 +895,11 @@ void GetVer(uint32_t addr, int lenth)
 	// 烧录区需要判断检验和
 	// 如果校验和不正确，则不返回版本号，经测试后功能可用。
 	if(area == 0 || CheckSumCheck(area) == 1) {
-		for(int i = 0; i < lenth; i++) {
+		for(i = 0; i < lenth; i++) {
 			CmdSendData[CmmuSendLength + i] = *(p_addr + i);
 		}
 	} else {
-		for(int i = 0; i < lenth; i++) {
+		for(i = 0; i < lenth; i++) {
 			CmdSendData[CmmuSendLength + i] = 0xff;
 		}
 	}
@@ -908,14 +928,16 @@ uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 {
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
+	VerStru* hexVer = 0x0;
+	int i = 0;
     CmmuSendLength = 0;	
     ACK = ERR_NO;
-	TVER* hexVer = 0x0;
+//	VerStru* hexVer = 0x0;
 	switch(cmd)
 	{
-		case ENTER_BOOTMODE:
-		case DOWNLOAD_BUFFER:
-		case DOWNLOAD_BACKUP:
+		case PC_SHAKE_ENTER_BOOTMODE:
+		case PC_SET_DOWNLOAD_BUFFER:
+		case PC_SET_DOWNLOAD_BACKUP:
 		{
 			// 如果下载HEX中出现握手指令，则需要重新握手
 			if(g_shakehandFlag == BUFFER_FLAG || g_shakehandFlag == BACKUP_FLAG) {
@@ -933,13 +955,13 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //			IAP_Erase_ALL(APROM_AREA);
 //            ACK = ERR_NO;
 //        }break;
-		case PC_GET_VER_APP:
+		case PC_GET_VER:
 		{
-			hexVer = (TVER*)(APP_VER_ADDR);
+			hexVer = (VerStru*)(APP_VER_ADDR);
 			if(g_flashWritableFlag.bit.appArea == 1) {
 				if(CheckSumCheck(APROM_AREA) == 1) {
-					memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
-					CmmuSendLength = sizeof(TVER);
+					memcpy(&CmdSendData[0], hexVer, sizeof(VerStru));
+					CmmuSendLength = sizeof(VerStru);
 					ACK = ERR_NO;
 				} else {
 					ACK = ERR_ALL_CHECK;
@@ -1001,7 +1023,7 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		// 	CmmuSendLength = sizeof(VerStru);
 		// 	ACK = ERR_NO;
 		// }
-        case ENTER_BOOTMODE: // 握手三次即可开始烧录
+        case PC_SHAKE_ENTER_BOOTMODE: // 握手三次即可开始烧录
         {
 			SetShakehandFlag(ENTER_CMD);
 			/* 关闭时钟 */
@@ -1015,10 +1037,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 //        case SET_BAUD:
 //        {
 //            cmd_buff = DEAL_SUCCESS;
-//			NewBaud = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
+//			NewBaud = (((uint32_t)rBuff[4])<<24)+(((uint32_t)rBuff[5])<<16)+(((uint32_t)rBuff[6])<<8)+((uint32_t)rBuff[7]);
 //        }break;
 
-        case DOWNLOAD_BUFFER:	//擦除APROM所有内容
+        case PC_SET_DOWNLOAD_BUFFER:	//擦除APROM所有内容
         {
 			SetShakehandFlag(BUFFER_CMD);
 			if(g_shakehandFlag != BUFFER_FLAG) {
@@ -1031,9 +1053,10 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 			BeginAddr = APP_BUFF_ADDR; // 地址修改成缓冲区地址为writeflash做准备
 			g_downLoadStatus = DOWNLOADING_BUFF;
+			NextPacketNumber = 1;
 			ACK = ERR_NO_SHAKE_SUCCESS;
         }break;
-		case DOWNLOAD_BACKUP:	//擦除APROM所有内容
+		case PC_SET_DOWNLOAD_BACKUP:	//擦除APROM所有内容
         {
 			SetShakehandFlag(BACKUP_CMD);
 			if(g_shakehandFlag != BACKUP_FLAG) {
@@ -1050,14 +1073,19 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 			BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
 			g_downLoadStatus = DOWNLOADING_BKP;
+			NextPacketNumber = 1;
 			ACK = ERR_NO_SHAKE_SUCCESS;
         }break;
-		case WRITE_FLASH:// 写入app，成功后进入app
+		case PC_SET_WRITE_FLASH:// 写入app，成功后进入app
 		{
-			if(g_downLoadStatus != DOWNLOADING_BUFF && g_downLoadStatus != DOWNLOADING_BKP) {
+			if(g_shakehandFlag != BUFFER_FLAG && g_shakehandFlag != BACKUP_FLAG) {
 				ACK = ERR_SHAKEHAND;
 				break;
 			}
+			// if(dataLen != PACKET_SIZE + RECEIVE_PACKET_LENTH) {
+			// 	ACK = ERR_CMD_LEN;
+			// 	break;
+			// }
 			#ifdef ENCRYPT_ENABLE
 			if(temp==UID_ENC_AREA)
 			{
@@ -1074,11 +1102,11 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 
 			if(IAP_WriteMultiByte(BeginAddr,(CommuData+DATA_OFFSET),PACKET_SIZE,temp))
 			{
-				BeginAddr = BeginAddr+CmmuLength;
+				BeginAddr = BeginAddr+PACKET_SIZE;
 				NextPacketNumber++;
 				ACK = ERR_NO;
 				g_packetTotalNum = 0;
-				for(int i = 0; i < PACKET_ID_LENTH; i++) {
+				for(i = 0; i < PACKET_ID_LENTH; i++) {
 					g_packetTotalNum += CommuData[i + 7 + PACKET_ID_LENTH] << (i * 8);
 				}
 			}
@@ -1086,21 +1114,21 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			{
 				ACK = ERR_OPERATE;
 			}
-			for(int i = 0; i < PACKET_ID_LENTH; i++) {
+			for(i = 0; i < PACKET_ID_LENTH; i++) {
 				CmdSendData[i] = CommuData[i + 7];
 			}
 			CmmuSendLength = PACKET_ID_LENTH;
 		}break;        
-		case REC_ALL_CHECKSUM: //接受hex文件校验和
+		case PC_SET_ALL_CHECKSUM: //接受hex文件校验和
         {
-			for(int i = 0; i < PACKET_ID_LENTH; i++) {
+			for(i = 0; i < PACKET_ID_LENTH; i++) {
 				CmdSendData[i] = CommuData[i + 7];
 			}
 			// CheckSum[0] = CommuData[7];
 			// CheckSum[1] = CommuData[8];
 			CheckSum = CommuData[7] + CommuData[8] * 0x100;
 			// All_CheckSum_Write(CheckSum, APP_CHECKSUM_ADRESS);
-			// PacketTotalNumWrite(g_packetTotalNum, APP_TOTAL_NUM_ADRESS);
+			// uint32ValWrite(g_packetTotalNum, APP_TOTAL_NUM_ADRESS);
 			// if(AppCheckSumCheck() == 1)
 			// {
 			// 	ACK = ERR_NO; //回应退出了Bootloader
@@ -1109,15 +1137,16 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			// }
 			if(g_downLoadStatus == DOWNLOADING_BUFF) {
 				CheckSumWrite(g_packetTotalNum, CheckSum, APROM_BUFF_AREA);
+				uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
 				g_packetTotalNum = 0;
-				if(CheckSumCheck(APROM_BUFF_AREA) == 1)
+				if(CheckSumCheck(APROM_BUFF_AREA) == 1 && ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF)
 				{
 					ACK = ERR_NO; //回应退出了Bootloader
 //					CheckSumWrite(0, 0, APROM_AREA); 	// 将app区域设置成非法
 					#ifdef IN_APP
 					ResetFlag = 1;						// 需要进入bt中
 					#endif
-					*g_restoreBufferFlag = 0x55AA5A5A;	// 设置恢复缓冲区标志位,等待跳入bt中
+					ReadInt(BUFFER_RESTORE_ADDRESS) = RESTORE_BUFF;	// 设置恢复缓冲区标志位,等待跳入bt中
 					g_downLoadStatus = DOWNLOADED_BUFF;	// 修改下载状态
 					g_shakehandFlag = 0x0;				// 清除握手成功标志位
 				} else {
@@ -1139,19 +1168,17 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 			}
 
         }break;        
-//        case ENTER_APPMODE: //运行用户代码
-//        {
-//            cmd_buff = DEAL_SUCCESS; //回应退出了Bootloader 
-//            #ifdef FLASH_BUFF_ENABLE            
-//			CurrState = 2;//表示代码缓存已下载完成
-//            #endif
-//            g_restoreBufferFlag = 0x55AA5A5A;
-//        }break;        
+       case BMS_SHAKE_ENTER_APP: //运行用户代码
+       {
+//			NVIC_SystemReset();
+			ACK = ERR_NO;
+			// g_restoreBufferFlag = 0x55AA5A5A;
+       }break;        
         case NO_CMD://无操作
         {
             ACK = ERR_CMD_ID;
         }break;
-        case READ_FLASH: // 读取flash，暂未使用此功能
+        case PC_GET_READ_FLASH: // 读取flash，暂未使用此功能
         {            
 			//ReadFlashAddr = CommuData[6]*256+CommuData[7];
             ReadFlashAddr = (((uint32_t)CommuData[4])<<24)+(((uint32_t)CommuData[5])<<16)+(((uint32_t)CommuData[6])<<8)+((uint32_t)CommuData[7]);
@@ -1169,18 +1196,23 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 
             CmmuSendLength = ReadFlashLength;
         }break;
-		case RESTORE_BACKUP:
+		case PC_SET_RESTORE_BACKUP:
 		// 恢复备份区流程 1下载 2强制恢复命令 3跳转到bt 4恢复 5跳转到app
 		{
 			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) { // 判断BACKUP区域是否有数据
 				ACK = ERR_AREA_BLANK;
 				break;
 			}
+			uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
+			if(ReadInt(BACKUP_RESTORE_ADDRESS) != RESTORE_BKP) {
+				ACK = ERR_AREA_NOT_WRITABLE;
+				break;
+			}
 			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) { // 校验BACKUP区域校验和
 				if(get_pc() >= APP_ADDR) {
 					ResetFlag = 1;						// 如果
 				}
-				*g_restoreBackupFlag = 0xA5A5A5A5;		// 设置标志位，进入bt后开始恢复backup区
+				ReadInt(BACKUP_RESTORE_ADDRESS) = RESTORE_BKP;		// 设置标志位，进入bt后开始恢复backup区
 				ACK = ERR_NO;
 			} else {
 				ACK = ERR_ALL_CHECK;
@@ -1189,15 +1221,17 @@ boot_cmd_t BootCmdRun(boot_cmd_t cmd)
 		break;
         default:
         {
-            // CmdSendData[0] = ERR_CHECK;
+            // CmdSendData[0] = ERR_CHKSUM;
             CmmuSendLength = 0;
             ACK = ERR_CMD_ID;
         }
         break;
     }
     if(ACK != ERR_CMD_ID) {
+#ifndef BMS_APP_DEVICE
 		BootWaitTime = 0;
 		BootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
+#endif
         return (cmd | 0x80);
     } else {
         return cmd;
@@ -1221,6 +1255,7 @@ void BootWaitTimeInit(void)
 void BootProcess(void)
 {
 	AppRestore();
+	#ifndef BMS_APP_DEVICE
 	if(UartReceFlag)
 	{
 		CMDBuff = AnalysisData();  // 分析从中断函数总获取的数据包， 返回cmd       
@@ -1228,17 +1263,20 @@ void BootProcess(void)
 		if (ACK == ERR_NO) {
 			result_cmd = BootCmdRun(CMDBuff);  // 根据cmd运行响应函数
 		}
+		#ifndef BMS_APP_DEVICE
 		CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
 		result_cmd = BOOT_BOOL_FALSE;
+		#endif
 		CMDBuff = 0; 
 	}
+	#endif
 	#ifndef IN_APP
 	if(BootWaitTime > BootWaitTimeLimit) {
 		if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
 			ResetFlag = 1;
 		} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
 			// 如果因为意外使APP损坏，将缓冲区APP复制过来
-			*g_restoreBufferFlag = 0x55AA5A5A;
+			ReadInt(BUFFER_RESTORE_ADDRESS) = RESTORE_BUFF;
 		// } else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
 		// 	g_BkpFlag = 1;
 		// 	g_restoreBackupFlag = 0;
@@ -1249,6 +1287,7 @@ void BootProcess(void)
 	BootCheckReset(); // 跳转函数，条件满足即可跳转入app
 }
 
+#ifndef BMS_APP_DEVICE
 void UART1_Start(void)
 {
     SCI0->SO0 |= _0004_SCI_CH2_DATA_OUTPUT_1;
@@ -1589,11 +1628,11 @@ void GPIO_Config(void)
 *********************************************************************************************************/
 void HardDriveInit(void)
 {
-	if(DEVICE == BMS_DEVICE) {
-		Clock_Config();		//OK
-	} else if (DEVICE == DEBUG_DEVICE) {
-		system_tick_init();
-	}
+	uint32_t uart_statu;
+	Clock_Config();		//OK
+#ifdef BMS_BT_DEVICE
+	system_tick_init();
+#endif 
 	
 //	GPIO_Config();		//OK
 	//Ext_INT_Config();	//?????
@@ -1603,15 +1642,17 @@ void HardDriveInit(void)
 	//CAN_Config();		//CAN OK?
 	// ADC_Config();		//OK
 	//sEE_Config();		//OK
-	uint32_t uart_statu = UART1_Init(SystemCoreClock, UartBaud);
+	uart_statu = UART1_Init(SystemCoreClock, UartBaud);
 
 }
+#endif
 
 uint8_t CheckAreaWritable(uint32_t addr)
 {
 	uint8_t ok = 0;
 	uint8_t CheckFlashBuff[512] = {0};
-	for(int i=0;i<512;i++)
+	int i = 0;
+	for(i = 0; i < 512; i++)
 	{
 		CheckFlashBuff[i] = IAP_ReadOneByte(addr + i,IAP_CHECK_AREA);
 	}
@@ -1620,7 +1661,7 @@ uint8_t CheckAreaWritable(uint32_t addr)
 
 	if(ok == 1) {
 		IAP_Erase_512B(addr & 0xffffff00,IAP_CHECK_AREA);
-		for(int i=0;i<512;i++)
+		for(i=0;i<512;i++)
 		{
 			IAP_WriteOneByte_Check(addr + i, CheckFlashBuff[i], IAP_CHECK_AREA);
 		}
