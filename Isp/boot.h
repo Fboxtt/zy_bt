@@ -4,11 +4,27 @@
 /*communication_protocol.h*/
 /*communication_protocol.h*/
 
-#include "serial_port_config.h"//串口通讯底层驱动文件
+// #include "serial_port_config.h"//串口通讯底层驱动文件
+#include "BAT32G137.h"
+#include "userdefine.h"
+#include "cg_sci.h"
+#include "cg_macrodriver.h"
 #include "gpio.h"
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
+
+#define UartBaud				19200		    	 //初始默认波特率
+#define	Fsoc					48000000	    	//主频选择
+#define CommunicationIOInit()	GPIO_SET_MUX_MODE(P23CFG,GPIO_MUX_TXD0);GPIO_SET_MUX_MODE(P24CFG,GPIO_MUX_RXD0)//通讯IO设置
+//**********************UART通讯接口**********************************
+extern uint8_t UartReceFlag;		  			//UART0接收完一帧标志位
+extern uint8_t UartSendFlag;		  			//UART0发送完一Byte标志位
+extern uint32_t CmmuReadNumber;
+//*********************************************************************
+void UartInit(uint32_t baud);
+void UartSendOneByte(uint8_t input_data);
+
 typedef enum {
     UART0,
     UART1,

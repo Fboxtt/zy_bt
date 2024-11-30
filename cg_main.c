@@ -208,6 +208,7 @@ void Clock_Config(void)
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
+	SCB->VTOR = 0x0000;
 	HardDriveInit();
     BootInit();
 	toggle_Init();
