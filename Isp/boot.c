@@ -62,7 +62,7 @@ typedef struct {
 
 #ifndef IN_APP
 const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
-	1,1,0,2024,11,12
+	1,2,0,2024,11,12
 };
 #endif
 
