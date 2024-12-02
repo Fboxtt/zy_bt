@@ -607,15 +607,10 @@ volatile uint8_t ACK = 0x00;
 
 
 WritableFlag g_flashWritableFlag = {0};
-#ifdef BMS_APP_DEVICE
-	uint8_t g_resetHandlerByid;
-#endif
+
 /* boot初始化钩子函数，请将初始化代码写入该函数 */
 void BootInit()
 {
-#ifdef BMS_APP_DEVICE
-	g_resetHandlerByid = SetQuickTask(IAP_Reset,NULL,TASK_SUSPEND);
-#endif
 	// UartInit(UartBaud);
 	g_FLSTSMaxCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
 	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
