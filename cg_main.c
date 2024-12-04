@@ -190,6 +190,7 @@ void toggle(void)
 	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
 	PORT->P7 |= _02_Pn1_OUTPUT_1;
 }
+uint32_t g_uartWaitTime = 0;
 
 void Clock_Config(void)
 {	
@@ -242,6 +243,39 @@ void SysTick_Handler(void)
 		PORT->P7 &= (~_02_Pn1_OUTPUT_1);
 	}
 	g_ticks--;
+	if(g_uartWaitTime > 10) {
+		ClearCommu();
+	}
+	g_uartWaitTime++;
 	BootWaitTime++;
 }
 /* End user code. Do not edit comment generated here */
+
+void UartReceData(uartId id)//接收数据帧
+{
+	if(!UartReceFlag)
+	{		
+		if(id == UART0) {
+			CommuData[CmmuReadNumber] = SCI0->RXD0;		//将接收数据载入缓存
+		}else if(id == UART1) {
+			CommuData[CmmuReadNumber] = SCI0->RXD1;		//将接收数据载入缓存
+		}else if(id == UART2) {
+			CommuData[CmmuReadNumber] = SCI1->RXD2;		//将接收数据载入缓存
+		}
+		CmmuReadNumber++;
+		g_uartWaitTime = 0;
+		// if(CommuData[0] == SLAVE_ADDRESS)
+		// {
+			
+		// }
+		if(CmmuReadNumber >= 3) {
+			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //数据数量超过256的话需要修改CmmuReadNumber类型
+			{
+				/* 开启看门狗和清狗 */
+				CmmuLength = 3 + CommuData[1] * 0x100 + CommuData[2] + 1;
+				UartReceFlag = 1;	  //表示接收到一帧数据
+			}
+		}
+
+	}
+}

@@ -19,6 +19,27 @@
 #ifdef BMS_APP_DEVICE
 #include "sci.h"
 #endif
+
+#ifdef BMS_BT_DEVICE
+
+typedef		unsigned char		UCHAR;			//uc
+
+typedef     unsigned char       BYTE;
+    
+typedef     char                UBYTE  ;
+    
+typedef     unsigned short      WORD;
+
+
+typedef struct
+{
+   BYTE  *pbuf; 
+   WORD  wLen;  
+}TUartData;	 
+
+#endif
+
+void DownloadProcess(void *p,UCHAR ucComPort);
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
@@ -49,7 +70,7 @@ typedef enum {
 
 #define PACKET_ID_LENTH            2
 #define RECEIVE_PACKET_LENTH        (PACKET_ID_LENTH+PACKET_ID_LENTH)
-#define DATA_OFFSET					(7+RECEIVE_PACKET_LENTH)
+#define DATA_OFFSET					(RECEIVE_PACKET_LENTH)
 #define PACKET_SIZE                 512
 #define MAX_PACK_NUM				(80 * 1024)
 #define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容
@@ -67,8 +88,8 @@ extern commu_cmd_t CMDBuff;		                        //命令存储缓存
 extern commu_data_t CommuData[ReceiveLength1];	//通讯接收缓存
 extern commu_data_t CmdSendData[SendLength1];  //发送缓存
 extern commu_length_t CmmuSendLength;		            //接收数据长度
-void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data);    
-uint8_t AnalysisData(void);
+void CommuSendCMD(commu_cmd_t Command,commu_cmd_t dataLen,commu_data_t* Data, commu_data_t Ack);
+uint8_t AnalysisData(uint8_t *pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, volatile uint8_t* pAck);
 void ClearCommu(void);
 void UartReceData(uartId id);
 
@@ -207,7 +228,7 @@ extern void BootCheckReset(void);		//检测是否有复位信号
 extern void AppRestore(void);
 extern uint8_t CheckUID(void);
 void BootInit(void);
-boot_cmd_t BootCmdRun(boot_cmd_t cmd);
+boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack);
 
 
 uint8_t AppCheckSumCheck(void);
