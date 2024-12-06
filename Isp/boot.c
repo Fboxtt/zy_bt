@@ -7,9 +7,6 @@
 //************************************************************
 #include "includes.h"
 
-// uint32_t* g_restoreBufferFlag = (uint32_t*)0x20000000; // 把强制恢复标志位保存在sram内的起始地址
-// uint32_t* g_restoreBackupFlag = (uint32_t*)0x20000004; // 把强制恢复标志位保存在sram内的起始地址
-
 uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位
 uint8_t UartSendFlag;				//UART0发送完一Byte标志位
@@ -95,13 +92,13 @@ __asm uint32_t get_pc(void) {
 
 
 
-void UartInit(uint32_t baud)
-{
-    SCI0_Init();
-    /* UART0 Start, Setting baud rate */
-    UART0_BaudRate(Fsoc, baud);
-    UART0_Start();
-}
+// void UartInit(uint32_t baud)
+// {
+//     SCI0_Init();
+//     /* UART0 Start, Setting baud rate */
+//     UART0_BaudRate(Fsoc, baud);
+//     UART0_Start();
+// }
 
 void UartSendOneByte(uint8_t input_data)
 {
@@ -239,70 +236,15 @@ uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, v
 }
 
 #ifndef BMS_APP_DEVICE
-void IRQ10_Handler(void) __attribute__((alias("uart0_interrupt_send")));
-void IRQ11_Handler(void) __attribute__((alias("uart0_interrupt_receive")));
 
-static void uart0_callback_sendend(void)
-{
-    /* Start user code. Do not edit comment generated here */
-    UartSendFlag=1; 	 //BootLoader·???±ê??
-    uart_send_flag=1;
-    /* End user code. Do not edit comment generated here */
-}
-static void uart1_callback_sendend(void)
-{
-    /* Start user code. Do not edit comment generated here */
-    UartSendFlag=1; 	 //BootLoader·???±ê??
-    uart_send_flag=1;
-    /* End user code. Do not edit comment generated here */
-}
-static void uart0_interrupt_send(void)
-{
-    INTC_ClearPendingIRQ(ST0_IRQn); /* clear INTST0 interrupt flag */
-    if (g_uart0_tx_count > 0U)
-    {
-		SCI0->TXD0 = *gp_uart0_tx_address;
-        gp_uart0_tx_address++;
-        g_uart0_tx_count--;
-    }
-    else
-    {
-        uart0_callback_sendend();
-    }
-}
+// static void uart1_callback_sendend(void)
+// {
+//     /* Start user code. Do not edit comment generated here */
+//     UartSendFlag=1; 	 //BootLoader·???±ê??
+//     uart_send_flag=1;
+//     /* End user code. Do not edit comment generated here */
+// }
 
-static void uart0_interrupt_receive(void)
-{
-	uartId id = UART0;
-
-    
-	// interrupt_receive(UART0);
-
-    volatile uint8_t rx_data;
-    volatile uint8_t err_type;
-    INTC_ClearPendingIRQ(SR0_IRQn); /* clear INTSR0 interrupt flag */
-    if(id == UART0) {
-        err_type = (uint8_t)(SCI0->SSR01 & 0x0007U);
-        SCI0->SIR01 = (uint16_t)err_type;
-        rx_data = SCI0->RXD0;
-    } else if(id == UART1) {
-        err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
-        SCI0->SIR03 = (uint16_t)err_type;
-        rx_data = SCI0->RXD1;
-    } else if(id == UART2) {
-        err_type = (uint8_t)(SCI1->SSR11 & 0x0007U);
-        SCI1->SIR11 = (uint16_t)err_type;
-        rx_data = SCI1->RXD2;
-    }
-
-    // if (err_type != 0U)
-    // {
-    //     uart0_callback_error(err_type);
-    // }
-    
-
-    UartReceData(id);
-}
 #endif
 /*flash_operate*/
 const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP可正常运行状态。
@@ -1440,8 +1382,7 @@ void uart1_interrupt_receive(void)
 void uart1_interrupt_send(void)
 {
     INTC_ClearPendingIRQ(ST0_IRQn); /* clear INTST0 interrupt flag */
-	uart1_callback_sendend();
-
+	// uart1_callback_sendend();
 }
 
 
