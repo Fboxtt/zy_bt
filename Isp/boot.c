@@ -1693,6 +1693,26 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
 	}
 }
 #endif
+
+void DownloadTermination(void)
+{
+	if(g_downLoadStatus == DOWNLOADING_BUFF) {
+		IAP_Erase_ALL(APROM_BUFF_AREA); // 清除接受数据缓冲区
+		CheckSumWrite(0xffffffff, 0xffffffff, APROM_BUFF_AREA); // 清除校验和包数量
+		uint32ValWrite(0x0, BUFFER_RESTORE_ADDRESS); // 清除恢复标志位
+
+	} else if(g_downLoadStatus == DOWNLOADING_BKP) {
+		IAP_Erase_ALL(APROM_BACKUP_AREA);
+		CheckSumWrite(0xffffffff, 0xffffffff, APROM_BACKUP_AREA);
+		uint32ValWrite(0x0, BACKUP_RESTORE_ADDRESS);
+	}
+	// 清除握手标志位, 如果没有g_downLoadStatus说明正在握手，也需要清除握手标志位
+	g_shakehandFlag = 0x0;
+
+}
+
+uint32_t g_errTime = 0;
+
 void DownloadProcess(void *p,UCHAR ucComPort)
 {
 	uint8_t  *rBuff, cmd, Ack;                         //????????????
@@ -1704,6 +1724,14 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 
 	if (Ack == ERR_NO) {
 		result_cmd = BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
+	}
+	if(Ack != ERR_NO && Ack != ERR_NO_SHAKE_SUCCESS) {
+		if(++g_errTime > 3) {
+			g_errTime = 0;
+			DownloadTermination();
+		} 
+	} else {
+		g_errTime = 0;
 	}
 	// fillbackFunc
 #ifdef BMS_APP_DEVICE
