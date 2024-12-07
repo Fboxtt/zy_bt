@@ -50,7 +50,7 @@ void DownloadProcess(void *p,UCHAR ucComPort);
 #define CommunicationIOInit()	GPIO_SET_MUX_MODE(P23CFG,GPIO_MUX_TXD0);GPIO_SET_MUX_MODE(P24CFG,GPIO_MUX_RXD0)//通讯IO设置
 //**********************UART通讯接口**********************************
 extern uint8_t UartReceFlag;		  			//UART0接收完一帧标志位
-extern uint8_t UartSendFlag;		  			//UART0发送完一Byte标志位
+// extern uint8_t UartSendFlag;		  			//UART0发送完一Byte标志位
 extern uint32_t CmmuReadNumber;
 //*********************************************************************
 void UartInit(uint32_t baud);
@@ -85,7 +85,6 @@ typedef enum {
 #define commu_cmd_t  uint8_t                //命令的数据类型
 
 extern commu_length_t CmmuLength;		                //接收数据长度
-extern commu_cmd_t CMDBuff;		                        //命令存储缓存
 extern commu_data_t CommuData[ReceiveLength1];	//通讯接收缓存
 extern commu_data_t CmdSendData[SendLength1];  //发送缓存
 extern commu_length_t CmmuSendLength;		            //接收数据长度
@@ -218,7 +217,6 @@ extern uint32_t BootWaitTimeLimit;
 /*     此处为通讯相关接口，需要在通讯协议文件中定义此部分内容      */
 // #define CommunicationLength1    (64+2+8)
 extern boot_length_t CmmuLength;		             //接收数据长度
-extern boot_cmd_t CMDBuff;		                     //命令存储缓存
 extern boot_data_t CommuData[ReceiveLength1];	 	//通讯接收缓存
 extern boot_data_t CmdSendData[SendLength1];		//发送缓存
 extern boot_length_t CmmuSendLength;		         //接收数据长度
@@ -299,7 +297,6 @@ uint8_t AppCheckSumCheck(void);
 #define BACKUP_CHECKSUM_ADRESS	(BACKUP_TOTAL_NUM_ADRESS + 4)            //缓冲区hex文件大小存储
 #define BACKUP_RESTORE_ADDRESS	(BACKUP_CHECKSUM_ADRESS + 4)
 
-#define FLASH_BUFF_ENABLE
 #define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //表示APP缓存区装载完备的数字码，最大14Byte
 
 #define UID_ENC_ADRESS			0x1FE00		        //UID密文存储地址

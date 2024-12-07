@@ -7,18 +7,11 @@
 //************************************************************
 #include "includes.h"
 
-// uint32_t* g_restoreBufferFlag = (uint32_t*)0x20000000; // 把强制恢复标志位保存在sram内的起始地址
-// uint32_t* g_restoreBackupFlag = (uint32_t*)0x20000004; // 把强制恢复标志位保存在sram内的起始地址
-
 uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位
-uint8_t UartSendFlag;				//UART0发送完一Byte标志位
 
 
-
-uint8_t CommunicationCheckNumber;			//校验位
 commu_length_t CmmuLength;						//接收数据长度
-uint8_t CMDBuff;								//命令存储缓存
 commu_data_t CommuData[ReceiveLength1];	//通讯接收缓存
 
 commu_data_t CmdSendData[SendLength1];	//发送数据
@@ -26,10 +19,6 @@ commu_length_t CmmuSendLength;		    //发送数据长度
 
 commu_data_t CmdSendAll[SendLength1];	//发送缓存
 commu_length_t CmdSendAllLenth;			//发送缓存长度
-
-uint8_t CRCchecksum[4];
-
-uint8_t uart_send_flag = 0;
 
 typedef enum {
 	NO_DOWNLOADING = 0x0,
@@ -43,11 +32,11 @@ typedef enum {
 
 DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
 #ifndef BMS_APP_DEVICE
-volatile uint8_t * gp_uart0_tx_address;         /* uart0 send buffer address */
-volatile uint16_t  g_uart0_tx_count;            /* uart0 send data number */
-volatile uint8_t * gp_uart0_rx_address;         /* uart0 receive buffer address */
-volatile uint16_t  g_uart0_rx_count;            /* uart0 receive data number */
-volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
+// volatile uint8_t * gp_uart0_tx_address;         /* uart0 send buffer address */
+// volatile uint16_t  g_uart0_tx_count;            /* uart0 send data number */
+// volatile uint8_t * gp_uart0_rx_address;         /* uart0 receive buffer address */
+// volatile uint16_t  g_uart0_rx_count;            /* uart0 receive data number */
+// volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
 #endif
 typedef struct {
 	uint16_t majorVer;			// 主版本号
@@ -78,7 +67,6 @@ const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
 uint8_t* g_sendArray;
 
 uint8_t result_cmd;
-// extern volatile uint8_t ACK;
 
 uint32_t BootWaitTime = 0;
 uint32_t BootWaitTimeLimit = 0;
@@ -90,16 +78,6 @@ __asm uint32_t get_pc(void) {
 	bx lr
 }
 #ifndef BMS_APP_DEVICE
-
-
-
-// void UartInit(uint32_t baud)
-// {
-//     SCI0_Init();
-//     /* UART0 Start, Setting baud rate */
-//     UART0_BaudRate(Fsoc, baud);
-//     UART0_Start();
-// }
 
 void UartSendOneByte(uint8_t input_data)
 {
@@ -113,33 +91,7 @@ void UartSendOneByte(uint8_t input_data)
 
 #endif 
 #define SLAVE_ADDRESS 0x00//设备地址
-//void UartReceData(uartId id)//接收数据帧
-//{
-//	if(!UartReceFlag)
-//	{		
-//		if(id == UART0) {
-//			CommuData[CmmuReadNumber] = SCI0->RXD0;		//将接收数据载入缓存
-//		}else if(id == UART1) {
-//			CommuData[CmmuReadNumber] = SCI0->RXD1;		//将接收数据载入缓存
-//		}else if(id == UART2) {
-//			CommuData[CmmuReadNumber] = SCI1->RXD2;		//将接收数据载入缓存
-//		}
-//		CmmuReadNumber++;
-//		// if(CommuData[0] == SLAVE_ADDRESS)
-//		// {
-//			
-//		// }
-//		if(CmmuReadNumber >= 3) {
-//			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //数据数量超过256的话需要修改CmmuReadNumber类型
-//			{
-//				/* 开启看门狗和清狗 */
-//				CmmuLength = 3 + CommuData[1] * 0x100 + CommuData[2] + 1;
-//				UartReceFlag = 1;	  //表示接收到一帧数据
-//			}
-//		}
 
-//	}
-//}
 void ClearCommu()
 {
     CommuData[0] = 0; //清除缓冲区数据头，准备下次串口数据到来
@@ -148,31 +100,6 @@ void ClearCommu()
 	CmdSendAllLenth = 0;
 }
 
-//#ifndef BMS_APP_DEVICE
-
-//void CommuSendCMD(commu_cmd_t Command,commu_cmd_t Data_len,commu_data_t* Data)
-//{
-//	uint8_t i;
-//	uint8_t check_sum = 0;
-//	UartSendOneByte(SEND_ADDRESS);	//发送帧头
-//	
-//	UartSendOneByte((Data_len + 5) >> 8);		 				 		//发送数据域长度高8位
-//	UartSendOneByte(Data_len + 5);		 			 	//发送数据域长度低8位
-//	UartSendOneByte(SEND_BMS_TYPE);					//发送单板类型码
-//	UartSendOneByte(Command);					 	//发送控制码
-//	UartSendOneByte(SEND_SHAKE_1);					//握手字1
-//	UartSendOneByte(SEND_SHAKE_2);					//握手字1
-//	UartSendOneByte(ACK);							//发送应答码
-//	check_sum = ((Data_len + 5) >> 8) + (Data_len + 5) + SEND_BMS_TYPE + Command + SEND_SHAKE_1 + SEND_SHAKE_2 + ACK;
-//	for(i=0;i<Data_len;i++)	  					 	//发送数据域
-//	{
-//		UartSendOneByte(*(Data+i));
-//		check_sum+=	*(Data+i);
-//	}	
-//	UartSendOneByte(check_sum);						//发送校验位低8位
-//	// UartSendOneByte(CommunicationCommandEnd);		//发送帧尾   
-//}
-//#endif
 
 void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,commu_cmd_t dataLen, commu_data_t Ack)
 {
@@ -238,13 +165,6 @@ uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, v
 
 #ifndef BMS_APP_DEVICE
 
-// static void uart1_callback_sendend(void)
-// {
-//     /* Start user code. Do not edit comment generated here */
-//     UartSendFlag=1; 	 //BootLoader·???±ê??
-//     uart_send_flag=1;
-//     /* End user code. Do not edit comment generated here */
-// }
 
 #endif
 /*flash_operate*/
@@ -387,27 +307,18 @@ uint8_t IAP_Erase_ALL(uint8_t area)
 		begin_addr = BACKUP_ADDR;
 		area = APROM_AREA;
 	}
-	#ifdef FLASH_BUFF_ENABLE
 	else if(area==APROM_BUFF_AREA)
 	{
 		k = (APP_BUFF_SIZE/ONE_PAGE_SIZE);
 		begin_addr = APP_BUFF_ADDR;
 		area = APROM_AREA;
 	}
-	#endif
 	else if(area==DATA_AREA)
 	{
 		k = (DATA_SIZE/ONE_PAGE_SIZE);
 		begin_addr = DATA_ADDR;
 	}
-	#ifdef ENCRYPT_UID_ENABLE
-	else if(area==UID_ENC_AREA)
-	{
-		k = 1;
-		begin_addr = UID_ENC_ADRESS;
-		area = APROM_AREA;
-	}
-	#endif
+
     for(i=0;i<k;i++)
     {
 		if(IAP_Erase_512B(i*ONE_PAGE_SIZE+begin_addr,area) == 0) {
@@ -495,37 +406,37 @@ void IAP_FlagWrite(uint8_t flag)
 	}
 }
 
-uint8_t IAP_CheckAPP()
-{
-    unsigned char i;
-	volatile uint8_t temp = 1;
-    for(i=0;i<IAP_CHECK_LENGTH;i++)
-    {
-        if(IAP_ReadOneByte(IAP_CHECK_ADRESS+i,IAP_CHECK_AREA)!=IapCheckNum[i])
-        {
-            temp = 0;
-			break;
-        }
-    }
-	if(temp)
-	{
-		return temp;
-	}
-	#ifdef FLASH_BUFF_ENABLE
-	for(i=0;i<IAP_CHECK_LENGTH;i++)
-    {
-		if(IAP_ReadOneByte(IAP_CHECK_ADRESS+i,IAP_CHECK_AREA)!=BuffCheckNum[i])
-        {
-			break;
-        }		
-    }
-	if(i>=IAP_CHECK_LENGTH)
-	{
-		temp = 2;
-	}
-	#endif
-    return temp;
-}
+// uint8_t IAP_CheckAPP()
+// {
+//     unsigned char i;
+// 	volatile uint8_t temp = 1;
+//     for(i=0;i<IAP_CHECK_LENGTH;i++)
+//     {
+//         if(IAP_ReadOneByte(IAP_CHECK_ADRESS+i,IAP_CHECK_AREA)!=IapCheckNum[i])
+//         {
+//             temp = 0;
+// 			break;
+//         }
+//     }
+// 	if(temp)
+// 	{
+// 		return temp;
+// 	}
+// 	#ifdef FLASH_BUFF_ENABLE
+// 	for(i=0;i<IAP_CHECK_LENGTH;i++)
+//     {
+// 		if(IAP_ReadOneByte(IAP_CHECK_ADRESS+i,IAP_CHECK_AREA)!=BuffCheckNum[i])
+//         {
+// 			break;
+//         }		
+//     }
+// 	if(i>=IAP_CHECK_LENGTH)
+// 	{
+// 		temp = 2;
+// 	}
+// 	#endif
+//     return temp;
+// }
 
 void IAP_ReadEncUID(uint8_t* buff)
 {
@@ -535,7 +446,7 @@ void IAP_ReadEncUID(uint8_t* buff)
 		buff[i] = IAP_ReadOneByte(UID_ENC_ADRESS+i,UID_ENC_AREA_AREA);
 	}
 }
-#ifdef FLASH_BUFF_ENABLE
+
 uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 {
 	uint16_t i;
@@ -548,7 +459,7 @@ uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 	}
 	return 1;
 }
-#endif
+
 
 uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
 {
@@ -611,14 +522,6 @@ void BootInit()
     {
 //        BaseTimeSystemInit(BOOT_ENABLE);
     }
-	#ifdef FLASH_BUFF_ENABLE
-	else if(CurrState==2)//将缓存区加载到运行区后直接运行APP
-	{
-		// IAP_Remap();//将代码缓存区的内容加载入程序运行区
-		// IAP_FlagWrite(1);//设置为APP可运行态
-//        IAP_Reset();
-	}
-	#endif
 }
 
 //void Decrypt_Fun(uint8_t* buff)
@@ -996,9 +899,9 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 			SetShakehandFlag(ENTER_CMD);
 			/* 关闭时钟 */
 //          BaseTimeSystemInit(BOOT_DISABLE);
-			#ifndef FLASH_BUFF_ENABLE
-			IAP_FlagWrite(0);//将APP完成标志去掉，如果更新过程失败则下次上电一直维持在BOOT等待更新
-			#endif
+			// #ifndef FLASH_BUFF_ENABLE
+			// IAP_FlagWrite(0);//将APP完成标志去掉，如果更新过程失败则下次上电一直维持在BOOT等待更新
+			// #endif
             *Ack = ERR_NO;
         }break;
 
