@@ -7,6 +7,9 @@
 //************************************************************
 #include "includes.h"
 
+// uint32_t* g_restoreBufferFlag = (uint32_t*)0x20000000; // 把强制恢复标志位保存在sram内的起始地址
+// uint32_t* g_restoreBackupFlag = (uint32_t*)0x20000004; // 把强制恢复标志位保存在sram内的起始地址
+
 uint32_t CmmuReadNumber;	//通讯当前读取数据为一帧中的第几个数
 uint8_t UartReceFlag;				//UART0接收完一帧标志位
 uint8_t UartSendFlag;				//UART0发送完一Byte标志位
@@ -79,8 +82,6 @@ uint8_t result_cmd;
 
 uint32_t BootWaitTime = 0;
 uint32_t BootWaitTimeLimit = 0;
-
-
 
 int g_FLSTSMaxCount = 0;
 
@@ -895,7 +896,7 @@ uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
-	VerStru* hexVer = 0x0;
+	TVER* hexVer = 0x0;
 	int i = 0;
     CmmuSendLength = 0;	
 	*Ack = ERR_NO;
@@ -924,11 +925,11 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 //        }break;
 		case PC_GET_VER:
 		{
-			hexVer = (VerStru*)(APP_VER_ADDR);
+			hexVer = (TVER*)(APP_VER_ADDR);
 			if(g_flashWritableFlag.bit.appArea == 1) {
 				if(CheckSumCheck(APROM_AREA) == 1) {
-					memcpy(&CmdSendData[0], hexVer, sizeof(VerStru));
-					CmmuSendLength = sizeof(VerStru);
+					memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
+					CmmuSendLength = sizeof(TVER);
 					*Ack = ERR_NO;
 				} else {
 					*Ack = ERR_ALL_CHECK;
@@ -1308,7 +1309,7 @@ MD_STATUS UART1_Init(uint32_t freq, uint32_t baud)
 
     return (status);
 }
-
+#ifndef BMS_APP_DEVICE
 // #define USE_SCI_UART1_TX
 // #define USE_SCI_UART1_RX
 
@@ -1339,6 +1340,7 @@ void uart1_callback_error(void)
 {
 	
 }
+#endif
 void uart1_interrupt_receive(void)
 {
     volatile uint8_t rx_data;

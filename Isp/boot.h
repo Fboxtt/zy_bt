@@ -7,20 +7,21 @@
 // #include "serial_port_config.h"//串口通讯底层驱动文件
 #include "BAT32G137.h"
 #include "userdefine.h"
-#include "cg_sci.h"
-#include "cg_macrodriver.h"
+
 #include "gpio.h"
 
 #define DEBUG_DEVICE 1
 #define BMS_BT_DEVICE 2
 // #define BMS_APP_DEVICE 3
 #define DEVICE BMS_APP_DEVICE
-
+// #define IN_APP
 #ifdef BMS_APP_DEVICE
 #include "sci.h"
 #endif
 
 #ifdef BMS_BT_DEVICE
+#include "cg_sci.h"
+#include "cg_macrodriver.h"
 
 typedef		unsigned char		UCHAR;			//uc
 
@@ -61,7 +62,7 @@ typedef enum {
     UART2,
 }uartId;
 
-// #define IN_APP
+
 
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
