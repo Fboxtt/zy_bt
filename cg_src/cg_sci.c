@@ -183,6 +183,11 @@ Global variables and functions
 // }
 
 /* Start user code for adding. Do not edit comment generated here */
+
+void IRQ13_Handler(void) __attribute__((alias("uart1_interrupt_send")));
+void IRQ14_Handler(void) __attribute__((alias("uart1_interrupt_receive")));
+
+
 /***********************************************************************************************************************
 * Function Name: UART_BaudRateCal
 * @brief  This function search the setting value for specified freq and baud of UART
@@ -326,5 +331,39 @@ MD_STATUS UART1_Init(uint32_t freq, uint32_t baud)
 
     return (status);
 }
+/***********************************************************************************************************************
+* Function Name: uart1_interrupt_receive
+* @brief  UART1 Receive interrupt service routine
+* @param  None
+* @return None
+***********************************************************************************************************************/
 
+void uart1_callback_error(void)
+{
+	//
+}
+
+void uart1_interrupt_receive(void)
+{
+    volatile uint8_t rx_data;
+    volatile uint8_t err_type;
+    uartId id = UART1;
+
+    INTC_ClearPendingIRQ(SR1_IRQn);
+    err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
+    SCI0->SIR03 = (uint16_t)err_type;
+
+    if (err_type != 0U)
+    {
+        uart1_callback_error();
+    }
+
+    UartReceData(id);
+}
+
+void uart1_interrupt_send(void)
+{
+    INTC_ClearPendingIRQ(ST0_IRQn); /* clear INTST0 interrupt flag */
+	// uart1_callback_sendend();
+}
 /* End user code. Do not edit comment generated here */

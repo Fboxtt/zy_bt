@@ -57,8 +57,6 @@ const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
 
 #ifndef BMS_APP_DEVICE
 
-void IRQ13_Handler(void) __attribute__((alias("uart1_interrupt_send")));
-void IRQ14_Handler(void) __attribute__((alias("uart1_interrupt_receive")));
 
 TUartData g_tUartData;
 
@@ -73,9 +71,28 @@ uint32_t g_bootWaitTimeLimit = 0;
 
 int g_flashStatusCount = 0; // 保证读写FLASH时不会卡死
 
+uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
+uint8_t ResetFlag = 0;								//表示复位条件达成
+uint8_t CurrState = 0;								//当前芯片的状态
+uint32_t ReadFlashLength = 0;                       //读Flash的长度        
+uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 
+uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
+
+uint32_t CheckSum = 0;
+
+const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//版本号存储
+boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
+uint32_t NewBaud = UartBaud;						//存储新波特率的变量
+extern commu_data_t CmdSendData[SendLength1];
+uint32_t NextPacketNumber = 0;
+
+const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
+
+
+WritableFlag g_flashWritableFlag = {0};
 /*
-跳转模块函数
+跳转相关函数
 */
 
 __asm uint32_t get_pc(void) {
@@ -201,17 +218,15 @@ void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,co
 }
 
 
-
-
 /*
 flash 操作相关函数
+重写这些函数，超时跳出，解决操作不成功卡死问题
 */
-const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP可正常运行状态。
-const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//代码缓存区代码就绪状态。
+
 uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//写单字节IAP操作
 {
+	int FLSTS_flagCount = 0;
     uint8_t *ptr;
-    
     ptr = (uint8_t *) IAP_IapAddr;
     
     FMC->FLPROT = 0xF1;
@@ -219,8 +234,10 @@ uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t 
     FMC->FLOPMD1 = 0xAA;
     FMC->FLOPMD2 = 0x55;  
     *ptr = Write_IAP_IapData;    
-    // polling OVER Flag
-    while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0);
+    // 超时跳出，避免卡死
+    while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0 && FLSTS_flagCount < g_flashStatusCount) {
+		FLSTS_flagCount++;
+	};
     FMC->FLSTS |= FMC_FLSTS_OVF_Msk;
 
     FMC->FLPROT = 0x00;
@@ -237,8 +254,8 @@ uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t 
 
 uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//写单字节IAP操作
 {
+	int FLSTS_flagCount = 0;
     uint8_t *ptr;
-    int FLSTS_flagCount = 0;
     ptr = (uint8_t *) IAP_IapAddr;
     
     FMC->FLPROT = 0xF1;
@@ -475,56 +492,10 @@ uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
 	}
 	return 1;
 }
-/*flash_operate*/
-/*flash_operate*/
-/*flash_operate*/
 
 
-/*boot_core.c*/
-/*boot_core.c*/
-/*boot_core.c*/
-uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
-uint8_t ResetFlag = 0;								//表示复位条件达成
-uint8_t CurrState = 0;								//当前芯片的状态
-uint32_t ReadFlashLength = 0;                       //读Flash的长度        
-uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
-
-uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
-
-uint32_t CheckSum = 0;
-// uint8_t CheckSum[2] = {0x0, 0x0};
-const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//版本号存储
-boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
-uint32_t NewBaud = UartBaud;						//存储新波特率的变量
-extern commu_data_t CmdSendData[SendLength1];
-uint32_t NextPacketNumber = 0;
-
-const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
-// volatile uint8_t *Ack =  0x00;
 
 
-WritableFlag g_flashWritableFlag = {0};
-
-/* boot初始化钩子函数，请将初始化代码写入该函数 */
-void BootInit()
-{
-	// UartInit(UartBaud);
-	g_flashStatusCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
-	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
-		g_flashWritableFlag.bit.appArea = 1;
-	}
-	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
-		g_flashWritableFlag.bit.bufferArea = 1;
-	}
-	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
-		g_flashWritableFlag.bit.backupArea = 1;
-	}
-	// CurrState = IAP_CheckAPP();
-    if(CurrState==1)//判断APP是否完整，完整则开启定时
-    {
-//        BaseTimeSystemInit(BOOT_ENABLE);
-    }
-}
 
 
 
@@ -581,25 +552,6 @@ uint8_t CheckSumCheck(int area)
 		return 0;
 	}
 }
-#ifdef ENCRYPT_UID_ENABLE
-uint8_t CheckUID()
-{
-	uint8_t i;	
-	uint8_t * uid_point = (uint8_t *)UID_BASE;
-	uint8_t * buff_point = CommuData;
-	IAP_ReadEncUID(buff_point);
-	CmmuLength = UID_ENC_SIZE;
-	Decrypt_Fun(CommuData);
-	for(i=0;i<UID_SIZE;i++)
-	{
-		if(CommuData[i]!=*(uid_point+i))
-		{
-			return 0;
-		}
-	}
-	return 1;
-}
-#endif
 
 void ReplyEnterBoot(void)
 {
@@ -729,13 +681,6 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 	}
     switch(cmd)//根据命令执行相应的动作
     {
-//        case READ_BOOT_CODE_INF: // 读取版本号
-//        {
-//			
-//			// BeginAddr = APP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
-//			IAP_Erase_ALL(APROM_AREA);
-//            *Ack = ERR_NO;
-//        }break;
 		case PC_GET_VER:
 		{
 			hexVer = (TVER*)(APP_VER_ADDR);
@@ -956,80 +901,9 @@ void BootWaitTimeInit(void)
 	g_bootWaitTime = 0;
 }
 
-#ifndef BMS_APP_DEVICE
-void BootProcess(void)
-{
-	AppRestore();
-	
-	
-	if(UartReceFlag)
-	{
-		UartReceFlag = 0;
-		g_tUartData.pbuf = CommuData;
-		g_tUartData.wLen = CmmuLength;
-		DownloadProcess(&g_tUartData,0);
-	}
-	
-	BootCheckReset(); // 跳转函数，条件满足即可跳转入app
-}
-#endif
-
-#ifndef BMS_APP_DEVICE
-
-#ifndef BMS_APP_DEVICE
 
 
-
-
-/***********************************************************************************************************************
-* Function Name: uart1_interrupt_receive
-* @brief  UART1 Receive interrupt service routine
-* @param  None
-* @return None
-***********************************************************************************************************************/
-
-void uart1_callback_error(void)
-{
-	//
-}
-#endif
-void uart1_interrupt_receive(void)
-{
-    volatile uint8_t rx_data;
-    volatile uint8_t err_type;
-    uartId id = UART1;
-
-    INTC_ClearPendingIRQ(SR1_IRQn);
-    err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
-    SCI0->SIR03 = (uint16_t)err_type;
-
-    if (err_type != 0U)
-    {
-        uart1_callback_error();
-    }
-
-    UartReceData(id);
-}
-
-void uart1_interrupt_send(void)
-{
-    INTC_ClearPendingIRQ(ST0_IRQn); /* clear INTST0 interrupt flag */
-	// uart1_callback_sendend();
-}
-
-void HardDriveInit(void)
-{
-	Clock_Config();		//OK
-#ifdef BMS_BT_DEVICE
-	system_tick_init();
-#endif 
-//	GPIO_Config();		//OK
-	UART1_Init(SystemCoreClock, UartBaud);
-}
-
-#endif
-
-
+// 检查flash区域是否可写
 uint8_t CheckAreaWritable(uint32_t addr)
 {
 	uint8_t ok = 0;
@@ -1061,6 +935,7 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
 }
 #endif
 
+// 发生错误时清除烧录，为重新烧录做准备
 void DownloadStop(void)
 {
 	if(g_downLoadStatus == DOWNLOADING_BUFF) {
@@ -1080,10 +955,11 @@ void DownloadStop(void)
 
 uint32_t g_errTime = 0;
 
+// 烧录程序，包含命令校验，命令执行，命令恢复功能
 void DownloadProcess(void *p,UCHAR ucComPort)
 {
-	uint8_t  *rBuff, cmd, Ack;                         //????????????
-	uint32_t  wholeDataLen, unitDataLen;	                          //???????????
+	uint8_t  *rBuff, cmd, Ack;
+	uint32_t  wholeDataLen, unitDataLen;
 	rBuff 		= 	((TUartData *)(p))->pbuf;
 	wholeDataLen	=	((TUartData *)(p))->wLen;
 
@@ -1121,3 +997,38 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 		}
 	}
 }
+
+/* boot初始化函数，会判断那些区域可写 */
+void BootInit()
+{
+	// UartInit(UartBaud);
+	g_flashStatusCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
+	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
+		g_flashWritableFlag.bit.appArea = 1;
+	}
+	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
+		g_flashWritableFlag.bit.bufferArea = 1;
+	}
+	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
+		g_flashWritableFlag.bit.backupArea = 1;
+	}
+}
+// BootLoader使用的主程序
+#ifndef BMS_APP_DEVICE
+
+void BootProcess(void)
+{
+	AppRestore();
+	
+	if(UartReceFlag)
+	{
+		UartReceFlag = 0;
+		g_tUartData.pbuf = CommuData;
+		g_tUartData.wLen = CmmuLength;
+		DownloadProcess(&g_tUartData,0);
+	}
+	
+	BootCheckReset(); // 跳转函数，条件满足即可跳转入app
+}
+
+#endif

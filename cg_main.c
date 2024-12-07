@@ -97,6 +97,14 @@ void Clock_Config(void)
 	SysTick_Config(msCnt); 				//系统计数器初始化
 }
 
+void HardDriveInit(void)
+{
+	Clock_Config();		//OK
+	system_tick_init();
+//	GPIO_Config();		//OK
+	UART1_Init(SystemCoreClock, UartBaud);
+}
+
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */

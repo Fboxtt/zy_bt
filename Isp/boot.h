@@ -1,13 +1,8 @@
 #ifndef USE_BOOT
 #define BOOT
-/*communication_protocol.h*/
-/*communication_protocol.h*/
-/*communication_protocol.h*/
 
-// #include "serial_port_config.h"//串口通讯底层驱动文件
 #include "BAT32G137.h"
 #include "userdefine.h"
-
 #include "gpio.h"
 
 #define DEBUG_DEVICE 1
@@ -24,13 +19,9 @@
 #include "cg_macrodriver.h"
 
 typedef		unsigned char		UCHAR;			//uc
-
 typedef     unsigned char       BYTE;
-    
 typedef     char                UBYTE  ;
-    
 typedef     unsigned short      WORD;
-
 
 typedef struct
 {
@@ -299,11 +290,6 @@ uint8_t AppCheckSumCheck(void);
 
 #define	BUFF_CHECK_NUMBER		0X55,0XAA,0XAA,0X55 //表示APP缓存区装载完备的数字码，最大14Byte
 
-#define UID_ENC_ADRESS			0x1FE00		        //UID密文存储地址
-#define UID_ENC_SIZE			16					//UID密文长度
-#define UID_SIZE				(128/8)				//UID有效长度
-#define UID_ENC_AREA_AREA		APROM_AREA			//UID密文所在的存储区域
-
 #define APP_TO_BOOT             0x55
 #define BOOT_TO_APP             0xAA
 #define UID_ENC_AREA			0x22				//UID密文存储区
@@ -329,79 +315,14 @@ extern void IAP_ReadEncUID(uint8_t* buff);
 extern uint8_t IAP_Remap(void);//将缓存区的代码装载如运行区
 extern uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area); //写单字节IAP操作
 
-// flash_operate.h
-
-extern volatile uint8_t * gp_uart0_tx_address;        /* uart0 transmit buffer address */
-extern volatile uint16_t  g_uart0_tx_count;           /* uart0 transmit data number */
-extern volatile uint8_t * gp_uart0_rx_address;        /* uart0 receive buffer address */
-extern volatile uint16_t  g_uart0_rx_count;           /* uart0 receive data number */
-extern volatile uint16_t  g_uart0_rx_length;          /* uart0 receive data length */
-
 extern void BootWaitTimeInit(void);
 extern void BootProcess(void);
 extern void ReplyEnterBoot(void);
 MD_STATUS UART1_Init(uint32_t freq, uint32_t baud);
 
 
-
-
-
-
-
-
-
-
-
-
-
-//typedef enum {
-//	PORT0 = 0,
-//	PORT1,
-//	PORT2,
-//	PORT3,
-//	PORT4,
-//	PORT5,
-//	PORT6,
-//	PORT7,
-//	PORT8,
-//	PORT9,
-//	PORT10,
-//	PORT11,
-//	PORT12,
-//	PORT13,
-//	PORT14,
-//	
-//}PORT_TypeDef;
-
-//typedef enum {
-//	PIN0 = 0,
-//	PIN1,
-//	PIN2,
-//	PIN3,
-//	PIN4,
-//	PIN5,
-//	PIN6,
-//	PIN7,
-//	
-//}PIN_TypeDef;
-
-//typedef enum {
-//	INPUT = 0,
-//	PULLUP_INPUT,
-//	TTL_INPUT,
-//	ANALOG_INPUT,
-//	OUTPUT,
-//	OPENDRAIN_OUTPUT,
-//	
-//}PIN_ModeDef;
 #ifndef BMS_APP_DEVICE
 
-//ADC 输入
-#define	 	ADC_PACK_V		ADC_CHANNEL_6
-#define     ADC_TEMP_T3     ADC_CHANNEL_0  
-#define     ADC_TEMP_MOS    ADC_CHANNEL_2
-#define     ADC_TEMP_T5     ADC_CHANNEL_1
-#define     ADC_TEMP_HEAT   ADC_CHANNEL_7
 
 //GPIO输入输出口变量定义
 
@@ -449,12 +370,9 @@ extern void TimingDelay_Decrement(void);
 
 
 extern void TIM_Config(void);
-//extern ULONG	FLASH_Write(ULONG ulDstAddr, ULONG ulSrcAddr, ULONG ulLen);
 
 extern void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx);
 
-//extern void PORT_ClrBit(PORT_TypeDef PORTx,PIN_TypeDef PINx);
-extern void HardDriveInit(void);
 extern void system_tick_init(void);
 
 uint8_t CheckSumCheck(int area);
