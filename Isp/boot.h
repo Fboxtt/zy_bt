@@ -183,8 +183,8 @@ typedef enum {
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
 #define YES_CMD_BOOT_WAIT_LIMIT 5000
 
-extern uint32_t BootWaitTime;
-extern uint32_t BootWaitTimeLimit;
+extern uint32_t g_bootWaitTime;
+extern uint32_t g_bootWaitTimeLimit;
 
 //从站回应控制码类型
 #define DEAL_SUCCESS 			0X9F		//回应操作成功

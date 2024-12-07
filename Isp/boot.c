@@ -31,13 +31,7 @@ typedef enum {
 }DOWNLOAD_STATUS;
 
 DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
-#ifndef BMS_APP_DEVICE
-// volatile uint8_t * gp_uart0_tx_address;         /* uart0 send buffer address */
-// volatile uint16_t  g_uart0_tx_count;            /* uart0 send data number */
-// volatile uint8_t * gp_uart0_rx_address;         /* uart0 receive buffer address */
-// volatile uint16_t  g_uart0_rx_count;            /* uart0 receive data number */
-// volatile uint16_t  g_uart0_rx_length;           /* uart0 receive data length */
-#endif
+
 typedef struct {
 	uint16_t majorVer;			// 主版本号
 	uint16_t minorVer;			// 次版本号
@@ -54,29 +48,73 @@ const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
 };
 #endif
 
-#ifndef BMS_APP_DEVICE
-
-TUartData g_tUartData;
-
 #ifdef IN_APP
 const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
 	1,1,1,2024,10,11
 };
 #endif
+
+
+#ifndef BMS_APP_DEVICE
+
+void IRQ13_Handler(void) __attribute__((alias("uart1_interrupt_send")));
+void IRQ14_Handler(void) __attribute__((alias("uart1_interrupt_receive")));
+
+TUartData g_tUartData;
+
 #endif
+
 uint8_t* g_sendArray;
 
 uint8_t result_cmd;
 
-uint32_t BootWaitTime = 0;
-uint32_t BootWaitTimeLimit = 0;
+uint32_t g_bootWaitTime = 0;
+uint32_t g_bootWaitTimeLimit = 0;
 
-int g_FLSTSMaxCount = 0;
+int g_flashStatusCount = 0; // 保证读写FLASH时不会卡死
+
+
+/*
+跳转模块函数
+*/
 
 __asm uint32_t get_pc(void) {
 	mov r0, pc
 	bx lr
 }
+
+void __set_VECTOR_ADDR(uint32_t addr)
+{
+	SCB->VTOR = addr;
+}
+
+void IAP_Reset()
+{	
+    SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
+	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
+	INTC_DisableIRQ(SR0_IRQn);
+	NVIC_SystemReset();
+}
+
+#ifdef BMS_BT_DEVICE
+void IAPEnterApp()
+{
+	BaseTimeSystemInit(BOOT_DISABLE);	//关闭定时器
+	SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
+	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
+	INTC_DisableIRQ(SR0_IRQn);
+	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+	__set_MSP(*(__IO uint32_t*) APP_ADDR);
+	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
+    NVIC_SystemReset();					//如果无法进入APP则复位
+}
+#endif
+
+
+/*
+通讯模块
+*/
+
 #ifndef BMS_APP_DEVICE
 
 void UartSendOneByte(uint8_t input_data)
@@ -90,7 +128,7 @@ void UartSendOneByte(uint8_t input_data)
 }
 
 #endif 
-#define SLAVE_ADDRESS 0x00//设备地址
+
 
 void ClearCommu()
 {
@@ -98,30 +136,6 @@ void ClearCommu()
     CmmuReadNumber = 0; //重新计数，准备下次串口数据到来
     UartReceFlag = 0; //清除传输完成标志
 	CmdSendAllLenth = 0;
-}
-
-
-void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,commu_cmd_t dataLen, commu_data_t Ack)
-{
-	uint8_t i;
-	uint8_t check_sum = 0;
-
-	pBuff[0] = SEND_ADDRESS;	//发送帧头
-	pBuff[1] = (dataLen + 5) >> 8;		 				 		//发送数据域长度高8位
-	pBuff[2] = dataLen + 5;		 			 	//发送数据域长度低8位
-	pBuff[3] = SEND_BMS_TYPE;					//发送单板类型码
-	pBuff[4] = Command;					 	//发送控制码
-	pBuff[5] = SEND_SHAKE_1;					//握手字1
-	pBuff[6] = SEND_SHAKE_2;					//握手字1
-	pBuff[7] = Ack;							//发送应答码
-	check_sum = ((dataLen + 5) >> 8) + (dataLen + 5) + SEND_BMS_TYPE + Command + SEND_SHAKE_1 + SEND_SHAKE_2 + Ack;
-	for(i=0;i<dataLen;i++)	  					 	//发送数据域
-	{
-		pBuff[8+i] = *(Data+i);
-		check_sum+=	*(Data+i);
-	}
-	pBuff[8 + dataLen] = check_sum;						//发送校验位低8位
-	// UartSendOneByte(CommunicationCommandEnd);		//发送帧尾  
 }
 
 uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, volatile uint8_t* pAck)//分析接收帧的数据
@@ -163,11 +177,35 @@ uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, v
     return cmd;
 }
 
-#ifndef BMS_APP_DEVICE
+void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,commu_cmd_t dataLen, commu_data_t Ack)
+{
+	uint8_t i;
+	uint8_t check_sum = 0;
+
+	pBuff[0] = SEND_ADDRESS;	//发送帧头
+	pBuff[1] = (dataLen + 5) >> 8;		 				 		//发送数据域长度高8位
+	pBuff[2] = dataLen + 5;		 			 	//发送数据域长度低8位
+	pBuff[3] = SEND_BMS_TYPE;					//发送单板类型码
+	pBuff[4] = Command;					 	//发送控制码
+	pBuff[5] = SEND_SHAKE_1;					//握手字1
+	pBuff[6] = SEND_SHAKE_2;					//握手字1
+	pBuff[7] = Ack;							//发送应答码
+	check_sum = ((dataLen + 5) >> 8) + (dataLen + 5) + SEND_BMS_TYPE + Command + SEND_SHAKE_1 + SEND_SHAKE_2 + Ack;
+	for(i=0;i<dataLen;i++)	  					 	//发送数据域
+	{
+		pBuff[8+i] = *(Data+i);
+		check_sum+=	*(Data+i);
+	}
+	pBuff[8 + dataLen] = check_sum;						//发送校验位低8位
+	// UartSendOneByte(CommunicationCommandEnd);		//发送帧尾  
+}
 
 
-#endif
-/*flash_operate*/
+
+
+/*
+flash 操作相关函数
+*/
 const unsigned char  IapCheckNum[IAP_CHECK_LENGTH]={IAP_CHECK_NUMBER};	//APP可正常运行状态。
 const unsigned char  BuffCheckNum[IAP_CHECK_LENGTH] = {BUFF_CHECK_NUMBER};	//代码缓存区代码就绪状态。
 uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//写单字节IAP操作
@@ -209,13 +247,13 @@ uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,ui
     *ptr = Write_IAP_IapData;    
     // polling OVER Flag
 	// 这个判断FLSTS值的循环一共有7条汇编指令
-    while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0 && FLSTS_flagCount < g_FLSTSMaxCount) {
+    while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0 && FLSTS_flagCount < g_flashStatusCount) {
 		FLSTS_flagCount++;
 	};
     FMC->FLSTS |= FMC_FLSTS_OVF_Msk;
 
     FMC->FLPROT = 0x00;
-	if(FLSTS_flagCount >= g_FLSTSMaxCount) {
+	if(FLSTS_flagCount >= g_flashStatusCount) {
 		return 0;
 	}
     if(IAP_ReadOneByte(IAP_IapAddr,area) == Write_IAP_IapData)
@@ -251,7 +289,7 @@ uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
     {
         //printf("\nerror\n");
     }
-	if(FLSTS_flagCount >= g_FLSTSMaxCount) {
+	if(FLSTS_flagCount >= g_flashStatusCount) {
 		return 0;
 	}
 	return 1;
@@ -328,32 +366,7 @@ uint8_t IAP_Erase_ALL(uint8_t area)
 	return 1;
 }
 
-void __set_VECTOR_ADDR(uint32_t addr)
-{
-	SCB->VTOR = addr;
-}
 
-void IAP_Reset()
-{	
-    SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
-	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
-	INTC_DisableIRQ(SR0_IRQn);
-	NVIC_SystemReset();
-}
-
-#ifdef BMS_BT_DEVICE
-void IAPEnterApp()
-{
-	BaseTimeSystemInit(BOOT_DISABLE);	//关闭定时器
-	SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
-	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
-	INTC_DisableIRQ(SR0_IRQn);
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
-	__set_MSP(*(__IO uint32_t*) APP_ADDR);
-	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
-    NVIC_SystemReset();					//如果无法进入APP则复位
-}
-#endif
 
 uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area)	//写多字节IAP操作
 {
@@ -386,181 +399,10 @@ void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t 
         buff++;
     }  
 }
-void IAP_FlagWrite(uint8_t flag)
-{
-    unsigned char i;
-    IAP_Erase_Some(IAP_CHECK_ADRESS,ALL_FLAG_LENTH);
-    if(flag==1)
-    {        
-        for(i=0;i<IAP_CHECK_LENGTH;i++)
-        {
-           IAP_WriteOneByte(IAP_CHECK_ADRESS+i,IapCheckNum[i],IAP_CHECK_AREA);
-        }
-    }
-	else if(flag==2)
-	{
-		for(i=0;i<IAP_CHECK_LENGTH;i++)
-        {
-           IAP_WriteOneByte(IAP_CHECK_ADRESS+i,BuffCheckNum[i],IAP_CHECK_AREA);
-        }
-	}
-}
 
-// uint8_t IAP_CheckAPP()
-// {
-//     unsigned char i;
-// 	volatile uint8_t temp = 1;
-//     for(i=0;i<IAP_CHECK_LENGTH;i++)
-//     {
-//         if(IAP_ReadOneByte(IAP_CHECK_ADRESS+i,IAP_CHECK_AREA)!=IapCheckNum[i])
-//         {
-//             temp = 0;
-// 			break;
-//         }
-//     }
-// 	if(temp)
-// 	{
-// 		return temp;
-// 	}
-// 	#ifdef FLASH_BUFF_ENABLE
-// 	for(i=0;i<IAP_CHECK_LENGTH;i++)
-//     {
-// 		if(IAP_ReadOneByte(IAP_CHECK_ADRESS+i,IAP_CHECK_AREA)!=BuffCheckNum[i])
-//         {
-// 			break;
-//         }		
-//     }
-// 	if(i>=IAP_CHECK_LENGTH)
-// 	{
-// 		temp = 2;
-// 	}
-// 	#endif
-//     return temp;
-// }
-
-void IAP_ReadEncUID(uint8_t* buff)
-{
-	uint8_t i;
-	for(i=0;i<UID_ENC_SIZE;i++)
-	{
-		buff[i] = IAP_ReadOneByte(UID_ENC_ADRESS+i,UID_ENC_AREA_AREA);
-	}
-}
-
-uint8_t IAP_Remap()//将缓存区的代码装载如运行区
-{
-	uint16_t i;
-	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
-	for(i=0;i<APP_BUFF_SIZE;i++)
-	{
-		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
-
-uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
-{
-	uint16_t i;
-	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
-	for(i=0;i<APP_BUFF_SIZE;i++)
-	{
-		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(BACKUP_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
-			return 0;
-		}
-	}
-	return 1;
-}
-/*flash_operate*/
-/*flash_operate*/
-/*flash_operate*/
-
-
-/*boot_core.c*/
-/*boot_core.c*/
-/*boot_core.c*/
-uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
-uint8_t ResetFlag = 0;								//表示复位条件达成
-uint8_t CurrState = 0;								//当前芯片的状态
-uint32_t ReadFlashLength = 0;                       //读Flash的长度        
-uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
-
-uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
-
-uint32_t CheckSum = 0;
-// uint8_t CheckSum[2] = {0x0, 0x0};
-const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//版本号存储
-boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
-uint32_t NewBaud = UartBaud;						//存储新波特率的变量
-extern commu_data_t CmdSendData[SendLength1];
-uint32_t NextPacketNumber = 0;
-
-const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
-// volatile uint8_t *Ack =  0x00;
-
-
-WritableFlag g_flashWritableFlag = {0};
-
-/* boot初始化钩子函数，请将初始化代码写入该函数 */
-void BootInit()
-{
-	// UartInit(UartBaud);
-	g_FLSTSMaxCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
-	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
-		g_flashWritableFlag.bit.appArea = 1;
-	}
-	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
-		g_flashWritableFlag.bit.bufferArea = 1;
-	}
-	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
-		g_flashWritableFlag.bit.backupArea = 1;
-	}
-	// CurrState = IAP_CheckAPP();
-    if(CurrState==1)//判断APP是否完整，完整则开启定时
-    {
-//        BaseTimeSystemInit(BOOT_ENABLE);
-    }
-}
-
-//void Decrypt_Fun(uint8_t* buff)
-//{
-//	uint8_t i;
-//	uint8_t k;
-//	uint32_t first_chunk;
-//	uint32_t second_chunk;
-//    union  
-//	{
-//		uint32_t temp_uint32[16];
-//		uint8_t temp_uint8[64];
-//	}temp; 
-//	if(CmmuLength>64)
-//	{
-//		return;
-//	}
-//    //ARM为小端模式需要将每个字的高位和低位对调
-//    for(i=0;i<(CmmuLength/4);i=i+1)
-//	{		
-//        for(k=0;k<4;k++)
-//        {
-//            temp.temp_uint8[i*4+(3-k)] = buff[i*4+k];
-//        }
-//	}
-//	for(i=0;i<(CmmuLength/4);i=i+2)
-//	{
-//		first_chunk = temp.temp_uint32[i];
-//		second_chunk = temp.temp_uint32[i+1];
-//		DecryptTEA(&first_chunk,&second_chunk);
-//		temp.temp_uint32[i] = first_chunk;
-//		temp.temp_uint32[i+1] = second_chunk;
-//        for(k=0;k<4;k++)
-//        {
-//            buff[i*4+k] = temp.temp_uint8[i*4+(3-k)] ;
-//            buff[(i+1)*4+k] = temp.temp_uint8[(i+1)*4+(3-k)] ;
-//        }
-//	}
-//}
+/*
+	HEX文件读写相关函数
+*/
 
 void All_CheckSum_Write(uint32_t checkSum, uint32_t addr)
 {
@@ -608,6 +450,84 @@ uint32_t PacketTotalNumRead(uint32_t addr)
 	return packetTotalNum;
 }
 
+uint8_t IAP_Remap()//将缓存区的代码装载如运行区
+{
+	uint16_t i;
+	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
+	for(i=0;i<APP_BUFF_SIZE;i++)
+	{
+		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
+{
+	uint16_t i;
+	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
+	for(i=0;i<APP_BUFF_SIZE;i++)
+	{
+		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(BACKUP_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
+			return 0;
+		}
+	}
+	return 1;
+}
+/*flash_operate*/
+/*flash_operate*/
+/*flash_operate*/
+
+
+/*boot_core.c*/
+/*boot_core.c*/
+/*boot_core.c*/
+uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
+uint8_t ResetFlag = 0;								//表示复位条件达成
+uint8_t CurrState = 0;								//当前芯片的状态
+uint32_t ReadFlashLength = 0;                       //读Flash的长度        
+uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
+
+uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
+
+uint32_t CheckSum = 0;
+// uint8_t CheckSum[2] = {0x0, 0x0};
+const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//版本号存储
+boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
+uint32_t NewBaud = UartBaud;						//存储新波特率的变量
+extern commu_data_t CmdSendData[SendLength1];
+uint32_t NextPacketNumber = 0;
+
+const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
+// volatile uint8_t *Ack =  0x00;
+
+
+WritableFlag g_flashWritableFlag = {0};
+
+/* boot初始化钩子函数，请将初始化代码写入该函数 */
+void BootInit()
+{
+	// UartInit(UartBaud);
+	g_flashStatusCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
+	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
+		g_flashWritableFlag.bit.appArea = 1;
+	}
+	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
+		g_flashWritableFlag.bit.bufferArea = 1;
+	}
+	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
+		g_flashWritableFlag.bit.backupArea = 1;
+	}
+	// CurrState = IAP_CheckAPP();
+    if(CurrState==1)//判断APP是否完整，完整则开启定时
+    {
+//        BaseTimeSystemInit(BOOT_ENABLE);
+    }
+}
+
+
+
 typedef struct {
 	uint32_t checkAddr;
 	uint32_t numAddr;
@@ -615,6 +535,7 @@ typedef struct {
 } CheckSumStruct;
 
 static uint32_t checkAddr = 0, numAddr = 0, hexAddr = 0; 
+
 void getCheckPara(int area)
 {
 	if(area == APROM_AREA) {
@@ -717,7 +638,7 @@ void AppRestore()
 		} else {
 			// *Ack =  ERR_REMAP;
 		}
-	} else if(BootWaitTime > BootWaitTimeLimit) {
+	} else if(g_bootWaitTime > g_bootWaitTimeLimit) {
 		if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
 			IAPEnterApp();
 		} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
@@ -728,7 +649,7 @@ void AppRestore()
 			IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4);
 			ReadInt(BACKUP_RESTORE_ADDRESS) = RESTORE_BKP;
 		}
-		BootWaitTime = 0;
+		g_bootWaitTime = 0;
 	}
 	#endif
 }
@@ -741,17 +662,6 @@ void BootCheckReset()
     }
 }
 
-// void logDebug(char* data, int lenth) {
-// 	UartSendOneByte('\n');
-// 	UartSendOneByte('d');
-// 	UartSendOneByte('b');
-// 	UartSendOneByte('=');
-// 	for(int i = 0; i < lenth; i++)
-// 	{
-// 		UartSendOneByte(*(data + i));
-// 	}
-// 	UartSendOneByte('\n');
-// }
 
 void GetVer(uint32_t addr, int lenth)
 {
@@ -842,21 +752,6 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 			}
 		}
 		break;
-		// case PC_GET_VER_BACKUP:
-		// {
-		// 	hexVer = (TVER*)(BACKUP_VER_ADDR);
-		// 	if(g_flashWritableFlag.bit.backupArea == 1) {
-		// 		if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
-		// 			memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
-		// 			CmmuSendLength = sizeof(TVER);
-		// 			*Ack = ERR_NO;
-		// 		} else {
-		// 			*Ack = ERR_ALL_CHECK;
-		// 		}
-		// 	} else {
-		// 		*Ack = ERR_AREA_NOT_WRITABLE;
-		// 	}
-		// }
 		case PC_GET_INF:
 		{
 			// BT版本号获取
@@ -869,48 +764,14 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 			GetVer((uint32_t)(&g_flashWritableFlag),sizeof(g_flashWritableFlag));
 			GetVer((uint32_t)&pcValue, 				sizeof(pcValue));
 			*Ack = ERR_NO;
-			// logDebug((char*)&DBG->DBGSTOPCR, sizeof(DBG->DBGSTOPCR));
 		}
 		break;
-        // case READ_IC_INF: // 读取芯片型号
-        // {
-        //     for(i=0;i < IC_TYPE_LENTH;i++)
-        //     {
-        //         CmdSendData[i] = IC_INF_BUFF[i];                
-        //     }
-        //     CmmuSendLength = IC_TYPE_LENTH;
-        //     *Ack =  ERR_NO;
-        // }break;
-        // case HEX_INFO:
-        // {
-        //     *Ack =  ERR_NO;
-        // }break;
-		// case PC_GET_VER_BT:
-		// {
-		// 	g_sendArray = (uint8_t*)(&btVersion);
-		// 	for(int i = 0; i < sizeof(VerStru); i++){
-		// 		CmdSendData[i] = *(g_sendArray + i);
-		// 	}
-		// 	CmmuSendLength = sizeof(VerStru);
-		// 	*Ack = ERR_NO;
-		// }
         case PC_SHAKE_ENTER_BOOTMODE: // 握手三次即可开始烧录
         {
 			SetShakehandFlag(ENTER_CMD);
-			/* 关闭时钟 */
-//          BaseTimeSystemInit(BOOT_DISABLE);
-			// #ifndef FLASH_BUFF_ENABLE
-			// IAP_FlagWrite(0);//将APP完成标志去掉，如果更新过程失败则下次上电一直维持在BOOT等待更新
-			// #endif
+
             *Ack = ERR_NO;
         }break;
-
-//        case SET_BAUD:
-//        {
-//            cmd_buff = DEAL_SUCCESS;
-//			NewBaud = (((uint32_t)rBuff[4])<<24)+(((uint32_t)rBuff[5])<<16)+(((uint32_t)rBuff[6])<<8)+((uint32_t)rBuff[7]);
-//        }break;
-
         case PC_SET_DOWNLOAD_BUFFER:	//擦除APROM所有内容
         {
 			SetShakehandFlag(BUFFER_CMD);
@@ -995,17 +856,8 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 			for(i = 0; i < PACKET_ID_LENTH; i++) {
 				CmdSendData[i] = rBuff[i];
 			}
-			// CheckSum[0] = CommuData[7];
-			// CheckSum[1] = CommuData[8];
 			CheckSum = rBuff[0] + rBuff[1] * 0x100;
-			// All_CheckSum_Write(CheckSum, APP_CHECKSUM_ADRESS);
-			// uint32ValWrite(g_packetTotalNum, APP_TOTAL_NUM_ADRESS);
-			// if(AppCheckSumCheck() == 1)
-			// {
-			// 	*Ack = ERR_NO; //回应退出了Bootloader
-			// } else {
-			// 	*Ack = ERR_ALL_CHECK;
-			// }
+
 			if(g_downLoadStatus == DOWNLOADING_BUFF) {
 				CheckSumWrite(g_packetTotalNum, CheckSum, APROM_BUFF_AREA);
 				uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
@@ -1013,8 +865,6 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 				if(CheckSumCheck(APROM_BUFF_AREA) == 1 && ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF)
 				{
 					*Ack = ERR_NO; //回应退出了Bootloader
-					
-//					CheckSumWrite(0, 0, APROM_AREA); 	// 将app区域设置成非法
 					ReadInt(BUFFER_RESTORE_ADDRESS) = RESTORE_BUFF;	// 设置恢复缓冲区标志位,等待跳入bt中
 					g_downLoadStatus = DOWNLOADED_BUFF;	// 修改下载状态
 					g_shakehandFlag = 0x0;				// 清除握手成功标志位
@@ -1049,20 +899,9 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
         }break;
         case PC_GET_READ_FLASH: // 读取flash，暂未使用此功能
         {            
-			//ReadFlashAddr = rBuff[6]*256+rBuff[7];
             ReadFlashAddr = (((uint32_t)rBuff[0])<<24)+(((uint32_t)rBuff[1])<<16)+(((uint32_t)rBuff[2])<<8)+((uint32_t)rBuff[3]);
 			ReadFlashLength = (rBuff[4]<<24)+(rBuff[5]<<16)+(rBuff[6]<<8)+rBuff[7];            
-            // if((rBuff[4])==RETURN_FLASH_UID)
-            // {
-            //     temp = APROM_AREA;
-			// 	ReadFlashAddr = UID_BASE;
-            // }
-            // else
-            // {
-            //     temp = APROM_AREA;
-            // }
 			IAP_ReadMultiByte(ReadFlashAddr,CmdSendData,ReadFlashLength,temp);								
-
             CmmuSendLength = ReadFlashLength;
         }break;
 		case PC_SET_RESTORE_BACKUP:
@@ -1095,8 +934,8 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
     }
     if(*Ack != ERR_CMD_ID) {
 #ifndef BMS_APP_DEVICE
-		BootWaitTime = 0;
-		BootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
+		g_bootWaitTime = 0;
+		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
 #endif
         return (cmd | 0x80);
     } else {
@@ -1110,11 +949,11 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 
 //main
 //main
-
+//main
 void BootWaitTimeInit(void)
 {
-	BootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // 进入APP等待开始计时
-	BootWaitTime = 0;
+	g_bootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // 进入APP等待开始计时
+	g_bootWaitTime = 0;
 }
 
 #ifndef BMS_APP_DEVICE
@@ -1136,101 +975,11 @@ void BootProcess(void)
 #endif
 
 #ifndef BMS_APP_DEVICE
-void UART1_Start(void)
-{
-    SCI0->SO0 |= _0004_SCI_CH2_DATA_OUTPUT_1;
-    SCI0->SOE0 |= _0004_SCI_CH2_OUTPUT_ENABLE;
-    SCI0->SS0 |= _0008_SCI_CH3_START_TRG_ON | _0004_SCI_CH2_START_TRG_ON;
-    INTC_ClearPendingIRQ(ST1_IRQn); /* clear INTST1 interrupt flag */
-    INTC_ClearPendingIRQ(SR1_IRQn); /* clear INTSR1 interrupt flag */
-    NVIC_ClearPendingIRQ(ST1_IRQn); /* clear INTST1 interrupt flag */
-    NVIC_ClearPendingIRQ(SR1_IRQn); /* clear INTSR1 interrupt flag */
-    INTC_DisableIRQ(ST1_IRQn);       /* enable INTST1 interrupt */	// 取消发送中断
-    INTC_EnableIRQ(SR1_IRQn);       /* enable INTSR1 interrupt */
-}
 
-MD_STATUS UART1_BaudRate(uint32_t fclk_freq, uint32_t baud)
-{
-    MD_STATUS status;
-    uart_baud_t pvalue;
-
-    status = UART_BaudRateCal(fclk_freq, baud, &pvalue);
-
-    if (status == MD_OK)
-    {
-        SCI0->ST0 = _0008_SCI_CH3_STOP_TRG_ON | _0004_SCI_CH2_STOP_TRG_ON;
-        SCI0->SPS0 = _0000_SCI_CK01_fCLK_0 | pvalue.prs;
-        SCI0->SDR02 = pvalue.sdr << 9;
-        SCI0->SDR03 = pvalue.sdr << 9;
-        SCI0->SS0 |= _0008_SCI_CH3_START_TRG_ON | _0004_SCI_CH2_START_TRG_ON;
-    }
-
-    return (status);
-}
-
-MD_STATUS UART1_Init(uint32_t freq, uint32_t baud)
-{
-    MD_STATUS status;
-    CGC->PER0 |= CGC_PER0_SCI0EN_Msk;
-	
-	SCI0->SPS0 &= ~SCI0_SPS0_PRS00_Msk;	//选择通道0的串口时钟；
-	//SCI0->SPS0 &= ~SCI0_SPS0_PRS00_Msk;
-    
-    SCI0->ST0 |= _0008_SCI_CH3_STOP_TRG_ON | _0004_SCI_CH2_STOP_TRG_ON;
-    INTC_DisableIRQ(ST1_IRQn);       /* disable INTST1 interrupt */
-    INTC_DisableIRQ(SR1_IRQn);       /* disable INTSR1 interrupt */
-    INTC_DisableIRQ(SRE1_IRQn);      /* disable INTSRE1 interrupt */
-    INTC_ClearPendingIRQ(ST1_IRQn);  /* clear INTST1 interrupt flag */
-    INTC_ClearPendingIRQ(SR1_IRQn);  /* clear INTSR1 interrupt flag */
-    INTC_ClearPendingIRQ(SRE1_IRQn); /* clear INTSRE1 interrupt flag */
-
-    /* transmission channel */
-    SCI0->SMR02 = _0020_SMRMN_DEFAULT_VALUE | _0000_SCI_CLOCK_SELECT_CK00 | _0000_SCI_CLOCK_MODE_CKS |
-                  _0002_SCI_MODE_UART | _0000_SCI_TRANSFER_END;
-    SCI0->SCR02 = _0004_SCRMN_DEFAULT_VALUE | _8000_SCI_TRANSMISSION | _0000_SCI_TIMING_1 | _0000_SCI_INTSRE_MASK |
-                  _0000_SCI_PARITY_NONE | _0080_SCI_LSB | _0010_SCI_STOP_1 | _0003_SCI_LENGTH_8;
-    SCI0->SDR02 = _CE00_SCI_BAUDRATE_DIVISOR;
-    /* reception channel */
-    MISC->NFEN0 |= _04_SCI_RXD1_FILTER_ON;
-    SCI0->SIR03 = _0004_SCI_SIRMN_FECTMN | _0002_SCI_SIRMN_PECTMN | _0001_SCI_SIRMN_OVCTMN;
-    SCI0->SMR03 = _0020_SMRMN_DEFAULT_VALUE | _0000_SCI_CLOCK_SELECT_CK00 | _0000_SCI_CLOCK_MODE_CKS |
-                  _0100_SCI_TRIGGER_RXD | _0000_SCI_EDGE_FALL | _0002_SCI_MODE_UART | _0000_SCI_TRANSFER_END;
-    SCI0->SCR03 = _0004_SCRMN_DEFAULT_VALUE | _4000_SCI_RECEPTION | _0000_SCI_TIMING_1 | _0000_SCI_INTSRE_MASK |
-                  _0000_SCI_PARITY_NONE | _0080_SCI_LSB | _0010_SCI_STOP_1 | _0003_SCI_LENGTH_8;
-    SCI0->SDR03 = _CE00_SCI_BAUDRATE_DIVISOR;
-    /* output enable */
-    SCI0->SO0 |= _0004_SCI_CH2_DATA_OUTPUT_1;
-    SCI0->SOL0 &= (uint16_t)~_0004_SCI_CHANNEL2_INVERTED;
-    SCI0->SOE0 |= _0004_SCI_CH2_OUTPUT_ENABLE;
-    /* Set TxD1 pin */
-    TXD1_PORT_SETTING();	//重定位到P72/P73
-    /* Set RxD1 pin */
-    RXD1_PORT_SETTING();
-    /* UART1 Start, Setting baud rate */
-    status = UART1_BaudRate(freq, baud);
-    UART1_Start();
-
-    return (status);
-}
 #ifndef BMS_APP_DEVICE
-// #define USE_SCI_UART1_TX
-// #define USE_SCI_UART1_RX
 
-#if defined USE_SCI_UART1_TX
-void IRQ13_Handler(void) __attribute__((alias("uart1_interrupt_send")));
-#elif defined USE_SCI_SPI10
-void IRQ13_Handler(void) __attribute__((alias("spi10_interrupt")));
-#elif defined USE_SCI_IIC10
-void IRQ13_Handler(void) __attribute__((alias("iic10_interrupt")));
-#endif
 
-#if defined USE_SCI_UART1_RX
-void IRQ14_Handler(void) __attribute__((alias("uart1_interrupt_receive")));
-#elif defined USE_SCI_SPI11
-void IRQ14_Handler(void) __attribute__((alias("spi11_interrupt")));
-#elif defined USE_SCI_IIC11
-void IRQ14_Handler(void) __attribute__((alias("iic11_interrupt")));
-#endif
+
 
 /***********************************************************************************************************************
 * Function Name: uart1_interrupt_receive
@@ -1241,7 +990,7 @@ void IRQ14_Handler(void) __attribute__((alias("iic11_interrupt")));
 
 void uart1_callback_error(void)
 {
-	
+	//
 }
 #endif
 void uart1_interrupt_receive(void)
@@ -1250,36 +999,14 @@ void uart1_interrupt_receive(void)
     volatile uint8_t err_type;
     uartId id = UART1;
 
-
     INTC_ClearPendingIRQ(SR1_IRQn);
     err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
     SCI0->SIR03 = (uint16_t)err_type;
-    // INTC_ClearPendingIRQ(SR1_IRQn);
-    // SCI0->SIR03 = (uint16_t)err_type;
+
     if (err_type != 0U)
     {
         uart1_callback_error();
     }
-    // rx_data = SCI0->RXD1;
-
-
-
-
-
-
-    // if(id == UART0) {
-    //     err_type = (uint8_t)(SCI0->SSR01 & 0x0007U);
-    //     SCI0->SIR01 = (uint16_t)err_type;
-    //     rx_data = SCI0->RXD0;
-    // } else if(id == UART1) {
-    //     err_type = (uint8_t)(SCI0->SSR03 & 0x0007U);
-    //     SCI0->SIR03 = (uint16_t)err_type;
-    //     rx_data = SCI0->RXD1;
-    // } else if(id == UART2) {
-    //     err_type = (uint8_t)(SCI1->SSR11 & 0x0007U);
-    //     SCI1->SIR11 = (uint16_t)err_type;
-    //     rx_data = SCI1->RXD2;
-    // }
 
     UartReceData(id);
 }
@@ -1290,222 +1017,16 @@ void uart1_interrupt_send(void)
 	// uart1_callback_sendend();
 }
 
-
-/*************************************************************************
-***Module	:	GPIO code module
-***brief 	:
-***
-*************************************************************************/
-TGPIO PIN_SW 	= {PORT1,PIN6,PULLUP_INPUT};		//
-TGPIO PIN_HEATE_N 	= {PORT1,PIN3,OUTPUT};		//
-TGPIO PIN_ALERT	= {PORT3,PIN1,PULLUP_INPUT};		//	
-
-TGPIO PIN_VBCTL = {PORT1,PIN5,OUTPUT};		//ok
-TGPIO PIN_CDEN 	= {PORT1,PIN4,OUTPUT};		//ok
-TGPIO PIN_CEN 	= {PORT1,PIN7,OUTPUT};		//ok
-
-TGPIO PIN_RED   = {PORT12,PIN0,OUTPUT};		//ok
-TGPIO PIN_GREEN = {PORT4,PIN1,OUTPUT};		//ok
-
-TGPIO PIN_FUSE_EN 	= {PORT1,PIN1,OUTPUT};	//未测试
-
-
-
-
-TGPIO PIN_COM3V3_EN = {PORT6,PIN2,OUTPUT};	//OK PIN_AMP_EN
-TGPIO PIN_COM5V_EN = {PORT6,PIN3,OUTPUT};	//OK
-
-TGPIO PIN_DEBUG ={PORT14,PIN6,OUTPUT};
-
-
-
-/********************************************************************************
-GPIO操作定义,所有引脚电平需要定义
-********************************************************************************/
-//定义电源控制
-#define  	VB_ON		(PORT_SetBit(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin))	 
-#define		VB_OFF		(PORT_ClrBit(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin))
-#define 	IS_VB_ON	(PORT_GetBit(PIN_VBCTL.emGPIOx,PIN_VBCTL.emPin))
-
-//定义按键输入
-#define		IS_SWITCH_PUSH	((PORT_GetBit(PIN_SW.emGPIOx,PIN_SW.emPin)))
-
-//加热器开启与关闭
-#define  	HEAT_ON		(PORT_SetBit(PIN_HEATE_N.emGPIOx,	PIN_HEATE_N.emPin))	 
-#define		HEAT_OFF	(PORT_ClrBit(PIN_HEATE_N.emGPIOx,	PIN_HEATE_N.emPin))
-#define		IS_HEAT_EN	((PORT_GetBit(PIN_HEATE_N.emGPIOx,PIN_HEATE_N.emPin)))
-
-//绿灯LED
-#define		GREEN_ON		(PORT_ClrBit  (PIN_GREEN.emGPIOx,	PIN_GREEN.emPin))
-#define		GREEN_OFF		(PORT_SetBit(PIN_GREEN.emGPIOx,	PIN_GREEN.emPin))
-#define		IS_GREEN_ON		(!PORT_GetBit(PIN_GREEN.emGPIOx,PIN_GREEN.GPIO_Pin))
-#define		GREEN_REVERSE	(PORT_ToggleBit(PIN_GREEN.emGPIOx,	PIN_GREEN.emPin))	
-
-//红灯LED
-#define		RED_ON			(PORT_ClrBit(PIN_RED.emGPIOx,	PIN_RED.emPin))
-#define		RED_OFF			(PORT_SetBit(PIN_RED.emGPIOx,	PIN_RED.emPin))
-#define		IS_RED_ON		(!PORT_GetBit(PIN_RED.emGPIOx,PIN_RED.emPin))
-#define		RED_REVERSE		(PORT_ToggleBit(PIN_RED.emGPIOx,	PIN_RED.emPin))		
-#define		LED_ALL_REVERSE	{GREEN_REVERSE;RED_REVERSE}	
-
-//仿真LED
-#define		DEBUG_LED_ON		(PORT_SetBit(PIN_DEBUG.emGPIOx,	PIN_DEBUG.emPin))
-#define		DEBUG_LED_OFF		(PORT_ClrBit(PIN_DEBUG.emGPIOx,	PIN_DEBUG.emPin))
-
-//加热器保险丝控制，高有效
-//#define 	HEATFUSE_ON		(PORT_ClrBit(PIN_HEATFUSE_EN.emGPIOx,	PIN_HEATFUSE_EN.emPin))
-//#define 	HEATFUSE_OFF	(PORT_SetBit(PIN_HEATFUSE_EN.emGPIOx,	PIN_HEATFUSE_EN.emPin))
-//#define		IS_HEATFUSE_OFF  ((PORT_GetBit(PIN_HEATFUSE_EN.emGPIOx,PIN_HEATFUSE_EN.emPin)))
-
-//三端保险丝控制,高位熔断
-#define	  FUSE_OFF	(PORT_SetBit(PIN_FUSE_EN.emGPIOx,	PIN_FUSE_EN.emPin))
-#define		FUSE_ON	    (PORT_ClrBit(PIN_FUSE_EN.emGPIOx,	PIN_FUSE_EN.emPin))
-#define		IS_FUSE_OFF	(PORT_GetBit(PIN_FUSE_EN.emGPIOx,PIN_FUSE_EN.emPin))
-
-//485发送使能
-//#define		RS485_SEND_ENABLE	(PORT_SetBit(PIN_485DE.emGPIOx,	PIN_485DE.emPin))
-//#define		RS485_SEND_DISABLE	(PORT_ClrBit(PIN_485DE.emGPIOx,	PIN_485DE.emPin))
-
-//PCAK
-//#define		PACKADC_DISABLE	(PORT_ClrBit(PIN_PACKADC_EN.emGPIOx,	PIN_PACKADC_EN.emPin))
-//#define		PACKADC_ENABLE	(PORT_SetBit(PIN_PACKADC_EN.emGPIOx,	PIN_PACKADC_EN.emPin))
-
-//充电限流
-#define 	C_ON		(PORT_SetBit(PIN_CEN.emGPIOx,	PIN_CEN.emPin))
-#define 	C_OFF		(PORT_ClrBit(PIN_CEN.emGPIOx,	PIN_CEN.emPin))
-#define		IS_C_ON		(PORT_GetBit(PIN_CEN.emGPIOx,PIN_CEN.emPin))
-
-//放电限流
-#define 	CD_ON		(PORT_SetBit(PIN_CDEN.emGPIOx,	PIN_CDEN.emPin))
-#define 	CD_OFF		(PORT_ClrBit(PIN_CDEN.emGPIOx,	PIN_CDEN.emPin))
-#define		IS_CD_ON	(PORT_GetBit(PIN_CDEN.emGPIOx,PIN_CDEN.emPin))
-
-//3V3 485电源使能
-#define 	PIN_COM3V3_ON		(PORT_SetBit(PIN_COM3V3_EN.emGPIOx,	PIN_COM3V3_EN.emPin))  //电源关闭
-#define 	PIN_COM3V3_OFF		(PORT_ClrBit(PIN_COM3V3_EN.emGPIOx,	PIN_COM3V3_EN.emPin))  //电源开启
-#define		IS_COM3V3_ON	((PORT_GetBit(PIN_COM3V3_EN.emGPIOx,PIN_COM3V3_EN.emPin)))
-
-//5V 隔离电源使能
-#define 	PIN_COM5V_ON		(PORT_SetBit(PIN_COM5V_EN.emGPIOx,	PIN_COM5V_EN.emPin))
-#define 	PIN_COM5V_OFF		(PORT_ClrBit(PIN_COM5V_EN.emGPIOx,	PIN_COM5V_EN.emPin))
-#define		IS_PIN_COM5V_ON		((PORT_GetBit(PIN_COM5V_EN.emGPIOx,PIN_COM5V_EN.emPin)))
-
-//AFE供电模式
-//#define		REGOUT_ON		(PORT_ClrBit(PIN_REGOUT_EN.emGPIOx,	PIN_REGOUT_EN.emPin))	
-//#define		REGOUT_OFF		(PORT_SetBit(PIN_REGOUT_EN.emGPIOx,	PIN_REGOUT_EN.emPin))
-//#define		IS_REGOUT_ON	(!(PORT_GetBit(PIN_REGOUT_EN.emGPIOx,PIN_REGOUT_EN.emPin)))
-
-/**
-  * @brief  Configures the different GPIO ports.
-  * @param  None
-  * @retval None
-  */
-void GPIO_Config(void)
-{
-	//输入
-	PORT_Init(PIN_SW.emGPIOx,		PIN_SW.emPin,		PIN_SW.emMode);	
-	PORT_Init(PIN_ALERT.emGPIOx,	PIN_ALERT.emPin,	PIN_ALERT.emMode);	
-	PORT_Init(PORT5,PIN1,INPUT);    //485唤醒
-  PORT_Init(PORT14,PIN0,PULLUP_INPUT);
-	//PORT_Init(PIN_REV.emGPIOx,		PIN_REV.emPin,		PIN_REV.emMode);
-  	
-	//输出
-	PORT_Init(PIN_VBCTL.emGPIOx,	PIN_VBCTL.emPin,	PIN_VBCTL.emMode);
-	VB_ON;
-   
-	PORT_Init(PIN_COM5V_EN.emGPIOx,PIN_COM5V_EN.emPin,PIN_COM5V_EN.emMode);
-  PIN_COM5V_OFF;
-	
-	PORT_Init(PIN_COM3V3_EN.emGPIOx,PIN_COM3V3_EN.emPin,PIN_COM3V3_EN.emMode);
-	PIN_COM3V3_OFF; 
-	
-  PORT_Init(PIN_HEATE_N.emGPIOx,	PIN_HEATE_N.emPin,	PIN_HEATE_N.emMode);
-  HEAT_OFF;
-	
-	PORT_Init(PIN_CDEN.emGPIOx,		PIN_CDEN.emPin,		PIN_CDEN.emMode);
-	CD_OFF;
-	
-	PORT_Init(PIN_CEN.emGPIOx,		PIN_CEN.emPin,		PIN_CEN.emMode);
-	C_OFF;
-	
-	PORT_Init(PIN_GREEN.emGPIOx,	PIN_GREEN.emPin,	PIN_GREEN.emMode);
-	GREEN_OFF;
-	
-	PORT_Init(PIN_RED.emGPIOx,		PIN_RED.emPin,		PIN_RED.emMode);
-	RED_OFF;
-	
-	PORT_Init(PIN_DEBUG.emGPIOx,		PIN_DEBUG.emPin,		PIN_DEBUG.emMode);
-	DEBUG_LED_ON;
-	
-
-	PORT_Init(PIN_FUSE_EN.emGPIOx,	PIN_FUSE_EN.emPin,	PIN_FUSE_EN.emMode);
-	FUSE_ON;
-	
-	PORT_Init(PORT5,PIN0,OUTPUT);    //CTLD
-	PORT_SetBit(PORT5,PIN0);
-	
-	//PORT_Init(PIN_HEATFUSE_EN.emGPIOx,PIN_HEATFUSE_EN.emPin,PIN_HEATFUSE_EN.emMode);
-	//HEATFUSE_ON;
-    
-	//PORT_Init(PIN_PACKADC_EN.emGPIOx,	PIN_PACKADC_EN.emPin,	PIN_PACKADC_EN.emMode);
-	//PACKADC_ENABLE;
-	
-	//PORT_Init(PIN_485DE.emGPIOx,	PIN_485DE.emPin,	PIN_485DE.emMode);
-	//RS485_SEND_DISABLE;
-	
-	//未使用管脚配置
-	PORT_Init(PORT13,PIN6,OUTPUT);
-	PORT_Init(PORT7,PIN5,OUTPUT); 
-	PORT_Init(PORT7,PIN4,OUTPUT); 
-	PORT_Init(PORT3,PIN0,OUTPUT);
-	PORT_Init(PORT1,PIN2,OUTPUT);
-  PORT_Init(PORT1,PIN0,OUTPUT);  
-	PORT_Init(PORT2,PIN0,OUTPUT);
-	PORT_Init(PORT2,PIN1,OUTPUT);
-	PORT_Init(PORT2,PIN2,OUTPUT);
-  PORT_Init(PORT2,PIN3,OUTPUT);
-  PORT_Init(PORT2,PIN4,OUTPUT);
-  PORT_Init(PORT2,PIN5,OUTPUT);
-	PORT_Init(PORT13,PIN0,OUTPUT); 
-	
-
-}
-
-//void Clock_Config(void)
-//{	
-//	CLK_Osc_Setting(OSC_PORT, OSC_PORT); /* MainOSC/SubOSC enable */
-//	CLK_MainOsc_Setting(OSC_PORT,OSC_OVER_10M);   //OSC_PORT  OSC_OSCILLATOR
-//	CLK_Fclk_Select(MAINCLK_FIH);//select FMX   MAINCLK_FIH   MAINCLK_FMX
-////	while((CGC->CKC & CGC_CKC_MCS_Msk) == 0);
-//	SystemCoreClock = 8000000;  //12000000
-//}
-/********************************************************************************************************
-**????		:   void HardDriveInit(void)
-**????      :   ?
-**????      :   ?                  
-**???		:	?   
-**??		    :	??????????
-**??          :  zml
-**??          :  2022-07-05
-*********************************************************************************************************/
 void HardDriveInit(void)
 {
 	Clock_Config();		//OK
 #ifdef BMS_BT_DEVICE
 	system_tick_init();
 #endif 
-	
 //	GPIO_Config();		//OK
-	//Ext_INT_Config();	//?????
-	//TimeTick_Config();	//OK
-	// TIM_Config();		//OK		
-	// USART_Config();		//OK
-	//CAN_Config();		//CAN OK?
-	// ADC_Config();		//OK
-	//sEE_Config();		//OK
 	UART1_Init(SystemCoreClock, UartBaud);
-
 }
+
 #endif
 
 
@@ -1540,7 +1061,7 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
 }
 #endif
 
-void DownloadTermination(void)
+void DownloadStop(void)
 {
 	if(g_downLoadStatus == DOWNLOADING_BUFF) {
 		IAP_Erase_ALL(APROM_BUFF_AREA); // 清除接受数据缓冲区
@@ -1574,12 +1095,11 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	if(Ack != ERR_NO && Ack != ERR_NO_SHAKE_SUCCESS) {
 		if(++g_errTime > 3) {
 			g_errTime = 0;
-			DownloadTermination();
+			DownloadStop();
 		} 
 	} else {
 		g_errTime = 0;
 	}
-	// fillbackFunc
 #ifdef BMS_APP_DEVICE
 	fillbackFunc(SysSendUart[g_byRecComChn].pSendBuff	, CmdSendData, result_cmd, CmmuSendLength, Ack);
 	SysSendUart[g_byRecComChn].EndPos += 9 + CmmuSendLength;

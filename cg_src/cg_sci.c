@@ -9,13 +9,12 @@
 /***********************************************************************************************************************
 Includes
 ***********************************************************************************************************************/
-#include "cg_macrodriver.h"
-#include "cg_sci.h"
-/* Start user code for include. Do not edit comment generated here */
-#include "stdlib.h"
+//#include "cg_macrodriver.h"
+//#include "cg_sci.h"
+///* Start user code for include. Do not edit comment generated here */
+//#include "stdlib.h"
 /* End user code. Do not edit comment generated here */
-#include "cg_userdefine.h"
-#include "boot.h"
+#include "includes.h"
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
@@ -248,5 +247,84 @@ MD_STATUS UART0_BaudRate(uint32_t fclk_freq, uint32_t baud)
     }
 
     return (status);
+
 }
+
+void UART1_Start(void)
+{
+    SCI0->SO0 |= _0004_SCI_CH2_DATA_OUTPUT_1;
+    SCI0->SOE0 |= _0004_SCI_CH2_OUTPUT_ENABLE;
+    SCI0->SS0 |= _0008_SCI_CH3_START_TRG_ON | _0004_SCI_CH2_START_TRG_ON;
+    INTC_ClearPendingIRQ(ST1_IRQn); /* clear INTST1 interrupt flag */
+    INTC_ClearPendingIRQ(SR1_IRQn); /* clear INTSR1 interrupt flag */
+    NVIC_ClearPendingIRQ(ST1_IRQn); /* clear INTST1 interrupt flag */
+    NVIC_ClearPendingIRQ(SR1_IRQn); /* clear INTSR1 interrupt flag */
+    INTC_DisableIRQ(ST1_IRQn);       /* enable INTST1 interrupt */	// 取消发送中断
+    INTC_EnableIRQ(SR1_IRQn);       /* enable INTSR1 interrupt */
+}
+
+MD_STATUS UART1_BaudRate(uint32_t fclk_freq, uint32_t baud)
+{
+    MD_STATUS status;
+    uart_baud_t pvalue;
+
+    status = UART_BaudRateCal(fclk_freq, baud, &pvalue);
+
+    if (status == MD_OK)
+    {
+        SCI0->ST0 = _0008_SCI_CH3_STOP_TRG_ON | _0004_SCI_CH2_STOP_TRG_ON;
+        SCI0->SPS0 = _0000_SCI_CK01_fCLK_0 | pvalue.prs;
+        SCI0->SDR02 = pvalue.sdr << 9;
+        SCI0->SDR03 = pvalue.sdr << 9;
+        SCI0->SS0 |= _0008_SCI_CH3_START_TRG_ON | _0004_SCI_CH2_START_TRG_ON;
+    }
+
+    return (status);
+}
+
+MD_STATUS UART1_Init(uint32_t freq, uint32_t baud)
+{
+    MD_STATUS status;
+    CGC->PER0 |= CGC_PER0_SCI0EN_Msk;
+	
+	SCI0->SPS0 &= ~SCI0_SPS0_PRS00_Msk;	//选择通道0的串口时钟；
+	//SCI0->SPS0 &= ~SCI0_SPS0_PRS00_Msk;
+    
+    SCI0->ST0 |= _0008_SCI_CH3_STOP_TRG_ON | _0004_SCI_CH2_STOP_TRG_ON;
+    INTC_DisableIRQ(ST1_IRQn);       /* disable INTST1 interrupt */
+    INTC_DisableIRQ(SR1_IRQn);       /* disable INTSR1 interrupt */
+    INTC_DisableIRQ(SRE1_IRQn);      /* disable INTSRE1 interrupt */
+    INTC_ClearPendingIRQ(ST1_IRQn);  /* clear INTST1 interrupt flag */
+    INTC_ClearPendingIRQ(SR1_IRQn);  /* clear INTSR1 interrupt flag */
+    INTC_ClearPendingIRQ(SRE1_IRQn); /* clear INTSRE1 interrupt flag */
+
+    /* transmission channel */
+    SCI0->SMR02 = _0020_SMRMN_DEFAULT_VALUE | _0000_SCI_CLOCK_SELECT_CK00 | _0000_SCI_CLOCK_MODE_CKS |
+                  _0002_SCI_MODE_UART | _0000_SCI_TRANSFER_END;
+    SCI0->SCR02 = _0004_SCRMN_DEFAULT_VALUE | _8000_SCI_TRANSMISSION | _0000_SCI_TIMING_1 | _0000_SCI_INTSRE_MASK |
+                  _0000_SCI_PARITY_NONE | _0080_SCI_LSB | _0010_SCI_STOP_1 | _0003_SCI_LENGTH_8;
+    SCI0->SDR02 = _CE00_SCI_BAUDRATE_DIVISOR;
+    /* reception channel */
+    MISC->NFEN0 |= _04_SCI_RXD1_FILTER_ON;
+    SCI0->SIR03 = _0004_SCI_SIRMN_FECTMN | _0002_SCI_SIRMN_PECTMN | _0001_SCI_SIRMN_OVCTMN;
+    SCI0->SMR03 = _0020_SMRMN_DEFAULT_VALUE | _0000_SCI_CLOCK_SELECT_CK00 | _0000_SCI_CLOCK_MODE_CKS |
+                  _0100_SCI_TRIGGER_RXD | _0000_SCI_EDGE_FALL | _0002_SCI_MODE_UART | _0000_SCI_TRANSFER_END;
+    SCI0->SCR03 = _0004_SCRMN_DEFAULT_VALUE | _4000_SCI_RECEPTION | _0000_SCI_TIMING_1 | _0000_SCI_INTSRE_MASK |
+                  _0000_SCI_PARITY_NONE | _0080_SCI_LSB | _0010_SCI_STOP_1 | _0003_SCI_LENGTH_8;
+    SCI0->SDR03 = _CE00_SCI_BAUDRATE_DIVISOR;
+    /* output enable */
+    SCI0->SO0 |= _0004_SCI_CH2_DATA_OUTPUT_1;
+    SCI0->SOL0 &= (uint16_t)~_0004_SCI_CHANNEL2_INVERTED;
+    SCI0->SOE0 |= _0004_SCI_CH2_OUTPUT_ENABLE;
+    /* Set TxD1 pin */
+    TXD1_PORT_SETTING();	//重定位到P72/P73
+    /* Set RxD1 pin */
+    RXD1_PORT_SETTING();
+    /* UART1 Start, Setting baud rate */
+    status = UART1_BaudRate(freq, baud);
+    UART1_Start();
+
+    return (status);
+}
+
 /* End user code. Do not edit comment generated here */
