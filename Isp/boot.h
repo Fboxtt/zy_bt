@@ -9,12 +9,15 @@
 #define BMS_BT_DEVICE 2
 // #define BMS_APP_DEVICE 3
 #define DEVICE BMS_APP_DEVICE
-// #define IN_APP
-#ifdef BMS_APP_DEVICE
-#include "sci.h"
-#endif
 
-#ifdef BMS_BT_DEVICE
+
+
+#ifdef BMS_APP_DEVICE
+
+#include "sci.h"
+
+#elif BMS_BT_DEVICE
+
 #include "cg_sci.h"
 #include "cg_macrodriver.h"
 
@@ -222,19 +225,7 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 
 
 uint8_t AppCheckSumCheck(void);
-/* boot core.h*/
-/* boot core.h*/
-/* boot core.h*/
 
-/*cg_sci_user.c*/
-/*cg_sci_user.c*/
-/*cg_sci_user.c*/
-
-/*cg_sci_user.c*/
-/*cg_sci_user.c*/
-/*cg_sci_user.c*/
-
-// flash_operate.h
 #define APP_VER_OFFSET			0xD0
 
 #define BOOT_ADDR				0x0000

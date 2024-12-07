@@ -20,13 +20,15 @@ commu_length_t CmmuSendLength;		    //发送数据长度
 commu_data_t CmdSendAll[SendLength1];	//发送缓存
 commu_length_t CmdSendAllLenth;			//发送缓存长度
 
+
+// 表示烧录状态宏定义
 typedef enum {
 	NO_DOWNLOADING = 0x0,
 	DOWNLOADING_BUFF	= 0x55AA55AA,
 	DOWNLOADING_BKP		= 0x0A555AAA,
 	DOWNLOADED_BUFF		= 0x5A5A5555,
 	DOWNLOADED_BKP		= 0x0A5AAAAA,
-	RESTORE_BUFF		= 0x5AA56699,
+	RESTORE_BUFF		= 0x5AA56699, // 恢复缓冲区到APP区域
 	RESTORE_BKP 		= 0x69695A5A,
 }DOWNLOAD_STATUS;
 
@@ -42,21 +44,11 @@ typedef struct {
 	uint8_t reserved[2];		// 保留，无用
 }VerStru;
 
-#ifndef IN_APP
+#ifdef BMS_BT_DEVICE
+// 预设版本号
 const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
 	1,2,0,2024,11,12
 };
-#endif
-
-#ifdef IN_APP
-const TVER g_stVersion __attribute__((at(APP_VER_ADDR)))= {
-	1,1,1,2024,10,11
-};
-#endif
-
-
-#ifndef BMS_APP_DEVICE
-
 
 TUartData g_tUartData;
 
@@ -66,8 +58,8 @@ uint8_t* g_sendArray;
 
 uint8_t result_cmd;
 
-uint32_t g_bootWaitTime = 0;
-uint32_t g_bootWaitTimeLimit = 0;
+uint32_t g_bootWaitTime = 0;						// 在boot中的已等待时间
+uint32_t g_bootWaitTimeLimit = 0;					// 在boot中的等待时间上限
 
 int g_flashStatusCount = 0; // 保证读写FLASH时不会卡死
 
@@ -77,7 +69,7 @@ uint8_t CurrState = 0;								//当前芯片的状态
 uint32_t ReadFlashLength = 0;                       //读Flash的长度        
 uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 
-uint32_t g_packetTotalNum = 0;								//烧录文件数据包的数量
+uint32_t g_packetTotalNum = 0;						//烧录文件数据包的数量
 
 uint32_t CheckSum = 0;
 
@@ -91,6 +83,30 @@ const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
 
 
 WritableFlag g_flashWritableFlag = {0};
+
+
+//表示握手状态
+typedef enum {
+	ENTER_CMD = 0xA,
+	BUFFER_CMD = 0xB,
+	BACKUP_CMD = 0XC,
+	BUFFER_FLAG = 0xAAAB,
+	BACKUP_FLAG  = 0xACCC,
+}SHAKE_FLAG;
+
+// 记录握手顺序变量
+static uint16_t g_shakehandFlag = 0x0; 
+
+//记录握手顺序函数
+void SetShakehandFlag(SHAKE_FLAG flag)
+{
+	g_shakehandFlag = g_shakehandFlag << 4;
+	g_shakehandFlag |= flag;
+}
+
+// 无用函数
+uint8_t temp = APROM_AREA;
+
 /*
 跳转相关函数
 */
@@ -641,23 +657,8 @@ void GetVer(uint32_t addr, int lenth)
 }
 
 
-typedef enum {
-	ENTER_CMD = 0xA,
-	BUFFER_CMD = 0xB,
-	BACKUP_CMD = 0XC,
-	BUFFER_FLAG = 0xAAAB,
-	BACKUP_FLAG  = 0xACCC,
-}SHAKE_FLAG;
-
-static uint16_t g_shakehandFlag = 0x0;
-void SetShakehandFlag(SHAKE_FLAG flag)
-{
-	g_shakehandFlag = g_shakehandFlag << 4;
-	g_shakehandFlag |= flag;
-}
 
 
-uint8_t temp = APROM_AREA;
 boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
@@ -763,16 +764,6 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 				*Ack = ERR_CMD_LEN;
 				break;
 			}
-			#ifdef ENCRYPT_ENABLE
-			if(temp==UID_ENC_AREA)
-			{
-				temp = UID_ENC_AREA_AREA;
-			}
-			else
-			{
-				Decrypt_Fun(rBuff+4);
-			}
-			#endif
 			if((rBuff[0] + (uint32_t)rBuff[1] * 0x100) != (NextPacketNumber)) {
 				*Ack = ERR_PACKET_NUMBER;
 			}
