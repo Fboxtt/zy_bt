@@ -124,11 +124,13 @@ __asm uint32_t get_pc(void) {
 	bx lr
 }
 
+// 重置向量表
 void __set_VECTOR_ADDR(uint32_t addr)
 {
 	SCB->VTOR = addr;
 }
 
+// 复位
 void IAP_Reset()
 {	
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
@@ -170,7 +172,7 @@ void UartSendOneByte(uint8_t input_data)
 
 #endif 
 
-
+// 清除通讯数据，为下次通讯做准备
 void ClearCommu()
 {
     CommuData[0] = 0; //清除缓冲区数据头，准备下次串口数据到来
@@ -179,7 +181,8 @@ void ClearCommu()
 	CmdSendAllLenth = 0;
 }
 
-uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, volatile uint8_t* pAck)//分析接收帧的数据
+//分析接收帧的数据
+uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, volatile uint8_t* pAck)
 {
 	volatile uint8_t cmd = NO_CMD;
     uint32_t calLen;
@@ -276,6 +279,7 @@ uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t 
     }
 }
 
+// 写单字节并校验
 uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area)//写单字节IAP操作
 {
 	int FLSTS_flagCount = 0;
@@ -336,6 +340,8 @@ uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
 	return 1;
     
 }
+
+// 擦除部分flash数据，
 void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，充分利用空间
 {
 	uint8_t buff[512] = {0};
@@ -370,6 +376,7 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
 	IAP_WriteMultiByte(sectorAddr, &buff[0], lowLenth, IAP_CHECK_AREA);
 	IAP_WriteMultiByte(sectorAddr + lowLenth + lenth, &buff[lowLenth + lenth], hignLenth, IAP_CHECK_AREA);
 }
+
 uint8_t IAP_Erase_ALL(uint8_t area)
 {
     uint16_t i;
@@ -444,7 +451,7 @@ void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t 
 /*
 	HEX文件读写相关函数
 */
-
+// 把校验和记录到flash中
 void All_CheckSum_Write(uint32_t checkSum, uint32_t addr)
 {
     unsigned char i;
@@ -455,6 +462,7 @@ void All_CheckSum_Write(uint32_t checkSum, uint32_t addr)
 
 }
 
+// 把一些标志位写入到固定区域
 void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr)
 {
 	int i = 0;
@@ -464,6 +472,7 @@ void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr)
 	}
 }
 
+// 读取校验和出来
 uint32_t All_CheckSum_Read(uint32_t addr)
 {
     unsigned char i;
@@ -477,6 +486,7 @@ uint32_t All_CheckSum_Read(uint32_t addr)
 	return checkSum;
 }
 
+// 读取包长度出来
 uint32_t PacketTotalNumRead(uint32_t addr)
 {
     uint32_t packetTotalNum = 0;
@@ -491,6 +501,7 @@ uint32_t PacketTotalNumRead(uint32_t addr)
 	return packetTotalNum;
 }
 
+// 恢复数据到APP中
 uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 {
 	uint16_t i;
@@ -504,6 +515,7 @@ uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 	return 1;
 }
 
+// 恢复备份区数据到APP中
 uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
 {
 	uint16_t i;
@@ -548,6 +560,7 @@ void getCheckPara(int area)
 	}
 }
 
+// 把烧录标志位相关数据写入到flash固定区域中
 void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area)
 {
 	getCheckPara(area);
@@ -555,6 +568,8 @@ void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area)
 	uint32ValWrite(totalNum, numAddr); // app校验和靠读取buffer或者backup，buffer靠外面输入，backup靠外面输入
 	All_CheckSum_Write(chkSum, checkAddr);
 }
+
+// 计算flash内存储的校验和是否正确
 uint8_t CheckSumCheck(int area)
 {
 	uint32_t packetTatolSize = 0;
@@ -577,12 +592,14 @@ uint8_t CheckSumCheck(int area)
 	}
 }
 
+// 开机时向主机发送命令
 void ReplyEnterBoot(void)
 {
 	CmmuSendLength = 0;
 //	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
 }
 
+// 恢复APP
 void AppRestore()
 {
 	#ifdef BMS_BT_DEVICE
@@ -629,6 +646,8 @@ void AppRestore()
 	}
 	#endif
 }
+
+// 重启
 void BootCheckReset()
 {
     if(ResetFlag==1)
@@ -638,7 +657,7 @@ void BootCheckReset()
     }
 }
 
-
+// 获取版本号函数
 void GetVer(uint32_t addr, int lenth)
 {
 	uint8_t* p_addr = (uint8_t*)addr;
@@ -666,7 +685,7 @@ void GetVer(uint32_t addr, int lenth)
 
 
 
-
+// 命令执行函数
 boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
@@ -888,12 +907,10 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 }
 
 /*boot_core.c*/
-/*boot_core.c*/
-/*boot_core.c*/
 
 //main
-//main
-//main
+
+// 重置Bt中等待时间
 void BootWaitTimeInit(void)
 {
 	g_bootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // 进入APP等待开始计时
