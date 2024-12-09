@@ -41,7 +41,11 @@ typedef struct
 #define vHW			"T12100-V1.1-1OZ"  //BMS24200-H 带加热器
 #define vFW			"V1"
 
+
+
 #endif
+
+#define SIMPLE_VER_LENGTH 12
 
 void DownloadProcess(void *p,UCHAR ucComPort);
 /*************************通讯协议相关宏定义*******************************/

@@ -34,17 +34,6 @@ typedef enum {
 
 DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
 
-typedef struct {
-	uint16_t majorVer;			// 主版本号
-	uint16_t minorVer;			// 次版本号
-	uint16_t revisionVer;		// 修订版本
-	uint16_t year;				// 年
-	uint8_t month;				// 月
-	uint8_t day;				// 日
-	uint8_t reserved[2];		// 保留，无用
-}VerStru;
-
-
 #ifdef BMS_BT_DEVICE
 // 预设版本号
 const TVER btVersion __attribute((at(BOOT_VER_ADDR)))= {
@@ -689,7 +678,7 @@ void GetVer(uint32_t addr, int lenth)
 boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
-	VerStru* hexVer = 0x0;
+	TVER* hexVer = 0x0;
 	int i = 0;
     CmmuSendLength = 0;	
 	*Ack = ERR_NO;
@@ -711,11 +700,11 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
     {
 		case PC_GET_VER:
 		{
-			hexVer = (VerStru*)(APP_VER_ADDR); //使用VerStru结构体而不是TVER，节省空间发送
+			hexVer = (TVER*)(APP_VER_ADDR); //使用TVER结构体而不是TVER，节省空间发送
 			if(g_flashWritableFlag.bit.appArea == 1) {
 				if(CheckSumCheck(APROM_AREA) == 1) {
-					memcpy(&CmdSendData[0], hexVer, sizeof(VerStru));
-					CmmuSendLength = sizeof(VerStru);
+					memcpy(&CmdSendData[0], hexVer, SIMPLE_VER_LENGTH);
+					CmmuSendLength = SIMPLE_VER_LENGTH;
 					*Ack = ERR_NO;
 				} else {
 					*Ack = ERR_ALL_CHECK;
@@ -729,10 +718,10 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 		{
 			// BT版本号获取
 			volatile uint32_t pcValue = get_pc();
-			GetVer(BOOT_VER_ADDR,					sizeof(VerStru));
-			GetVer(APP_VER_ADDR,					sizeof(VerStru));
-			GetVer(APP_BUFF_VER_ADDR, 				sizeof(VerStru));
-			GetVer(BACKUP_VER_ADDR, 				sizeof(VerStru));
+			GetVer(BOOT_VER_ADDR,					SIMPLE_VER_LENGTH);
+			GetVer(APP_VER_ADDR,					SIMPLE_VER_LENGTH);
+			GetVer(APP_BUFF_VER_ADDR, 				SIMPLE_VER_LENGTH);
+			GetVer(BACKUP_VER_ADDR, 				SIMPLE_VER_LENGTH);
 			GetVer((uint32_t)IC_INF_BUFF, 			IC_TYPE_LENTH);
 			GetVer((uint32_t)(&g_flashWritableFlag),sizeof(g_flashWritableFlag));
 			GetVer((uint32_t)&pcValue, 				sizeof(pcValue));
