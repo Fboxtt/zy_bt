@@ -30,7 +30,7 @@
 #include "communication_protocol.h"
 #include "base_time_system.h"
 #include "clk.h"
-
+#include "Typedefs.h"
 
 
 #endif

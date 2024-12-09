@@ -20,17 +20,26 @@
 
 #include "cg_sci.h"
 #include "cg_macrodriver.h"
-
-typedef		unsigned char		UCHAR;			//uc
-typedef     unsigned char       BYTE;
-typedef     char                UBYTE  ;
-typedef     unsigned short      WORD;
+#include "Typedefs.h"
 
 typedef struct
 {
    BYTE  *pbuf; 
    WORD  wLen;  
 }TUartData;	 
+
+
+
+#define vMAIN		1
+#define vREV		2
+#define vFIX		0
+
+#define vYEAR		2024
+#define vMONTH		12
+#define vDAY		9
+
+#define vHW			"T12100-V1.1-1OZ"  //BMS24200-H 带加热器
+#define vFW			"V1"
 
 #endif
 
@@ -373,19 +382,6 @@ uint8_t CheckAreaWritable(uint32_t addr);
 
 #define ONE_DISASSEMBLE_COUNT 7 // 判断一次FLSTS的值需要7个汇编指令
 
-#ifndef BMS_APP_DEVICE
-typedef struct tagVersion
-{
-	uint16_t	usMajorVer;				    	 
-	uint16_t	usMinorVer;				    	 
-	uint16_t	usRevision;						 
-	uint16_t	usCompileYear;					 
-	uint8_t		ucCompileMonth;			    	 
-	uint8_t		ucCompileDay;					  
-	int8_t    cHWversion[30];					 
-	int8_t    cFuncVersion[40];				 
-}TVER;
-#endif
 typedef union { // 确认区域是否可写的标志位
 	uint8_t value;
 	struct {
@@ -395,6 +391,7 @@ typedef union { // 确认区域是否可写的标志位
 	}bit;
 }WritableFlag;
 
+extern uint32_t g_uartWaitTime;
 extern WritableFlag g_flashWritableFlag;
 #define ReadInt(x) *(uint32_t*)(x)
 

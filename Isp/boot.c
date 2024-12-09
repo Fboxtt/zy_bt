@@ -44,10 +44,18 @@ typedef struct {
 	uint8_t reserved[2];		// 保留，无用
 }VerStru;
 
+
 #ifdef BMS_BT_DEVICE
 // 预设版本号
-const VerStru btVersion __attribute((at(BOOT_VER_ADDR)))= {
-	1,2,0,2024,11,12
+const TVER btVersion __attribute((at(BOOT_VER_ADDR)))= {
+	vMAIN,
+	vREV,
+	vFIX,
+	vYEAR,
+	vMONTH,
+	vDAY,
+	vHW,
+	vFW,
 };
 
 TUartData g_tUartData;
@@ -662,7 +670,7 @@ void GetVer(uint32_t addr, int lenth)
 boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
-	TVER* hexVer = 0x0;
+	VerStru* hexVer = 0x0;
 	int i = 0;
     CmmuSendLength = 0;	
 	*Ack = ERR_NO;
@@ -684,11 +692,11 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
     {
 		case PC_GET_VER:
 		{
-			hexVer = (TVER*)(APP_VER_ADDR);
+			hexVer = (VerStru*)(APP_VER_ADDR); //使用VerStru结构体而不是TVER，节省空间发送
 			if(g_flashWritableFlag.bit.appArea == 1) {
 				if(CheckSumCheck(APROM_AREA) == 1) {
-					memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
-					CmmuSendLength = sizeof(TVER);
+					memcpy(&CmdSendData[0], hexVer, sizeof(VerStru));
+					CmmuSendLength = sizeof(VerStru);
 					*Ack = ERR_NO;
 				} else {
 					*Ack = ERR_ALL_CHECK;
