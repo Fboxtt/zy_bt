@@ -333,6 +333,7 @@ uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
 // 擦除部分flash数据，
 void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，充分利用空间
 {
+	int FLSTS_flagCount = 0;
 	uint8_t buff[512] = {0};
 	uint32_t sectorAddr = IAP_IapAddr & 0xfffffe00;
 	uint32_t lowLenth = IAP_IapAddr - sectorAddr;
@@ -353,7 +354,9 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
     *(uint32_t *) IAP_IapAddr = 0xFFFFFFFF;
     
     // polling Erase Over Flag
-    while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0);
+	while((FMC->FLSTS & FMC_FLSTS_OVF_Msk) == 0 && FLSTS_flagCount < 120000) {
+		FLSTS_flagCount++;
+	};
     FMC->FLSTS |= FMC_FLSTS_OVF_Msk;
     FMC->FLERMD = 0x00;
     FMC->FLPROT = 0x00;
@@ -626,10 +629,10 @@ void AppRestore()
 		} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
 			// 如果因为意外使APP损坏，将缓冲区APP复制过来
 			IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
-			ReadInt(BUFFER_RESTORE_ADDRESS) = RESTORE_BUFF;
+			uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
 		} else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
 			IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4);
-			ReadInt(BACKUP_RESTORE_ADDRESS) = RESTORE_BKP;
+			uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
 		}
 		g_bootWaitTime = 0;
 	}
@@ -812,15 +815,16 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 
 			if(g_downLoadStatus == DOWNLOADING_BUFF) {
 				CheckSumWrite(g_packetTotalNum, CheckSum, APROM_BUFF_AREA);
-				uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
 				g_packetTotalNum = 0;
-				if(CheckSumCheck(APROM_BUFF_AREA) == 1 && ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF)
+				IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, sizeof(uint32_t));
+				if(CheckSumCheck(APROM_BUFF_AREA) == 1)
 				{
 					*Ack = ERR_NO; //回应退出了Bootloader
-					ReadInt(BUFFER_RESTORE_ADDRESS) = RESTORE_BUFF;	// 设置恢复缓冲区标志位,等待跳入bt中
+					uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS); // 设置恢复缓冲区标志位,等待跳入bt中
 					g_downLoadStatus = DOWNLOADED_BUFF;	// 修改下载状态
 					g_shakehandFlag = 0x0;				// 清除握手成功标志位
 				} else {
+					uint32ValWrite(0xffffffff, BUFFER_RESTORE_ADDRESS); // 设置恢复缓冲区标志位,等待跳入bt中
 					*Ack = ERR_ALL_CHECK;
 				}
 			} else if(g_downLoadStatus == DOWNLOADING_BKP){
@@ -859,17 +863,13 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 		case PC_SET_RESTORE_BACKUP:
 		// 恢复备份区流程 1下载 2强制恢复命令 3跳转到bt 4恢复 5跳转到app
 		{
-			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0x0) { // 判断BACKUP区域是否有数据
+			if(IAP_ReadOneByte(BACKUP_ADDR,IAP_CHECK_AREA) == 0xffffffff) { // 判断BACKUP区域是否有数据
 				*Ack = ERR_AREA_BLANK;
 				break;
 			}
-			uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
-			if(ReadInt(BACKUP_RESTORE_ADDRESS) != RESTORE_BKP) {
-				*Ack = ERR_AREA_NOT_WRITABLE;
-				break;
-			}
+			IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, sizeof(uint32_t));
 			if(CheckSumCheck(APROM_BACKUP_AREA) == 1) { // 校验BACKUP区域校验和
-				ReadInt(BACKUP_RESTORE_ADDRESS) = RESTORE_BKP;		// 设置标志位，进入bt后开始恢复backup区
+				uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS); // 设置标志位，进入bt后开始恢复backup区
 				*Ack = ERR_NO;
 			} else {
 				*Ack = ERR_ALL_CHECK;

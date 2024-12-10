@@ -79,7 +79,7 @@ typedef enum {
 #define PACKET_ID_LENTH            2
 #define RECEIVE_PACKET_LENTH        (PACKET_ID_LENTH+PACKET_ID_LENTH)
 #define DATA_OFFSET					(RECEIVE_PACKET_LENTH)
-#define PACKET_SIZE                 512
+#define PACKET_SIZE                 500
 #define MAX_PACK_NUM				(80 * 1024)
 #define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容
 #define TYPE_TO_SHAKE_LENTH         4
