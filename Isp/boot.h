@@ -74,7 +74,7 @@ typedef enum {
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
 #define SEND_PACKET_LENTH           2
-#define SendLength1                (64+SEND_PACKET_LENTH+8)
+#define SendLength1                (128+SEND_PACKET_LENTH+8)
 
 #define PACKET_ID_LENTH            2
 #define RECEIVE_PACKET_LENTH        (PACKET_ID_LENTH+PACKET_ID_LENTH)
