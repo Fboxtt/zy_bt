@@ -721,7 +721,7 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 		{
 			// BT版本号获取
 			volatile uint32_t pcValue = get_pc();
-			GetVer(BOOT_VER_ADDR,					sizeof(TVER));
+			GetVer(BOOT_VER_ADDR,					SIMPLE_VER_LENGTH);
 			GetVer(APP_VER_ADDR,					SIMPLE_VER_LENGTH);
 			GetVer(APP_BUFF_VER_ADDR, 				SIMPLE_VER_LENGTH);
 			GetVer(BACKUP_VER_ADDR, 				SIMPLE_VER_LENGTH);
