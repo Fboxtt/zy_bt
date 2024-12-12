@@ -160,6 +160,7 @@ typedef enum {
 #endif
 
 #define PC_GET_INF					0x71		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
+#define PC_GET_BT_INF				0x72		// 获取BT详细版本号
 
 #define PC_SET_DOWNLOAD_BUFFER		0x75		// 擦除所有APROM
 #define PC_SHAKE_ENTER_BOOTMODE 	0x76		// 进入更新模式，即握手信号
@@ -185,6 +186,9 @@ typedef enum {
 #define ERR_AREA_NOT_WRITABLE	0x26		// 区域不可写
 #define ERR_DOWNLOAD_DONE		0x27		// 烧录已完成，请重新开始
 #define ERR_ERASE				0x28		// 擦除错误
+
+
+
 #define ERR_NO_SHAKE_SUCCESS	0x29		// 握手成功
 
 #define NO_CMD_BOOT_WAIT_LIMIT  4500
