@@ -18,6 +18,7 @@
 
 #elif BMS_BT_DEVICE
 
+
 #include "cg_sci.h"
 #include "cg_macrodriver.h"
 #include "Typedefs.h"
@@ -41,7 +42,7 @@ typedef struct
 #define vHW			"T12100-V1.1-1OZ"  //BMS24200-H 带加热器
 #define vFW			"V1"
 
-
+void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 
 #endif
 
@@ -402,5 +403,7 @@ typedef union { // 确认区域是否可写的标志位
 extern uint32_t g_uartWaitTime;
 extern WritableFlag g_flashWritableFlag;
 #define ReadInt(x) *(uint32_t*)(x)
+void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,commu_cmd_t dataLen, commu_data_t Ack);
 
+extern commu_data_t CmdSendAll[SendLength1];	//发送缓存
 #endif
