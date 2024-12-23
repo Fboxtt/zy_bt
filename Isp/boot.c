@@ -168,6 +168,7 @@ void ClearCommu()
     CmmuReadNumber = 0; //重新计数，准备下次串口数据到来
     UartReceFlag = 0; //清除传输完成标志
 	CmdSendAllLenth = 0;
+	CmmuSendLength = 0;
 }
 
 //分析接收帧的数据
@@ -902,10 +903,8 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 		g_bootWaitTime = 0;
 		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
 #endif
-        return (cmd | 0x80);
-    } else {
-        return cmd;
     }
+	return (cmd | 0x80);
 }
 
 /*boot_core.c*/
