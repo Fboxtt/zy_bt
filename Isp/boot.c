@@ -789,6 +789,10 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
         }break;
 		case PC_SET_WRITE_FLASH:// 写入app，成功后进入app
 		{
+			for(i = 0; i < PACKET_ID_LENTH; i++) {
+				CmdSendData[i] = 0x00;
+			}
+			CmmuSendLength = PACKET_ID_LENTH;
 			if(g_shakehandFlag != BUFFER_FLAG && g_shakehandFlag != BACKUP_FLAG) {
 				*Ack = ERR_SHAKEHAND;
 				break;
@@ -818,7 +822,6 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 			for(i = 0; i < PACKET_ID_LENTH; i++) {
 				CmdSendData[i] = rBuff[i];
 			}
-			CmmuSendLength = PACKET_ID_LENTH;
 		}break;        
 		case PC_SET_ALL_CHECKSUM: //接受hex文件校验和
         {
