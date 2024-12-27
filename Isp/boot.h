@@ -239,7 +239,7 @@ extern void BootCheckReset(void);		//检测是否有复位信号
 extern void AppRestore(void);
 extern uint8_t CheckUID(void);
 void BootInit(void);
-boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack);
+void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack);
 
 
 uint8_t AppCheckSumCheck(void);

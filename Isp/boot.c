@@ -679,7 +679,7 @@ void GetVer(uint32_t addr, int lenth)
 
 
 // 命令执行函数
-boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
+void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
 	TVER* hexVer = 0x0;
@@ -907,7 +907,7 @@ boot_cmd_t BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t 
 		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
 #endif
     }
-	return (cmd | 0x80);
+	return;
 }
 
 /*boot_core.c*/
@@ -986,7 +986,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	cmd = AnalysisData(rBuff, wholeDataLen, &unitDataLen,&Ack);  // 分析从中断函数总获取的数据包， 返回cmd
 
 	if (Ack == ERR_NO) {
-		result_cmd = BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
+		BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
 	}
 	if(Ack != ERR_NO && Ack != ERR_NO_SHAKE_SUCCESS) {
 		if(++g_errTime > 3) {
@@ -997,15 +997,14 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 		g_errTime = 0;
 	}
 #ifdef BMS_APP_DEVICE
-	fillbackFunc(SysSendUart[g_byRecComChn].pSendBuff	, CmdSendData, result_cmd, CmmuSendLength, Ack);
+	fillbackFunc(SysSendUart[g_byRecComChn].pSendBuff	, CmdSendData, cmd | 0x80, CmmuSendLength, Ack);
 	SysSendUart[g_byRecComChn].EndPos += 9 + CmmuSendLength;
 #else
 	fillbackFunc(CmdSendAll, CmdSendData, result_cmd, CmmuSendLength, Ack);
 	CmdSendAllLenth += 9 + CmmuSendLength;
 	CmdSendFunc(CmdSendAll, CmdSendAllLenth);
-	ClearCommu();
 #endif
-
+	ClearCommu();
 	if(ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF || ReadInt(BACKUP_RESTORE_ADDRESS) == RESTORE_BKP) {	// 设置恢复缓冲区标志位,等待跳入bt中)
 	// 下面这个if保证在bt中如果无法清除BUFFER_RESTORE_ADDRESS标志位，不会进入死循环
 		if(g_downLoadStatus == DOWNLOADED_BUFF || g_downLoadStatus == DOWNLOADED_BKP) {
