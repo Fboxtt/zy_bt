@@ -1000,7 +1000,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	fillbackFunc(SysSendUart[g_byRecComChn].pSendBuff	, CmdSendData, cmd | 0x80, CmmuSendLength, Ack);
 	SysSendUart[g_byRecComChn].EndPos += 9 + CmmuSendLength;
 #else
-	fillbackFunc(CmdSendAll, CmdSendData, result_cmd, CmmuSendLength, Ack);
+	fillbackFunc(CmdSendAll, CmdSendData, cmd | 0x80, CmmuSendLength, Ack);
 	CmdSendAllLenth += 9 + CmmuSendLength;
 	CmdSendFunc(CmdSendAll, CmdSendAllLenth);
 #endif
