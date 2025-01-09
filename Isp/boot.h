@@ -192,8 +192,8 @@ typedef enum {
 
 #define ERR_NO_SHAKE_SUCCESS	0x29		// 握手成功
 
-#define NO_CMD_BOOT_WAIT_LIMIT  4500
-#define YES_CMD_BOOT_WAIT_LIMIT 5000
+#define NO_CMD_BOOT_WAIT_LIMIT  1000
+#define YES_CMD_BOOT_WAIT_LIMIT 1000
 
 extern uint32_t g_bootWaitTime;
 extern uint32_t g_bootWaitTimeLimit;
@@ -335,31 +335,7 @@ MD_STATUS UART1_Init(uint32_t freq, uint32_t baud);
 
 //GPIO输入输出口变量定义
 
-typedef struct 
-{
-	PORT_TypeDef	emGPIOx;		//refer to PORT_TypeDef
-	PIN_TypeDef 	emPin;			//refer to PIN_TypeDef
-	PIN_ModeDef		emMode;			//refer to PIN_ModeDef
-	uint8_t 		value;			//output TRUE: high, FALSE: low
-}TGPIO;
 
-extern TGPIO PIN_SW; 	
-extern TGPIO PIN_HEATE_N;	
-extern TGPIO PIN_ALERT;	
-
-extern TGPIO PIN_VBCTL; 
-extern TGPIO PIN_CDEN; 	
-extern TGPIO PIN_CEN; 	
-extern TGPIO PIN_GREEN; 
-extern TGPIO PIN_RED; 	
-//extern TGPIO PIN_485DE; 
-extern TGPIO PIN_FUSE_EN; 	
-extern TGPIO PIN_WAKE; 		
-//extern TGPIO PIN_PACKADC_EN; 
-
-extern TGPIO PIN_COM3V3_EN;	 
-extern TGPIO PIN_COM5V_EN;	 
-extern TGPIO PIN_REGOUT_EN;	 
 #endif
 
 
