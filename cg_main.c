@@ -216,22 +216,40 @@ void SysTick_Handler(void)
 	g_boot100MsCount++;
 }
 
+// void toggle_Init(void)
+// {
+//     // PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
+//     PORT->P7 |= _02_Pn1_OUTPUT_1;
+//     PORT->PU7 |= _01_PUn0_PULLUP_ON;
+//     PORT->POM7 &= (~_02_POMn1_NCH_ON);
+//     // PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
+//     PORT->PM7 &= (~_02_PMn1_MODE_INPUT);
+// }
+// void toggle(void)
+// {
+// 	// PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
+// 	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
+//     PORT->P7 |= _02_Pn1_OUTPUT_1;
+// 	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
+// 	PORT->P7 |= _02_Pn1_OUTPUT_1;
+// }
+
 void toggle_Init(void)
 {
     // PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
-    PORT->P7 |= _02_Pn1_OUTPUT_1;
-    PORT->PU7 |= _01_PUn0_PULLUP_ON;
-    PORT->POM7 &= (~_02_POMn1_NCH_ON);
+    PORT->P7 |= 0x02U;
+    PORT->PU7 |= 0x01U;
+    PORT->POM7 &= (~0x02U);
     // PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
-    PORT->PM7 &= (~_02_PMn1_MODE_INPUT);
+    PORT->PM7 &= (~0x02U);
 }
 void toggle(void)
 {
 	// PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
 	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
-    PORT->P7 |= _02_Pn1_OUTPUT_1;
-	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
-	PORT->P7 |= _02_Pn1_OUTPUT_1;
+    PORT->P7 |= 0x02U;
+	PORT->P7 &= (~0x02U);
+	PORT->P7 |= 0x02U;
 }
 
 void Clock_Config(void)
@@ -270,7 +288,7 @@ void CheckSwitch(void)
 	if (!IS_SWITCH_PUSH)		//非高电平，等于按下按键
 	{
 		if(Switch_Count == 0) {
-			toggle();
+//			toggle();
 		}
 		NO_Siwtch_Count = 0;
 		Switch_Count++;
@@ -293,7 +311,7 @@ void CheckSwitch(void)
 		if(Switch_Count > 20)
 		{
 			RED_OFF;
-			toggle();
+//			toggle();
 		}
 	} else {
 		NO_Siwtch_Count++;
@@ -324,9 +342,9 @@ int main(void)
 	SCB->VTOR = 0x0000;
 	HardDriveInit();
     BootInit();
-	toggle_Init();
-	toggle();
-	toggle();
+	// toggle_Init();
+	// toggle();
+	// toggle();
 	BootWaitTimeInit();    
 //	ReplyEnterBoot();       
 	

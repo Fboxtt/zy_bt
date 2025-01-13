@@ -278,7 +278,7 @@ void SystemInit (void)
 /* ToDo: add code to initialize the system
          do not use global variables because this function is called before
          reaching pre-main. RW section maybe overwritten afterwards. */
-  SystemCoreClock = CLK_GetCoreFreq();
+//   SystemCoreClock = CLK_GetCoreFreq();
   
   /* RAM Parity Error Reset Disable */
   SAF->RPECTL = 0x80U;

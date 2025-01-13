@@ -646,7 +646,10 @@ void BootCheckReset()
     if(ResetFlag==1)
     {
         ResetFlag = 0;	
+		// toggle();
+		// toggle();
         IAP_Reset();//∏¥ŒªΩ¯»ÎAPP
+
     }
 }
 
