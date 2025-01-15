@@ -199,7 +199,7 @@ uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, v
 			*pAck = ERR_CMD_LEN;
 		}
 	}
-	if(cmd != PC_SET_WRITE_FLASH && cmd != PC_SET_ALL_CHECKSUM && wholeLen != 8) {
+	if(cmd != PC_SET_WRITE_FLASH && cmd != PC_SET_ALL_CHECKSUM && cmd != PC_GET_READ_FLASH && wholeLen != 8) {
 		*pAck = ERR_CMD_LEN;
 	}
 	//校验成功,提取控制码
@@ -421,9 +421,9 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint
 	for(i=0;i<len;i++)
 	{
 		Write_IAP_IapData = buff[i];
-        if(IAP_WriteOneByte_Check(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//判断写入是否正确
+        if(IAP_WriteOneByte(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//判断写入是否正确
 		{
-			return 0;
+			// return 0;	
 		}			
 	}
 	return 1;
@@ -880,10 +880,18 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
         }break;
         case PC_GET_READ_FLASH: // 读取flash，暂未使用此功能
         {            
-            ReadFlashAddr = (((uint32_t)rBuff[0])<<24)+(((uint32_t)rBuff[1])<<16)+(((uint32_t)rBuff[2])<<8)+((uint32_t)rBuff[3]);
-			ReadFlashLength = (rBuff[4]<<24)+(rBuff[5]<<16)+(rBuff[6]<<8)+rBuff[7];            
-			IAP_ReadMultiByte(ReadFlashAddr,CmdSendData,ReadFlashLength,temp);								
-            CmmuSendLength = ReadFlashLength;
+			for(i = 0; i < PACKET_ID_LENTH; i++) {
+				CmdSendData[i] = 0x00;
+			}
+			CmmuSendLength = PACKET_ID_LENTH;
+			if(IAP_WriteMultiByte(0x30000,(rBuff+DATA_OFFSET),PACKET_SIZE,temp) == 0) {
+				CmdSendData[0] = 0xff;
+				CmdSendData[1] = 0xff;
+			}
+            // ReadFlashAddr = (((uint32_t)rBuff[0])<<24)+(((uint32_t)rBuff[1])<<16)+(((uint32_t)rBuff[2])<<8)+((uint32_t)rBuff[3]);
+			// ReadFlashLength = (rBuff[4]<<24)+(rBuff[5]<<16)+(rBuff[6]<<8)+rBuff[7];            
+			// IAP_ReadMultiByte(ReadFlashAddr,CmdSendData,ReadFlashLength,temp);								
+            // CmmuSendLength = ReadFlashLength;
         }break;
 		case PC_SET_RESTORE_BACKUP:
 		// 恢复备份区流程 1下载 2强制恢复命令 3跳转到bt 4恢复 5跳转到app
