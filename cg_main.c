@@ -216,40 +216,22 @@ void SysTick_Handler(void)
 	g_boot100MsCount++;
 }
 
-// void toggle_Init(void)
-// {
-//     // PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
-//     PORT->P7 |= _02_Pn1_OUTPUT_1;
-//     PORT->PU7 |= _01_PUn0_PULLUP_ON;
-//     PORT->POM7 &= (~_02_POMn1_NCH_ON);
-//     // PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
-//     PORT->PM7 &= (~_02_PMn1_MODE_INPUT);
-// }
-// void toggle(void)
-// {
-// 	// PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
-// 	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
-//     PORT->P7 |= _02_Pn1_OUTPUT_1;
-// 	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
-// 	PORT->P7 |= _02_Pn1_OUTPUT_1;
-// }
-
 void toggle_Init(void)
 {
     // PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
-    PORT->P7 |= 0x02U;
-    PORT->PU7 |= 0x01U;
-    PORT->POM7 &= (~0x02U);
+    PORT->P7 |= _02_Pn1_OUTPUT_1;
+    PORT->PU7 |= _01_PUn0_PULLUP_ON;
+    PORT->POM7 &= (~_02_POMn1_NCH_ON);
     // PORT->PM7 = _00_PMn2_MODE_OUTPUT | _00_PMn1_MODE_OUTPUT | _01_PMn0_MODE_INPUT;
-    PORT->PM7 &= (~0x02U);
+    PORT->PM7 &= (~_02_PMn1_MODE_INPUT);
 }
 void toggle(void)
 {
 	// PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
 	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
-    PORT->P7 |= 0x02U;
-	PORT->P7 &= (~0x02U);
-	PORT->P7 |= 0x02U;
+    PORT->P7 |= _02_Pn1_OUTPUT_1;
+	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
+	PORT->P7 |= _02_Pn1_OUTPUT_1;
 }
 
 void Clock_Config(void)

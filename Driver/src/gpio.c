@@ -152,28 +152,28 @@ void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx)
 			*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
 			*((volatile uint8_t*)(&PORT->PU0+PORTx)) |= pos;
 			break;
-		case TTL_INPUT:
-			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
-			*((volatile uint8_t*)(&PORT->PM0+PORTx)) |= pos;
-			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) |= pos;
-			*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
-			*((volatile uint8_t*)(&PORT->PU0+PORTx)) &= ~pos;
-			break;
-		case ANALOG_INPUT:
-			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) |= pos;
-			break;
+		// case TTL_INPUT:
+		// 	*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
+		// 	*((volatile uint8_t*)(&PORT->PM0+PORTx)) |= pos;
+		// 	*((volatile uint8_t*)(&PORT->PIM0+PORTx)) |= pos;
+		// 	*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
+		// 	*((volatile uint8_t*)(&PORT->PU0+PORTx)) &= ~pos;
+		// 	break;
+		// case ANALOG_INPUT:
+		// 	*((volatile uint8_t*)(&PORT->PMC0+PORTx)) |= pos;
+		// 	break;
 		case OUTPUT:
 			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
 			*((volatile uint8_t*)(&PORT->PM0+PORTx)) &= ~pos;
 			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) &= ~pos;
 			*((volatile uint8_t*)(&PORT->POM0+PORTx)) &= ~pos;
 			break;
-		case OPENDRAIN_OUTPUT:
-			*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
-			*((volatile uint8_t*)(&PORT->PM0+PORTx)) &= ~pos;
-			*((volatile uint8_t*)(&PORT->PIM0+PORTx)) &= ~pos;
-			*((volatile uint8_t*)(&PORT->POM0+PORTx)) |= pos;
-			break;
+		// case OPENDRAIN_OUTPUT:
+		// 	*((volatile uint8_t*)(&PORT->PMC0+PORTx)) &= ~pos;
+		// 	*((volatile uint8_t*)(&PORT->PM0+PORTx)) &= ~pos;
+		// 	*((volatile uint8_t*)(&PORT->PIM0+PORTx)) &= ~pos;
+		// 	*((volatile uint8_t*)(&PORT->POM0+PORTx)) |= pos;
+		// 	break;
 	}
 }
 
