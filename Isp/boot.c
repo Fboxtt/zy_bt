@@ -171,6 +171,11 @@ void ClearCommu()
 	CmmuSendLength = 0;
 }
 
+void ClearDownload()
+{
+
+}
+
 //分析接收帧的数据
 uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, volatile uint8_t* pAck)
 {
@@ -416,7 +421,7 @@ uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint
 	for(i=0;i<len;i++)
 	{
 		Write_IAP_IapData = buff[i];
-        if(IAP_WriteOneByte(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//判断写入是否正确
+        if(IAP_WriteOneByte_Check(IAP_IapAddr+i,Write_IAP_IapData,area)==0)//判断写入是否正确
 		{
 			return 0;
 		}			
@@ -450,7 +455,7 @@ void All_CheckSum_Write(uint32_t checkSum, uint32_t addr)
     unsigned char i;
 	for(i=0;i<CHECKSUM_LENGTH;i++)
 	{
-		IAP_WriteOneByte(addr+i,(checkSum >> (8 * i)),IAP_CHECK_AREA);
+		IAP_WriteOneByte_Check(addr+i,(checkSum >> (8 * i)),IAP_CHECK_AREA);
 	}
 
 }
@@ -461,7 +466,7 @@ void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr)
 	int i = 0;
 	for(i = 0;i < TOTAL_NUM_LENGTH; i++)
 	{
-		IAP_WriteOneByte(addr + i, (packetTotalNum >> (8 * i)), IAP_CHECK_AREA);
+		IAP_WriteOneByte_Check(addr + i, (packetTotalNum >> (8 * i)), IAP_CHECK_AREA);
 	}
 }
 
@@ -501,7 +506,7 @@ uint8_t IAP_Remap()//将缓存区的代码装载如运行区
 	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
 	for(i=0;i<APP_BUFF_SIZE;i++)
 	{
-		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
+		if(IAP_WriteOneByte_Check(APP_ADDR+i,IAP_ReadOneByte(APP_BUFF_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
 			return 0;
 		}
 	}
@@ -515,7 +520,7 @@ uint8_t IAP_BkpRemap()//将缓存区的代码装载如运行区
 	IAP_Erase_ALL(APROM_AREA);//擦除APP运行区代码
 	for(i=0;i<APP_BUFF_SIZE;i++)
 	{
-		if(IAP_WriteOneByte(APP_ADDR+i,IAP_ReadOneByte(BACKUP_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
+		if(IAP_WriteOneByte_Check(APP_ADDR+i,IAP_ReadOneByte(BACKUP_ADDR+i,APROM_AREA),APROM_AREA) == 0) {
 			return 0;
 		}
 	}
