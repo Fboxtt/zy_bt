@@ -75,7 +75,7 @@ boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 uint32_t NewBaud = UartBaud;						//存储新波特率的变量
 extern commu_data_t CmdSendData[SendLength1];
 uint32_t NextPacketNumber = 0;
-
+uint32_t AllPacketNumber = 0;
 const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
 
 
@@ -797,10 +797,10 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
         }break;
 		case PC_SET_WRITE_FLASH:// 写入app，成功后进入app
 		{
-			for(i = 0; i < PACKET_ID_LENTH; i++) {
-				CmdSendData[i] = 0x00;
-			}
+			CmdSendData[0] = 0x00;
+			CmdSendData[1] = 0x00;
 			CmmuSendLength = PACKET_ID_LENTH;
+
 			if(g_shakehandFlag != BUFFER_FLAG && g_shakehandFlag != BACKUP_FLAG) {
 				*Ack = ERR_SHAKEHAND;
 				break;
@@ -813,16 +813,19 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 				*Ack = ERR_PACKET_NUMBER;
 				break;
 			}
-
+			if(NextPacketNumber == 1) {
+				g_packetTotalNum = rBuff[2] + rBuff[3] * 0x100; // 获得总包号
+			}
 			if(IAP_WriteMultiByte(BeginAddr,(rBuff+DATA_OFFSET),PACKET_SIZE,temp))
 			{
+				if(g_packetTotalNum != rBuff[2] + rBuff[3] * 0x100) {
+					*Ack = ERR_PACKET_NUMBER;
+					break;
+				}
 				BeginAddr = BeginAddr+PACKET_SIZE;
 				NextPacketNumber++;
 				*Ack = ERR_NO;
 				g_packetTotalNum = 0;
-				for(i = 0; i < PACKET_ID_LENTH; i++) {
-					g_packetTotalNum += rBuff[i + PACKET_ID_LENTH] << (i * 8);
-				}
 			}
 			else
 			{
