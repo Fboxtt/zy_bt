@@ -315,7 +315,7 @@ extern uint8_t IAP_IapLength;	        //用于IAP操作数据长度缓存
 extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area);//写多字节IAP操作
 extern void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area); //读多字节IAP操作
 extern uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area);  //读单字节IAP操作
-extern void IAP_Reset(void);			 		                    //复位启动								
+extern void MCU_Reset(void);			 		                    //复位启动								
 extern uint8_t IAP_Erase_ALL(uint8_t area);						    //将目标区域全擦
 extern uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（512B）
 extern void IAP_FlagWrite(uint8_t flag);

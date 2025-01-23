@@ -120,7 +120,7 @@ void __set_VECTOR_ADDR(uint32_t addr)
 }
 
 // 复位
-void IAP_Reset()
+void MCU_Reset()
 {	
     SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
 	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
@@ -653,7 +653,7 @@ void BootCheckReset()
         ResetFlag = 0;	
 		// toggle();
 		// toggle();
-        IAP_Reset();//复位进入APP
+        MCU_Reset(); // 复位进入BOOT
 
     }
 }
@@ -875,7 +875,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
        case BMS_SHAKE_ENTER_APP: //运行用户代码
        {
 			*Ack = ERR_NO;
-		   IAP_Reset();
+		   MCU_Reset();
 //           	g_restoreBufferFlag = RESTORE_BUFF;
        }break;        
         case NO_CMD://无操作
@@ -1021,9 +1021,9 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	// 下面这个if保证在bt中如果无法清除BUFFER_RESTORE_ADDRESS标志位，不会进入死循环
 		if(g_downLoadStatus == DOWNLOADED_BUFF || g_downLoadStatus == DOWNLOADED_BKP) {
 #ifdef BMS_APP_DEVICE
-			SetDelayTask(IAP_Reset, NULL, 1000);
+			SetDelayTask(MCU_Reset, NULL, 1000);
 #else
-			ResetFlag = 1;
+			// ResetFlag = 1;
 #endif
 		}
 	}
@@ -1059,7 +1059,7 @@ void BootProcess(void)
 		DownloadProcess(&g_tUartData,0);
 	}
 	
-	BootCheckReset(); // 跳转函数，条件满足即可跳转入app
+	// BootCheckReset(); // 跳转函数，条件满足即可跳转入app
 }
 
 #endif
