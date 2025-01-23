@@ -42,9 +42,21 @@ typedef struct
 #define vHW			"T12100-V1.1-1OZ"  //BMS24200-H 带加热器
 #define vFW			"V1"
 
+
+
+
 void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 
 #endif
+
+#define TIME_UNIT	10 									// 10ms
+#define DELAY_RETURN_COUNT (10 / TIME_UNIT)				// 10ms
+#define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
+#define YES_CMD_BOOT_WAIT_LIMIT (1000 / TIME_UNIT)		// 1000ms
+#define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
+
+extern uint32_t g_bootWaitTime;
+extern uint32_t g_bootWaitTimeLimit;
 
 #define SIMPLE_VER_LENGTH 12
 
@@ -192,11 +204,7 @@ typedef enum {
 
 #define ERR_NO_SHAKE_SUCCESS	0x29		// 握手成功
 
-#define NO_CMD_BOOT_WAIT_LIMIT  1000
-#define YES_CMD_BOOT_WAIT_LIMIT 1000
 
-extern uint32_t g_bootWaitTime;
-extern uint32_t g_bootWaitTimeLimit;
 
 //从站回应控制码类型
 #define DEAL_SUCCESS 			0X9F		//回应操作成功

@@ -183,7 +183,7 @@ void system_tick_init()
     uint32_t msCnt; 	// count value of 1ms
     // g_ticks = 1000; 	// 1000ms
 	// SystemCoreClockUpdate();
-	msCnt = SystemCoreClock / 1000;
+	msCnt = SystemCoreClock / (1000 / TIME_UNIT);
 	SysTick_Config(msCnt); 
 }
 void HardFault_Handler()
@@ -204,7 +204,7 @@ void SysTick_Handler(void)
 	// }
 //	toggle();
 	// g_ticks--;
-	if(g_uartWaitTime > 10) {
+	if(g_uartWaitTime > DELAY_RETURN_COUNT) {
 		if(CmmuReadNumber < (3 + CommuData[1] * 0x100 + CommuData[2] + 1) && CmmuReadNumber >= 5) {
 			fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
 			CmdSendFunc(CmdSendAll, 9);
@@ -262,7 +262,7 @@ void CheckSwitch(void)
 {
 	static BYTE	Switch_Count = 0;
 	static BYTE NO_Siwtch_Count = 0;
-	if(g_boot100MsCount / 100 > 0) {
+	if(g_boot100MsCount / TICK_100MS_COUNT > 0) {
 		g_boot100MsCount = 0;
 	} else {
 		return;
@@ -270,14 +270,14 @@ void CheckSwitch(void)
 	if (!IS_SWITCH_PUSH)		//非高电平，等于按下按键
 	{
 		if(Switch_Count == 0) {
-//			toggle();
+			// toggle();
 		}
 		NO_Siwtch_Count = 0;
 		Switch_Count++;
 		if(Switch_Count > 20)
 		{
 			RED_OFF;
-//			toggle();
+			// toggle();
 		}
 	} else {
 		NO_Siwtch_Count++;
