@@ -42,7 +42,7 @@ Pragma directive
 Global variables and functions
 ***********************************************************************************************************************/
 /* Start user code for global. Do not edit comment generated here */
-volatile uint32_t g_ticks;
+// volatile uint32_t g_ticks;
 int32_t P71FlushCount = 0;
 uint32_t g_uartWaitTime = 0;
 uint8_t g_bWholeSysShutdown = 0;
@@ -72,7 +72,7 @@ extern TGPIO PIN_WAKE;
 extern TGPIO PIN_COM3V3_EN;	 
 extern TGPIO PIN_COM5V_EN;	 
 extern TGPIO PIN_REGOUT_EN;	 
-extern void toggle();
+//extern void toggle();
 TGPIO PIN_SW 	= {PORT1,PIN6,PULLUP_INPUT};
 
 TGPIO PIN_VBCTL = {PORT1,PIN5,OUTPUT};		//ok
@@ -174,14 +174,14 @@ void GPIO_Config(void)
 
 void delay_ms(uint32_t n)
 {
-    g_ticks = n;
-    while(g_ticks);
+    // g_ticks = n;
+    // while(g_ticks);
 }
 
 void system_tick_init()
 {
     uint32_t msCnt; 	// count value of 1ms
-    g_ticks = 1000; 	// 1000ms
+    // g_ticks = 1000; 	// 1000ms
 	// SystemCoreClockUpdate();
 	msCnt = SystemCoreClock / 1000;
 	SysTick_Config(msCnt); 
@@ -203,7 +203,7 @@ void SysTick_Handler(void)
 	// 	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
 	// }
 //	toggle();
-	g_ticks--;
+	// g_ticks--;
 	if(g_uartWaitTime > 10) {
 		if(CmmuReadNumber < (3 + CommuData[1] * 0x100 + CommuData[2] + 1) && CmmuReadNumber >= 5) {
 			fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
@@ -274,22 +274,6 @@ void CheckSwitch(void)
 		}
 		NO_Siwtch_Count = 0;
 		Switch_Count++;
-		// if(Switch_Count > 3 && Switch_Count <= 20 )
-		// {
-		//   Switch_On_1S  = TRUE;
-		// 	g_stSBS.ulFaultStatus &= ~FAULT_SWITCH_OFF;
-		// 	s_bResetSW = FALSE;
-		// 	g_bWholeSysShutdown = FALSE;	
-		// }
-		// else if (Switch_Count > 20 && Switch_Count <= 35)
-		// {
-		// 	//Switch_On_1S  = FALSE;
-		// 	Switch_Off_2S = TRUE;	
-      			
-		// 	g_stSBS.ulFaultStatus |= FAULT_SWITCH_OFF;
-		// 	s_bResetSW = TRUE;
-		// 	SetBmsEventAct(xEVENT_MANNULA_DOWN,TRUE);
-		// }
 		if(Switch_Count > 20)
 		{
 			RED_OFF;
