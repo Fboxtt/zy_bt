@@ -102,6 +102,8 @@ GPIO操作定义,所有引脚电平需要定义
 #define		IS_RED_ON		(!PORT_GetBit(PIN_RED.emGPIOx,PIN_RED.emPin))
 #define		RED_REVERSE		(PORT_ToggleBit(PIN_RED.emGPIOx,	PIN_RED.emPin))	
 
+TUartData g_tUartData;
+
 void GPIO_Config(void)
 {
 	//输入
@@ -262,11 +264,7 @@ void CheckSwitch(void)
 {
 	static BYTE	Switch_Count = 0;
 	static BYTE NO_Siwtch_Count = 0;
-	if(g_boot100MsCount / TICK_100MS_COUNT > 0) {
-		g_boot100MsCount = 0;
-	} else {
-		return;
-	}
+
 	if (!IS_SWITCH_PUSH)		//非高电平，等于按下按键
 	{
 		if(Switch_Count == 0) {
@@ -316,8 +314,22 @@ int main(void)
 	
     while (1U)
     {
-		BootProcess();
-		CheckSwitch();
+		if(g_boot100MsCount / TICK_100MS_COUNT > 0) {
+			g_boot100MsCount = 0;
+			CheckSwitch();
+			AppRestore();
+		}
+		if(UartReceFlag)
+		{
+			UartReceFlag = 0;
+			g_tUartData.pbuf = CommuData;
+			g_tUartData.wLen = CmmuLength;
+			DownloadProcess(&g_tUartData,0);
+		}
+		// BootProcess();
+
     }
+
+	
     /* End user code. Do not edit comment generated here */
 }

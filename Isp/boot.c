@@ -47,7 +47,7 @@ const TVER btVersion __attribute((at(BOOT_VER_ADDR)))= {
 	vFW,
 };
 
-TUartData g_tUartData;
+
 
 #endif
 
@@ -1043,22 +1043,3 @@ void BootInit()
 		g_flashWritableFlag.bit.backupArea = 1;
 	}
 }
-// BootLoader使用的主程序
-#ifndef BMS_APP_DEVICE
-
-void BootProcess(void)
-{
-	AppRestore();
-	
-	if(UartReceFlag)
-	{
-		UartReceFlag = 0;
-		g_tUartData.pbuf = CommuData;
-		g_tUartData.wLen = CmmuLength;
-		DownloadProcess(&g_tUartData,0);
-	}
-	
-	// BootCheckReset(); // 跳转函数，条件满足即可跳转入app
-}
-
-#endif
