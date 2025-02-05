@@ -57,6 +57,7 @@ uint8_t result_cmd;
 
 uint32_t g_bootWaitTime = 0;						// 在boot中的已等待时间
 uint32_t g_bootWaitTimeLimit = 0;					// 在boot中的等待时间上限
+uint8_t g_waitFlag = 0;
 
 int g_flashStatusCount = 0; // 保证读写FLASH时不会卡死
 
@@ -597,6 +598,20 @@ void ReplyEnterBoot(void)
 //	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
 }
 
+void CheckAndEnterApp(void)
+{
+	if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
+		IAPEnterApp();
+	} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
+		// 如果因为意外使APP损坏，将缓冲区APP复制过来
+		IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
+		uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
+	} else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
+		IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4);
+		uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
+	}
+}
+
 // 恢复APP
 void AppRestore()
 {
@@ -609,6 +624,7 @@ void AppRestore()
 				IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
 				// *Ack =  ERR_NO; //回应退出了Bootloader
 			} else {
+				CheckAndEnterApp();
 				// *Ack =  ERR_ALL_CHECK;
 			}
 		} else {
@@ -624,23 +640,20 @@ void AppRestore()
 				IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4); // 成功恢复数据后才会清楚标志位，但是如果清楚不成功可能造成反复进入，所以需要APP中不复位
 				// *Ack =  ERR_NO; //回应退出了Bootloader
 			} else {
+				CheckAndEnterApp();
 				// *Ack =  ERR_ALL_CHECK;
 			}
 		} else {
 			// *Ack =  ERR_REMAP;
 		}
-	} else if(g_bootWaitTime > (g_bootWaitTimeLimit / TIME_UNIT)) {
-		if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
-			IAPEnterApp();
-		} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
-			// 如果因为意外使APP损坏，将缓冲区APP复制过来
-			IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
-			uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
-		} else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
-			IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4);
-			uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
-		}
+	} 
+	if(g_waitFlag == LONG_WAIT && g_bootWaitTime > g_bootWaitTimeLimit) {
+		g_waitFlag = SHORT_WAIT;
 		g_bootWaitTime = 0;
+		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
+	} else if(g_waitFlag == SHORT_WAIT && g_bootWaitTime > g_bootWaitTimeLimit){
+		g_bootWaitTime = 0;
+		CheckAndEnterApp();
 	}
 	#endif
 }
@@ -871,12 +884,21 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			}
 
         }break;        
-       case BMS_SHAKE_ENTER_APP: //运行用户代码
-       {
+		case BMS_SHAKE_ENTER_APP: //运行用户代码
+		{
 			*Ack = ERR_NO;
-		   MCU_Reset();
-//           	g_restoreBufferFlag = RESTORE_BUFF;
-       }break;        
+			MCU_Reset();
+		}break;        
+		case BMS_ENTER_BOOT: //运行用户代码
+		{
+			if(get_pc() < APP_ADDR) {
+				*Ack = ERR_NO;
+				g_bootWaitTimeLimit = LONG_WAIT_TIME;
+				g_waitFlag = LONG_WAIT;
+			} else {
+				*Ack = ERR_OPERATE;
+			}
+		}break;
         case NO_CMD://无操作
         {
             *Ack = ERR_CMD_ID;
@@ -912,12 +934,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
         }
         break;
     }
-    if(*Ack != ERR_CMD_ID) {
-#ifndef BMS_APP_DEVICE
-		g_bootWaitTime = 0;
-		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
-#endif
-    }
+
 	return;
 }
 
@@ -987,9 +1004,15 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 
 	cmd = AnalysisData(rBuff, wholeDataLen, &unitDataLen,&Ack);  // 分析从中断函数总获取的数据包， 返回cmd
 
-	if (Ack == ERR_NO) {
+	if(Ack == ERR_NO) {
 		BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
 	}
+	if(Ack != ERR_CMD_ID && g_waitFlag == SHORT_WAIT) {
+#ifndef BMS_APP_DEVICE
+		g_bootWaitTime = 0;
+		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
+#endif
+    }
 	if(Ack != ERR_NO && Ack != ERR_NO_SHAKE_SUCCESS) {
 		if(++g_errTime > 3) {
 			g_errTime = 0;
@@ -1016,7 +1039,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 			// ResetFlag = 1;
 #endif
 		}
-	}
+	} 
 }
 
 /* boot初始化函数，会判断那些区域可写 */

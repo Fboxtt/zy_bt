@@ -52,8 +52,12 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 #define TIME_UNIT	10 									// 10ms
 #define DELAY_RETURN_COUNT (10 / TIME_UNIT)				// 10ms
 #define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
-#define YES_CMD_BOOT_WAIT_LIMIT (1000 / TIME_UNIT)		// 1000ms
+#define YES_CMD_BOOT_WAIT_LIMIT (5000 / TIME_UNIT)		// 1000ms
 #define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
+#define LONG_WAIT_TIME (10000 / TIME_UNIT)
+
+#define SHORT_WAIT 0
+#define LONG_WAIT 1
 
 extern uint32_t g_bootWaitTime;
 extern uint32_t g_bootWaitTimeLimit;
@@ -181,6 +185,7 @@ typedef enum {
 #define PC_SET_ALL_CHECKSUM        	0x78		// 发送校验和
 #define PC_GET_READ_FLASH           0x79        // 读FLASH指定地址
 #define BMS_SHAKE_ENTER_APP         0x7A        // 进入APP
+#define BMS_ENTER_BOOT				0x7B		// 向主机表示进入了APP
 
 #define PC_SET_DOWNLOAD_BACKUP			0x7C		// 下载备份
 #define PC_SET_RESTORE_BACKUP			0x7D		// 将备份恢复到APP中

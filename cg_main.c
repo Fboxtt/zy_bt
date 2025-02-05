@@ -304,15 +304,17 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
-	SCB->VTOR = 0x0000;
+	SCB->VTOR = 0x0000;    
+	uint8_t openBootCmd[9] = {0x00,0x00,0x05,0x01,0x7B,0x55,0xAA,0x00,0x80};
+
 	HardDriveInit();
     BootInit();
 	// toggle_Init();
 	// toggle();
 	// toggle();
-	BootWaitTimeInit();    
-//	ReplyEnterBoot();       
-	
+	BootWaitTimeInit();
+	CmdSendFunc(openBootCmd, 9);
+
     while (1U)
     {
 		if(g_boot100MsCount / TICK_100MS_COUNT > 0) {
