@@ -206,13 +206,6 @@ void SysTick_Handler(void)
 	// }
 //	toggle();
 	// g_ticks--;
-	if(g_uartWaitTime > DELAY_RETURN_COUNT) {
-		if(CmmuReadNumber < (3 + CommuData[1] * 0x100 + CommuData[2] + 1) && CmmuReadNumber >= 5) {
-			fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
-			CmdSendFunc(CmdSendAll, 9);
-			ClearCommu();
-		}
-	}
 	g_uartWaitTime++;
 	g_bootWaitTime++;
 	g_boot100MsCount++;
@@ -318,6 +311,14 @@ int main(void)
 			g_boot100MsCount = 0;
 			CheckSwitch();
 			AppRestore();
+		}
+		if(g_uartWaitTime > DELAY_RETURN_COUNT) {
+			if(CmmuReadNumber < (3 + CommuData[1] * 0x100 + CommuData[2] + 1) && CmmuReadNumber >= 5) {
+				fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
+				CmdSendFunc(CmdSendAll, 9);
+				ClearCommu();
+			}
+			g_uartWaitTime = 0;
 		}
 		if(UartReceFlag)
 		{
