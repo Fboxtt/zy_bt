@@ -16,25 +16,25 @@ void UartReceData(uartId id)//?????
 {
 	if(!UartReceFlag)
 	{		
-		if(id == UART0) {
-			CommuData[CmmuReadNumber] = SCI0->RXD0;		//?????????
-		}else if(id == UART1) {
-			CommuData[CmmuReadNumber] = SCI0->RXD1;		//?????????
-		}else if(id == UART2) {
-			CommuData[CmmuReadNumber] = SCI1->RXD2;		//?????????
+		// if(id == UART0) {
+		// 	CommuData[CmmuReadNumber] = SCI0->RXD0;
+		// }else if(id == UART1) {
+		// 	CommuData[CmmuReadNumber] = SCI0->RXD1;
+		// }else if(id == UART2) {
+		// 	CommuData[CmmuReadNumber] = SCI1->RXD2;
+		// }
+		if(id == UART1) {
+			CommuData[CmmuReadNumber] = SCI0->RXD1;
 		}
 		CmmuReadNumber++;
 		g_uartWaitTime = 0;
-		// if(CommuData[0] == SLAVE_ADDRESS)
-		// {
-			
-		// }
+
 		if(CmmuReadNumber >= 3) {
-			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //??????256??????CmmuReadNumber??
+			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //CmmuReadNumber??
 			{
-				/* ???????? */
+				
 				CmmuLength = 3 + CommuData[1] * 0x100 + CommuData[2] + 1;
-				UartReceFlag = 1;	  //?????????
+				UartReceFlag = 1;
 			}
 		}
 
