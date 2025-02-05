@@ -18,7 +18,7 @@ commu_data_t CmdSendData[SendLength1];	//发送数据
 commu_length_t CmmuSendLength;		    //发送数据长度
 
 commu_data_t CmdSendAll[SendLength1];	//发送缓存
-commu_length_t CmdSendAllLenth;			//发送缓存长度
+// commu_length_t CmdSendAllLenth;			//发送缓存长度
 
 
 // 表示烧录状态宏定义
@@ -167,7 +167,7 @@ void ClearCommu()
     CommuData[0] = 0; //清除缓冲区数据头，准备下次串口数据到来
     CmmuReadNumber = 0; //重新计数，准备下次串口数据到来
     UartReceFlag = 0; //清除传输完成标志
-	CmdSendAllLenth = 0;
+//	CmdSendAllLenth = 0;
 	CmmuSendLength = 0;
 }
 
@@ -956,15 +956,6 @@ uint8_t CheckAreaWritable(uint32_t addr)
 	}
 	return ok;
 }
-#ifdef BMS_BT_DEVICE
-void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
-{
-	uint32_t i;
-	for(i = 0; i < lenth; i++) {
-		UartSendOneByte(*(sBuff + i));
-	}
-}
-#endif
 
 // 发生错误时清除烧录，为重新烧录做准备
 void DownloadStop(void)
@@ -1012,8 +1003,8 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	SysSendUart[g_byRecComChn].EndPos += 9 + CmmuSendLength;
 #else
 	fillbackFunc(CmdSendAll, CmdSendData, cmd | 0x80, CmmuSendLength, Ack);
-	CmdSendAllLenth += 9 + CmmuSendLength;
-	CmdSendFunc(CmdSendAll, CmdSendAllLenth);
+	// CmdSendAllLenth += 9 + CmmuSendLength;
+	CmdSendFunc(CmdSendAll, 9 + CmmuSendLength);
 #endif
 	ClearCommu();
 	if(ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF || ReadInt(BACKUP_RESTORE_ADDRESS) == RESTORE_BKP) {	// 设置恢复缓冲区标志位,等待跳入bt中)

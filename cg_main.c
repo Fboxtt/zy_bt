@@ -293,6 +293,14 @@ void CheckSwitch(void)
 	}
 }
 
+void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
+{
+	uint32_t i;
+	for(i = 0; i < lenth; i++) {
+		UartSendOneByte(*(sBuff + i));
+	}
+}
+
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
