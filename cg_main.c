@@ -301,12 +301,23 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
 	}
 }
 
+uint8_t CompareArray() {
+	uint8_t BLENotConnectCmd[7] = {0x45,0x52,0x52,0x4f,0x52,0x0d,0x0a};
+	int i = 0;
+	while(i++ < 7) {
+		if(BLENotConnectCmd[i] != CmdSendData[i]) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
 	SCB->VTOR = 0x0000;    
 	uint8_t openBootCmd[9] = {0x00,0x00,0x05,0x01,0x7B,0x55,0xAA,0x00,0x80};
-
+	
 	HardDriveInit();
     BootInit();
 	// toggle_Init();
@@ -324,11 +335,20 @@ int main(void)
 		}
 		if(g_uartWaitTime > DELAY_RETURN_COUNT) {
 			if(CmmuReadNumber < (3 + CommuData[1] * 0x100 + CommuData[2] + 1) && CmmuReadNumber >= 5) {
-				fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
-				CmdSendFunc(CmdSendAll, 9);
+				if(CmmuReadNumber == 7 && CompareArray() == 0) {
+					CmdSendFunc(openBootCmd, 9);
+				} else {
+					fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
+					CmdSendFunc(CmdSendAll, 9);
+				}
 				ClearCommu();
 			}
 			g_uartWaitTime = 0;
+		}
+		if(g_waitFlag == SHORT_WAIT) {
+			if(g_vbOffWaitTime > VB_OFF_WAIT_TIME) {
+				VB_OFF;
+			}
 		}
 		if(UartReceFlag)
 		{

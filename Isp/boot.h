@@ -49,19 +49,21 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 
 #endif
 
-#define TIME_UNIT	10 									// 10ms
-#define DELAY_RETURN_COUNT (10 / TIME_UNIT)				// 10ms
+#define TIME_UNIT				10 									// 10ms
+#define DELAY_RETURN_COUNT 		(10 / TIME_UNIT)				// 10ms
 #define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
 #define YES_CMD_BOOT_WAIT_LIMIT (5000 / TIME_UNIT)		// 1000ms
 #define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
-#define LONG_WAIT_TIME (10000 / TIME_UNIT)
+#define LONG_WAIT_TIME 			(10000 / TIME_UNIT)
+#define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 2) // 无操作2分钟触发一次boot关机
 
 #define SHORT_WAIT 0
 #define LONG_WAIT 1
 
 extern uint32_t g_bootWaitTime;
 extern uint32_t g_bootWaitTimeLimit;
-
+extern uint32_t g_vbOffWaitTime;
+extern uint8_t g_waitFlag;
 #define SIMPLE_VER_LENGTH 12
 
 void DownloadProcess(void *p,UCHAR ucComPort);

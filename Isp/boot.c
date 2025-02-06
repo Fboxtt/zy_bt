@@ -1011,6 +1011,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 #ifndef BMS_APP_DEVICE
 		g_bootWaitTime = 0;
 		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
+		g_vbOffWaitTime = 0;
 #endif
     }
 	if(Ack != ERR_NO && Ack != ERR_NO_SHAKE_SUCCESS) {
