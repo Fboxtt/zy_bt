@@ -62,9 +62,9 @@ void TMA0_Start(void)
 ***********************************************************************************************************************/
 void TMA0_Stop(void)
 {
-    TMA->TACR0 &= (uint8_t)~_01_TMA_COUNT_START;
-    INTC_DisableIRQ(TMA_IRQn);/* disable INTTMA interrupt */
     INTC_ClearPendingIRQ(TMA_IRQn);/* clear INTTMA interrupt flag */
+    INTC_DisableIRQ(TMA_IRQn);/* disable INTTMA interrupt */
+    TMA->TACR0 &= (uint8_t)~_01_TMA_COUNT_START;
 }
 
 /* Start user code for adding. Do not edit comment generated here */
