@@ -47,6 +47,7 @@ int32_t P71FlushCount = 0;
 uint32_t g_uartWaitTime = 0;
 uint8_t g_bWholeSysShutdown = 0;
 uint8_t g_boot100MsCount = 0;
+uint32_t g_vbOffWaitTime = 0;
 typedef struct 
 {
 	PORT_TypeDef	emGPIOx;		//refer to PORT_TypeDef
@@ -208,6 +209,7 @@ void SysTick_Handler(void)
 	// g_ticks--;
 	g_uartWaitTime++;
 	g_bootWaitTime++;
+	g_vbOffWaitTime++;
 	g_boot100MsCount++;
 }
 
