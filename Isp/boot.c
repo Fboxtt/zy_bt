@@ -21,16 +21,7 @@ commu_data_t CmdSendAll[SendLength1];	//发送缓存
 // commu_length_t CmdSendAllLenth;			//发送缓存长度
 
 
-// 表示烧录状态宏定义
-typedef enum {
-	NO_DOWNLOADING = 0x0,
-	DOWNLOADING_BUFF	= 0x55AA55AA,
-	DOWNLOADING_BKP		= 0x0A555AAA,
-	DOWNLOADED_BUFF		= 0x5A5A5555,
-	DOWNLOADED_BKP		= 0x0A5AAAAA,
-	RESTORE_BUFF		= 0x5AA56699, // 恢复缓冲区到APP区域
-	RESTORE_BKP 		= 0x69695A5A,
-}DOWNLOAD_STATUS;
+
 
 DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
 
@@ -56,7 +47,7 @@ uint8_t* g_sendArray;
 uint8_t result_cmd;
 
 uint32_t g_bootWaitTime = 0;						// 在boot中的已等待时间
-uint32_t g_bootWaitTimeLimit = 0;					// 在boot中的等待时间上限
+// uint32_t g_bootWaitTimeLimit = 0;					// 在boot中的等待时间上限
 uint8_t g_waitFlag = 0;
 
 int g_flashStatusCount = 0; // 保证读写FLASH时不会卡死
@@ -80,7 +71,7 @@ uint32_t AllPacketNumber = 0;
 const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
 
 
-WritableFlag g_flashWritableFlag = {0};
+WritableFlag g_flashWritableFlag = {3};
 
 
 //表示握手状态
@@ -109,16 +100,11 @@ uint8_t temp = APROM_AREA;
 跳转相关函数
 */
 
-__asm uint32_t get_pc(void) {
-	mov r0, pc
-	bx lr
+uint32_t get_pc(void) {
+    return (uint32_t)__return_address();  // 
 }
 
-// 重置向量表
-void __set_VECTOR_ADDR(uint32_t addr)
-{
-	SCB->VTOR = addr;
-}
+
 
 // 复位
 void MCU_Reset()
@@ -129,19 +115,7 @@ void MCU_Reset()
 	NVIC_SystemReset();
 }
 
-#ifdef BMS_BT_DEVICE
-void IAPEnterApp()
-{
-	BaseTimeSystemInit(BOOT_DISABLE);	//关闭定时器
-	SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
-	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
-	INTC_DisableIRQ(SR0_IRQn);
-	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
-	__set_MSP(*(__IO uint32_t*) APP_ADDR);
-	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
-    NVIC_SystemReset();					//如果无法进入APP则复位
-}
-#endif
+
 
 
 /*
@@ -598,19 +572,6 @@ void ReplyEnterBoot(void)
 //	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
 }
 
-void CheckAndEnterApp(void)
-{
-	if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
-		IAPEnterApp();
-	} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
-		// 如果因为意外使APP损坏，将缓冲区APP复制过来
-		IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
-		uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
-	} else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
-		IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4);
-		uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
-	}
-}
 
 // 恢复APP
 void AppRestore()
@@ -647,14 +608,7 @@ void AppRestore()
 			// *Ack =  ERR_REMAP;
 		}
 	} 
-	if(g_waitFlag == LONG_WAIT && g_bootWaitTime > g_bootWaitTimeLimit) {
-		g_waitFlag = SHORT_WAIT;
-		g_bootWaitTime = 0;
-		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
-	} else if(g_waitFlag == SHORT_WAIT && g_bootWaitTime > g_bootWaitTimeLimit){
-		g_bootWaitTime = 0;
-		CheckAndEnterApp();
-	}
+
 	#endif
 }
 
@@ -893,7 +847,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 		{
 			if(get_pc() < APP_ADDR) {
 				*Ack = ERR_NO;
-				g_bootWaitTimeLimit = LONG_WAIT_TIME;
+				// g_bootWaitTimeLimit = LONG_WAIT_TIME;
 				g_waitFlag = LONG_WAIT;
 			} else {
 				*Ack = ERR_OPERATE;
@@ -940,14 +894,6 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 
 /*boot_core.c*/
 
-//main
-
-// 重置Bt中等待时间
-void BootWaitTimeInit(void)
-{
-	g_bootWaitTimeLimit = NO_CMD_BOOT_WAIT_LIMIT; // 进入APP等待开始计时
-	g_bootWaitTime = 0;
-}
 
 
 
@@ -1007,13 +953,17 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	if(Ack == ERR_NO) {
 		BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
 	}
-	if(Ack != ERR_CMD_ID && g_waitFlag == SHORT_WAIT) {
 #ifndef BMS_APP_DEVICE
-		g_bootWaitTime = 0;
-		g_bootWaitTimeLimit = YES_CMD_BOOT_WAIT_LIMIT;
-		g_vbOffWaitTime = 0;
+	if(Ack != ERR_CMD_ID && g_waitFlag == SHORT_WAIT) {
+		if(cmd == BMS_ENTER_BOOT) {
+			g_waitFlag = LONG_WAIT;
+			g_bootWaitTime = 0;
+		} else {
+			g_bootWaitTime = 0;
+		}
+	}
 #endif
-    }
+    
 	if(Ack != ERR_NO && Ack != ERR_NO_SHAKE_SUCCESS) {
 		if(++g_errTime > 3) {
 			g_errTime = 0;
@@ -1048,12 +998,12 @@ void BootInit()
 {
 	// UartInit(UartBaud);
 	g_flashStatusCount = 24 * SystemCoreClock / ONE_DISASSEMBLE_COUNT / 1000000 * 2;
-	if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
-		g_flashWritableFlag.bit.appArea = 1;
-	}
-	if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
-		g_flashWritableFlag.bit.bufferArea = 1;
-	}
+	// if(CheckAreaWritable(APP_ADDR + APP_SIZE - 512) == 1) { // 确认区域APP是否可写
+		// g_flashWritableFlag.bit.appArea = 1;
+	// }
+	// if(CheckAreaWritable(APP_BUFF_ADDR + APP_BUFF_SIZE - 512) == 1) { // 确认区域BUFF是否可写
+		// g_flashWritableFlag.bit.bufferArea = 1;
+	// }
 	if(CheckAreaWritable(BACKUP_ADDR + BACKUP_SIZE - 512) == 1) { // 确认区域BACKUP是否可写
 		g_flashWritableFlag.bit.backupArea = 1;
 	}

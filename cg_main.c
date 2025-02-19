@@ -200,16 +200,16 @@ void SysTick_Handler(void)
 {
 	WDT->WDTE = 0xAC;
 	P71FlushCount++;
-	// if(P71FlushCount / 100 % 2 == 1) {
-	// 	PORT->P7 |= _02_Pn1_OUTPUT_1;
-	// } else {
-	// 	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
-	// }
+	if(P71FlushCount / 100 % 2 == 1) {
+		PORT->P7 |= _02_Pn1_OUTPUT_1;
+	} else {
+		PORT->P7 &= (~_02_Pn1_OUTPUT_1);
+	}
 //	toggle();
 	// g_ticks--;
 	g_uartWaitTime++;
 	g_bootWaitTime++;
-	g_vbOffWaitTime++;
+	// g_vbOffWaitTime++;
 	g_boot100MsCount++;
 }
 
@@ -304,29 +304,61 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
 }
 
 uint8_t CompareArray() {
-	uint8_t BLENotConnectCmd[7] = {0x45,0x52,0x52,0x4f,0x52,0x0d,0x0a};
-	int i = 0;
-	while(i++ < 7) {
-		if(BLENotConnectCmd[i] != CmdSendData[i]) {
-			return 0;
-		}
-	}
+	// uint8_t BLENotConnectCmd[7] = {0x45,0x52,0x52,0x4f,0x52,0x0d,0x0a};
+	// int i = 0;
+	// while(i++ < 7) {
+	// 	if(BLENotConnectCmd[i] != CmdSendData[i]) {
+	// 		return 0;
+	// 	}
+	// }
 	return 1;
 }
+// 重置向量表
+void __set_VECTOR_ADDR(uint32_t addr)
+{
+	SCB->VTOR = addr;
+}
+#ifdef BMS_BT_DEVICE
+void IAPEnterApp()
+{
+	BaseTimeSystemInit(BOOT_DISABLE);	//关闭定时器
+	SCI0->ST0   = _0002_SCI_CH1_STOP_TRG_ON | _0001_SCI_CH0_STOP_TRG_ON;
+	CGC->PER0 &= ~CGC_PER0_SCI0EN_Msk;
+	INTC_DisableIRQ(SR0_IRQn);
+	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
+	__set_MSP(*(__IO uint32_t*) APP_ADDR);
+	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
+    NVIC_SystemReset();					//如果无法进入APP则复位
+}
+#endif
+
+void CheckAndEnterApp(void)
+{
+	if(CheckSumCheck(APROM_AREA) == 1) { // 如果时间到，校验App数据，正确则进入APP
+		IAPEnterApp();
+	} else if(CheckSumCheck(APROM_BUFF_AREA) == 1) {
+		// 如果因为意外使APP损坏，将缓冲区APP复制过来
+		IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
+		uint32ValWrite(RESTORE_BUFF, BUFFER_RESTORE_ADDRESS);
+	} else if(CheckSumCheck(APROM_BACKUP_AREA) == 1) {
+		IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4);
+		uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
+	}
+}
+
 
 int main(void)
 {
     /* Start user code. Do not edit comment generated here */
 	SCB->VTOR = 0x0000;    
-	uint8_t openBootCmd[9] = {0x00,0x00,0x05,0x01,0x7B,0x55,0xAA,0x00,0x80};
+	// uint8_t openBootCmd[9] = {0x00,0x00,0x05,0x01,0x7B,0x55,0xAA,0x00,0x80};
 	
 	HardDriveInit();
     BootInit();
-	// toggle_Init();
-	// toggle();
-	// toggle();
-	BootWaitTimeInit();
-	CmdSendFunc(openBootCmd, 9);
+	toggle_Init();
+//	toggle();
+//	toggle();
+	// CmdSendFunc(openBootCmd, 9);
 
     while (1U)
     {
@@ -334,11 +366,30 @@ int main(void)
 			g_boot100MsCount = 0;
 			CheckSwitch();
 			AppRestore();
+			if(g_waitFlag == SHORT_WAIT) {
+				if(g_bootWaitTime > NO_CMD_BOOT_WAIT_LIMIT) {
+					g_bootWaitTime = 0;
+					CheckAndEnterApp();
+				}
+			} else if(g_waitFlag == LONG_WAIT) {
+				if(g_bootWaitTime > YES_CMD_BOOT_WAIT_LIMIT) {
+					g_bootWaitTime = 0;
+					CheckAndEnterApp();
+					g_waitFlag = SHORT_WAIT;
+				}
+			} else if(g_waitFlag == VB_WAIT) {
+				if(g_bootWaitTime > VB_OFF_WAIT_TIME) {
+					g_bootWaitTime = 0;
+					RED_OFF;
+					VB_OFF;
+					g_waitFlag = SHORT_WAIT;
+				}
+			}
 		}
 		if(g_uartWaitTime > DELAY_RETURN_COUNT) {
 			if(CmmuReadNumber < (3 + CommuData[1] * 0x100 + CommuData[2] + 1) && CmmuReadNumber >= 5) {
 				if(CmmuReadNumber == 7 && CompareArray() == 0) {
-					CmdSendFunc(openBootCmd, 9);
+					// CmdSendFunc(openBootCmd, 9);
 				} else {
 					fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
 					CmdSendFunc(CmdSendAll, 9);
@@ -346,11 +397,6 @@ int main(void)
 				ClearCommu();
 			}
 			g_uartWaitTime = 0;
-		}
-		if(g_waitFlag == SHORT_WAIT) {
-			if(g_vbOffWaitTime > VB_OFF_WAIT_TIME) {
-				VB_OFF;
-			}
 		}
 		if(UartReceFlag)
 		{

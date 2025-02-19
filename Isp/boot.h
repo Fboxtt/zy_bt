@@ -49,16 +49,16 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 
 #endif
 
-#define TIME_UNIT				10 									// 10ms
-#define DELAY_RETURN_COUNT 		(10 / TIME_UNIT)				// 10ms
-#define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
-#define YES_CMD_BOOT_WAIT_LIMIT (5000 / TIME_UNIT)		// 1000ms
+#define TIME_UNIT				10 						// 10ms
+#define DELAY_RETURN_COUNT 		(10 / TIME_UNIT)		// 10ms
 #define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
-#define LONG_WAIT_TIME 			(10000 / TIME_UNIT)
+#define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
+#define YES_CMD_BOOT_WAIT_LIMIT (200000 / TIME_UNIT)	// 1000ms
 #define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 2) // 无操作2分钟触发一次boot关机
 
 #define SHORT_WAIT 0
 #define LONG_WAIT 1
+#define VB_WAIT 2
 
 extern uint32_t g_bootWaitTime;
 extern uint32_t g_bootWaitTimeLimit;
@@ -241,6 +241,9 @@ typedef enum {
 #define BOOT_DISABLE       0
 
 
+extern void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth);
+extern void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr);
+
 /*     此处为通讯相关接口，需要在通讯协议文件中定义此部分内容      */
 // #define CommunicationLength1    (64+2+8)
 extern boot_length_t CmmuLength;		             //接收数据长度
@@ -251,6 +254,7 @@ extern uint32_t NewBaud;							 //新波特率存储
 extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
 extern boot_bool_t ResetFlag;
 extern void BootCheckReset(void);		//检测是否有复位信号
+extern void CheckAndEnterApp(void);
 extern void AppRestore(void);
 extern uint8_t CheckUID(void);
 void BootInit(void);
@@ -397,4 +401,15 @@ extern WritableFlag g_flashWritableFlag;
 void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,commu_cmd_t dataLen, commu_data_t Ack);
 
 extern commu_data_t CmdSendAll[SendLength1];	//发送缓存
+
+// 表示烧录状态宏定义
+typedef enum {
+	NO_DOWNLOADING = 0x0,
+	DOWNLOADING_BUFF	= 0x55AA55AA,
+	DOWNLOADING_BKP		= 0x0A555AAA,
+	DOWNLOADED_BUFF		= 0x5A5A5555,
+	DOWNLOADED_BKP		= 0x0A5AAAAA,
+	RESTORE_BUFF		= 0x5AA56699, // 恢复缓冲区到APP区域
+	RESTORE_BKP 		= 0x69695A5A,
+}DOWNLOAD_STATUS;
 #endif
