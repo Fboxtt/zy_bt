@@ -303,14 +303,15 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth)
 	}
 }
 
-uint8_t CompareArray() {
-	// uint8_t BLENotConnectCmd[7] = {0x45,0x52,0x52,0x4f,0x52,0x0d,0x0a};
-	// int i = 0;
-	// while(i++ < 7) {
-	// 	if(BLENotConnectCmd[i] != CmdSendData[i]) {
-	// 		return 0;
-	// 	}
-	// }
+uint8_t CompareArray() 
+{
+	uint8_t BLENotConnectCmd[3] = {0x45,0x52,0x52};
+	int i = 0;
+	while(i++ < 3) {
+		if(BLENotConnectCmd[i] != CmdSendData[i]) {
+			return 0;
+		}
+	}
 	return 1;
 }
 // 重置向量表
@@ -344,6 +345,31 @@ void CheckAndEnterApp(void)
 		IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4);
 		uint32ValWrite(RESTORE_BKP, BACKUP_RESTORE_ADDRESS);
 	}
+}
+/********************************************************************************************************
+**函数原型		:   WORD CalCRC (BYTE *ptr,int count)
+**输入参数		: 	*ptr：待计算CRC的数据的首地址；   count：长度
+**输出参数      :   无
+**返回值		:	CRC计算结果
+**说明		    :	
+*********************************************************************************************************/
+WORD CalCRC (BYTE *ptr,int count)
+{
+  WORD crc = 0;
+  BYTE  i;
+  while(--count>=0)
+  {
+    crc = crc^(int)*ptr++<<8;
+    i = 8;
+    do
+   {
+      if(crc & 0x8000)
+        crc = crc<<1^0x1021;
+      else
+        crc = crc<<1;
+    }while(--i);
+  }
+  return (crc)	 ;
 }
 
 

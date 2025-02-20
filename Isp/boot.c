@@ -697,6 +697,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 		{
 			// BT∞Ê±æ∫≈ªÒ»°
 			volatile uint32_t pcValue = get_pc();
+			uint32_t uniqueNumNoInit = 0xffffffff;
 			GetVer(BOOT_VER_ADDR,					SIMPLE_VER_LENGTH);
 			GetVer(APP_VER_ADDR,					SIMPLE_VER_LENGTH);
 			GetVer(APP_BUFF_VER_ADDR, 				SIMPLE_VER_LENGTH);
@@ -704,6 +705,11 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			GetVer((uint32_t)IC_INF_BUFF, 			IC_TYPE_LENTH);
 			GetVer((uint32_t)(&g_flashWritableFlag),sizeof(g_flashWritableFlag));
 			GetVer((uint32_t)&pcValue, 				sizeof(pcValue));
+			if(*(uint16_t*)EEPROM_ADDR_UNIQUE_NUM_CRC != CalCRC((BYTE*)EEPROM_ADDR_UNIQUE_NUM,4)) {
+				GetVer((uint32_t)&uniqueNumNoInit,				sizeof(uniqueNumNoInit));
+			} else {
+				GetVer(EEPROM_ADDR_UNIQUE_NUM,		sizeof(uniqueNumNoInit));
+			}
 			*Ack = ERR_NO;
 		}
 		break;

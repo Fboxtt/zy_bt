@@ -31,7 +31,7 @@
 #include "base_time_system.h"
 #include "clk.h"
 #include "Typedefs.h"
-
+#include "SysCfg.h"
 
 #endif
 

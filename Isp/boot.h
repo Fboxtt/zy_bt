@@ -270,16 +270,16 @@ uint8_t AppCheckSumCheck(void);
 
 #define BOOT_VER_ADDR			(BOOT_ADDR + APP_VER_OFFSET)
 
-#define APP_ADDR                0X2000							// APP的起始位置
-#define APP_SIZE                (60 * 1024)						// APP代码最大长度
+#define APP_ADDR                0X3000							// APP的起始位置
+#define APP_SIZE                (58 * 1024)						// APP代码最大长度
 #define APP_VER_ADDR			(APP_ADDR + APP_VER_OFFSET) 	// 存储app版本号的地址
 
-#define APP_BUFF_ADDR           (0x2000 + APP_SIZE)		        // APP缓存区的起始位置
+#define APP_BUFF_ADDR           (APP_ADDR + APP_SIZE)		        // APP缓存区的起始位置
 #define APP_BUFF_SIZE           APP_SIZE						// APP缓存区最大长度
 #define APP_BUFF_VER_ADDR		(APP_BUFF_ADDR + APP_VER_OFFSET) 	// 存储app版本号的地址
 #define APP_VECTOR_ADDR         APP_ADDR
 
-#define BACKUP_ADDR				(0x2000 + APP_SIZE * 2)
+#define BACKUP_ADDR				(APP_ADDR + APP_SIZE * 2)
 #define BACKUP_SIZE				APP_SIZE						// 60 * 1024 = 0xF000
 #define BACKUP_VER_ADDR			(BACKUP_ADDR + APP_VER_OFFSET) 	// 存储backup版本号的地址
 
@@ -301,18 +301,18 @@ uint8_t AppCheckSumCheck(void);
 
 #define ALL_FLAG_LENTH			(CHECKSUM_LENGTH + TOTAL_NUM_LENGTH + IAP_CHECK_LENGTH)
 
-#define IAP_CHECK_ADRESS 		0x1E00     		    //更新成功数字码存储的起始地址
-#define APP_TOTAL_NUM_ADRESS	0x1E04     		    //上位机发送校验和存储地址
+#define IAP_CHECK_ADRESS 		0x2E00     		    //更新成功数字码存储的起始地址
+#define APP_TOTAL_NUM_ADRESS	(IAP_CHECK_ADRESS + 4)     		    //上位机发送校验和存储地址
 #define APP_CHECKSUM_ADRESS		(APP_TOTAL_NUM_ADRESS + 4)     		//hex文件大小存储
 
 
-#define BUFFER_CHECK_ADRESS 	0x1E80     		    //更新成功数字码存储的起始地址
-#define BUFFER_TOTAL_NUM_ADRESS	0x1E84     		    //上位机发送校验和存储地址
+#define BUFFER_CHECK_ADRESS 	(IAP_CHECK_ADRESS + 0x80)     		    //更新成功数字码存储的起始地址
+#define BUFFER_TOTAL_NUM_ADRESS	(APP_TOTAL_NUM_ADRESS + 0x80)     		    //上位机发送校验和存储地址
 #define BUFFER_CHECKSUM_ADRESS	(BUFFER_TOTAL_NUM_ADRESS + 4)            //缓冲区hex文件大小存储
 #define BUFFER_RESTORE_ADDRESS	(BUFFER_CHECKSUM_ADRESS + 4)
 
-#define BACKUP_CHECK_ADRESS 	0x1F00     		    //更新成功数字码存储的起始地址
-#define BACKUP_TOTAL_NUM_ADRESS	0x1F04     		    //上位机发送校验和存储地址
+#define BACKUP_CHECK_ADRESS 	(BUFFER_CHECK_ADRESS + 0x80)     		    //更新成功数字码存储的起始地址
+#define BACKUP_TOTAL_NUM_ADRESS	(BUFFER_TOTAL_NUM_ADRESS + 0x80)     		    //上位机发送校验和存储地址
 #define BACKUP_CHECKSUM_ADRESS	(BACKUP_TOTAL_NUM_ADRESS + 4)            //缓冲区hex文件大小存储
 #define BACKUP_RESTORE_ADDRESS	(BACKUP_CHECKSUM_ADRESS + 4)
 
@@ -412,4 +412,6 @@ typedef enum {
 	RESTORE_BUFF		= 0x5AA56699, // 恢复缓冲区到APP区域
 	RESTORE_BKP 		= 0x69695A5A,
 }DOWNLOAD_STATUS;
+
+extern WORD CalCRC (BYTE *ptr,int count);
 #endif
