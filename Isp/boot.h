@@ -53,7 +53,7 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 #define DELAY_RETURN_COUNT 		(10 / TIME_UNIT)		// 10ms
 #define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
 #define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
-#define YES_CMD_BOOT_WAIT_LIMIT (200000 / TIME_UNIT)	// 1000ms
+#define YES_CMD_BOOT_WAIT_LIMIT (20000 / TIME_UNIT)	// 1000ms
 #define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 2) // 无操作2分钟触发一次boot关机
 
 #define SHORT_WAIT 0
@@ -166,6 +166,7 @@ typedef enum {
 #define IC_TYPE_128KB_NAME				"BAT32G137GH48"
 #define IC_TYPE_256KB_NAME				"BAT32G139GH48"
 
+#define UNIQUE_NUM_LENTH				4
 
 //私有协议新增内容
 #define TYPE_FAIL 0xDE//主机命令类型错误
@@ -186,8 +187,8 @@ typedef enum {
 #define PC_SET_WRITE_FLASH			0x77		// 更新程序命令
 #define PC_SET_ALL_CHECKSUM        	0x78		// 发送校验和
 #define PC_GET_READ_FLASH           0x79        // 读FLASH指定地址
-#define BMS_SHAKE_ENTER_APP         0x7A        // 进入APP
-#define BMS_ENTER_BOOT				0x7B		// 向主机表示进入了APP
+#define BMS_RESET					0x7A        // 软复位
+#define BMS_MCU_OPEN				0x7B		// 向主机表示开机了
 
 #define PC_SET_DOWNLOAD_BACKUP			0x7C		// 下载备份
 #define PC_SET_RESTORE_BACKUP			0x7D		// 将备份恢复到APP中
@@ -348,14 +349,6 @@ extern void BootProcess(void);
 extern void ReplyEnterBoot(void);
 MD_STATUS UART1_Init(uint32_t freq, uint32_t baud);
 
-
-#ifndef BMS_APP_DEVICE
-
-
-//GPIO输入输出口变量定义
-
-
-#endif
 
 
 extern void ADC_Config(void);

@@ -591,7 +591,7 @@ void AppRestore()
 		} else {
 			// *Ack =  ERR_REMAP;
 		}
-		result_cmd = BMS_SHAKE_ENTER_APP;
+		// result_cmd = BMS_SHAKE_ENTER_APP;
 	} else if(ReadInt(BACKUP_RESTORE_ADDRESS) == RESTORE_BKP) {
 		if(IAP_BkpRemap() == 1) {
 			// 从备份区中读取校验和数据，并写入到APP区域中
@@ -849,12 +849,10 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			*Ack = ERR_NO;
 			MCU_Reset();
 		}break;        
-		case BMS_ENTER_BOOT: //运行用户代码
+		case BMS_MCU_OPEN: //运行用户代码
 		{
 			if(get_pc() < APP_ADDR) {
 				*Ack = ERR_NO;
-				// g_bootWaitTimeLimit = LONG_WAIT_TIME;
-				g_waitFlag = LONG_WAIT;
 			} else {
 				*Ack = ERR_OPERATE;
 			}
@@ -961,7 +959,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	}
 #ifndef BMS_APP_DEVICE
 	if(Ack != ERR_CMD_ID && g_waitFlag == SHORT_WAIT) {
-		if(cmd == BMS_ENTER_BOOT) {
+		if(cmd == BMS_MCU_OPEN || PC_SHAKE_ENTER_BOOTMODE) {
 			g_waitFlag = LONG_WAIT;
 			g_bootWaitTime = 0;
 		} else {
@@ -991,7 +989,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	// 下面这个if保证在bt中如果无法清除BUFFER_RESTORE_ADDRESS标志位，不会进入死循环
 		if(g_downLoadStatus == DOWNLOADED_BUFF || g_downLoadStatus == DOWNLOADED_BKP) {
 #ifdef BMS_APP_DEVICE
-			SetDelayTask(MCU_Reset, NULL, 1000);
+			SetDelayTask((void(*)(void*))MCU_Reset, NULL, 1000);
 #else
 			// ResetFlag = 1;
 #endif
