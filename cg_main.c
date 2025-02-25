@@ -200,7 +200,7 @@ void SysTick_Handler(void)
 {
 	WDT->WDTE = 0xAC;
 	P71FlushCount++;
-	if(P71FlushCount / 100 % 2 == 1) {
+	if(P71FlushCount / 10 % 2 == 1) {
 		PORT->P7 |= _02_Pn1_OUTPUT_1;
 	} else {
 		PORT->P7 &= (~_02_Pn1_OUTPUT_1);
@@ -328,6 +328,7 @@ void IAPEnterApp()
 	INTC_DisableIRQ(SR0_IRQn);
 	__set_VECTOR_ADDR(APP_VECTOR_ADDR); // 需要配置向量表，因为实测发现app发生中断依然会跳到bt的systick
 	__set_MSP(*(__IO uint32_t*) APP_ADDR);
+
 	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
     NVIC_SystemReset();					//如果无法进入APP则复位
 }
@@ -377,14 +378,14 @@ int main(void)
 {
     /* Start user code. Do not edit comment generated here */
 	SCB->VTOR = 0x0000;    
-	// uint8_t openBootCmd[9] = {0x00,0x00,0x05,0x01,0x7B,0x55,0xAA,0x00,0x80};
+	uint8_t openBootCmd[9] = {0x00,0x00,0x05,0x01,0x7B,0x55,0xAA,0x00,0x80};
 	
 	HardDriveInit();
     BootInit();
 	toggle_Init();
 //	toggle();
 //	toggle();
-	// CmdSendFunc(openBootCmd, 9);
+	CmdSendFunc(openBootCmd, 9);
 
     while (1U)
     {

@@ -844,7 +844,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			}
 
         }break;        
-		case BMS_SHAKE_ENTER_APP: //运行用户代码
+		case BMS_RESET: // 软复位
 		{
 			*Ack = ERR_NO;
 			MCU_Reset();
