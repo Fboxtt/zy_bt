@@ -682,8 +682,8 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			hexVer = (TVER*)(APP_VER_ADDR); //使用TVER结构体而不是TVER，节省空间发送
 			if(g_flashWritableFlag.bit.appArea == 1) {
 				if(CheckSumCheck(APROM_AREA) == 1) {
-					memcpy(&CmdSendData[0], hexVer, SIMPLE_VER_LENGTH);
-					CmmuSendLength = SIMPLE_VER_LENGTH;
+					memcpy(&CmdSendData[0], hexVer, sizeof(TVER));
+					CmmuSendLength = sizeof(TVER);
 					*Ack = ERR_NO;
 				} else {
 					*Ack = ERR_ALL_CHECK;
@@ -958,13 +958,9 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 		BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
 	}
 #ifndef BMS_APP_DEVICE
-	if(Ack != ERR_CMD_ID && g_waitFlag == SHORT_WAIT) {
-		if(cmd == BMS_MCU_OPEN || PC_SHAKE_ENTER_BOOTMODE) {
+	if(Ack != ERR_CMD_ID && (g_waitFlag == SHORT_WAIT || g_waitFlag == LONG_WAIT)) {
 			g_waitFlag = LONG_WAIT;
 			g_bootWaitTime = 0;
-		} else {
-			g_bootWaitTime = 0;
-		}
 	}
 #endif
     

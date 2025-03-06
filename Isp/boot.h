@@ -54,7 +54,7 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 #define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
 #define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
 #define YES_CMD_BOOT_WAIT_LIMIT (20000 / TIME_UNIT)	// 1000ms
-#define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 2) // 无操作2分钟触发一次boot关机
+#define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 10) // 无操作2分钟触发一次boot关机
 
 #define SHORT_WAIT 0
 #define LONG_WAIT 1
