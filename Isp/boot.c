@@ -18,7 +18,6 @@ commu_data_t CmdSendData[SendLength1];	//发送数据
 commu_length_t CmmuSendLength;		    //发送数据长度
 
 commu_data_t CmdSendAll[SendLength1];	//发送缓存
-// commu_length_t CmdSendAllLenth;			//发送缓存长度
 
 
 
@@ -29,7 +28,7 @@ DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
 // 预设版本号
 const TVER btVersion __attribute((at(BOOT_VER_ADDR)))= {
 	vMAIN,
-	vREV,
+	vMINOR,
 	vFIX,
 	vYEAR,
 	vMONTH,
@@ -142,7 +141,6 @@ void ClearCommu()
     CommuData[0] = 0; //清除缓冲区数据头，准备下次串口数据到来
     CmmuReadNumber = 0; //重新计数，准备下次串口数据到来
     UartReceFlag = 0; //清除传输完成标志
-//	CmdSendAllLenth = 0;
 	CmmuSendLength = 0;
 }
 
@@ -977,7 +975,6 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	SysSendUart[g_byRecComChn].EndPos += 9 + CmmuSendLength;
 #else
 	fillbackFunc(CmdSendAll, CmdSendData, cmd | 0x80, CmmuSendLength, Ack);
-	// CmdSendAllLenth += 9 + CmmuSendLength;
 	CmdSendFunc(CmdSendAll, 9 + CmmuSendLength);
 #endif
 	ClearCommu();

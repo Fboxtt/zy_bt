@@ -29,23 +29,23 @@ typedef struct
    WORD  wLen;  
 }TUartData;	 
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<BOOT版本更新需要修改的参数
 
+#define vMAIN		1 //主版本号
+#define vMINOR		2 //次版本号
+#define vFIX		0 //修复版本号
 
-#define vMAIN		1
-#define vREV		2
-#define vFIX		0
-
-#define vYEAR		2024
-#define vMONTH		12
-#define vDAY		9
+#define vYEAR		2024 //版本生成年
+#define vMONTH		12   //版本生成月
+#define vDAY		9    //版本生成日
 
 #define vHW			"T12100-V1.1-1OZ"  //BMS24200-H 带加热器
-#define vFW			"V1"
+#define vFW			"V1"				//功能版本号
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>BOOT版本更新需要修改的参数
 
 
-
-
-void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
+void CmdSendFunc(uint8_t *sBuff, uint32_t lenth); // BOOT专用的串口发送函数
 
 #endif
 
@@ -56,14 +56,11 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth);
 #define YES_CMD_BOOT_WAIT_LIMIT (20000 / TIME_UNIT)	// 1000ms
 #define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 10) // 无操作2分钟触发一次boot关机
 
-#define SHORT_WAIT 0
-#define LONG_WAIT 1
-#define VB_WAIT 2
+#define SHORT_WAIT 0 //开机后在boot总需要停留多久的标志位
+#define LONG_WAIT 1  //在boot中等待20s的标志位
+#define VB_WAIT 2    //无操作，需要关机标志位
 
-extern uint32_t g_bootWaitTime;
-extern uint32_t g_bootWaitTimeLimit;
-extern uint32_t g_vbOffWaitTime;
-extern uint8_t g_waitFlag;
+
 #define SIMPLE_VER_LENGTH 12
 
 void DownloadProcess(void *p,UCHAR ucComPort);
@@ -76,7 +73,6 @@ void DownloadProcess(void *p,UCHAR ucComPort);
 #define CommunicationIOInit()	GPIO_SET_MUX_MODE(P23CFG,GPIO_MUX_TXD0);GPIO_SET_MUX_MODE(P24CFG,GPIO_MUX_RXD0)//通讯IO设置
 //**********************UART通讯接口**********************************
 extern uint8_t UartReceFlag;		  			//UART0接收完一帧标志位
-// extern uint8_t UartSendFlag;		  			//UART0发送完一Byte标志位
 extern uint32_t CmmuReadNumber;
 //*********************************************************************
 void UartInit(uint32_t baud);
@@ -88,7 +84,10 @@ typedef enum {
     UART2,
 }uartId;
 
-
+extern uint32_t g_bootWaitTime;
+extern uint32_t g_bootWaitTimeLimit;
+extern uint32_t g_vbOffWaitTime;
+extern uint8_t g_waitFlag;
 
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
