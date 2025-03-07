@@ -307,10 +307,11 @@ uint8_t CompareArray()
 {
 	uint8_t BLENotConnectCmd[3] = {0x45,0x52,0x52};
 	int i = 0;
-	while(i++ < 3) {
-		if(BLENotConnectCmd[i] != CmdSendData[i]) {
+	while(i < 3) {
+		if(BLENotConnectCmd[i] != CommuData[i]) {
 			return 0;
 		}
+		i++;
 	}
 	return 1;
 }
@@ -383,8 +384,6 @@ int main(void)
 	HardDriveInit();
     BootInit();
 	toggle_Init();
-//	toggle();
-//	toggle();
 	CmdSendFunc(openBootCmd, 9);
 
     while (1U)
@@ -415,8 +414,8 @@ int main(void)
 		}
 		if(g_uartWaitTime > DELAY_RETURN_COUNT) {
 			if(CmmuReadNumber < (3 + CommuData[1] * 0x100 + CommuData[2] + 1) && CmmuReadNumber >= 5) {
-				if(CmmuReadNumber == 7 && CompareArray() == 0) {
-					// CmdSendFunc(openBootCmd, 9);
+				if(CmmuReadNumber == 7 && CompareArray() == 1) {
+					//蓝牙模块未连接时会发送ERROR字符串，这个判断是为了隔离这个影响
 				} else {
 					fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
 					CmdSendFunc(CmdSendAll, 9);
@@ -432,8 +431,6 @@ int main(void)
 			g_tUartData.wLen = CmmuLength;
 			DownloadProcess(&g_tUartData,0);
 		}
-		// BootProcess();
-
     }
 
 	

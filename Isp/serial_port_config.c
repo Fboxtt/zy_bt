@@ -12,7 +12,6 @@
 //	if(READ_TI)
 //	{
 //		CLEAR_TI;			 //中断进来要把TI清0
-//		UartSendFlag=1; 	 //BootLoader发送标志
 //	}
 //	if(READ_RI)		
 //	{

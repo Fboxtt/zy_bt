@@ -17,7 +17,6 @@
 #define CommunicationIOInit()	GPIO_SET_MUX_MODE(P23CFG,GPIO_MUX_TXD0);GPIO_SET_MUX_MODE(P24CFG,GPIO_MUX_RXD0)//通讯IO设置
 //**********************UART通讯接口**********************************
 extern uint8_t UartReceFlag;		  			//UART0接收完一帧标志位
-extern uint8_t UartSendFlag;		  			//UART0发送完一Byte标志位
 extern uint32_t CmmuReadNumber;
 //*********************************************************************
 void UartInit(uint32_t baud);
