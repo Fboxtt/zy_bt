@@ -241,7 +241,7 @@ typedef enum {
 #define BOOT_DISABLE       0
 
 
-extern void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth);
+extern uint8_t IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth);
 extern void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr);
 
 /*     此处为通讯相关接口，需要在通讯协议文件中定义此部分内容      */

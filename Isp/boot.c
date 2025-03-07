@@ -310,17 +310,21 @@ uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
 }
 
 // 擦除部分flash数据，
-void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，充分利用空间
+uint8_t IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，充分利用空间
 {
 	int FLSTS_flagCount = 0;
 	uint8_t buff[512] = {0};
 	uint32_t sectorAddr = IAP_IapAddr & 0xfffffe00;
 	uint32_t lowLenth = IAP_IapAddr - sectorAddr;
-	uint32_t hignLenth = 512 - lenth - lowLenth;
+	uint32_t hignLenth = 0;
 	int i = 0;
 	if(lenth > 512) {
-		return;
+		return 0;
 	}
+	if(lenth + lowLenth > 512) {
+		lenth = 512 - lowLenth;
+	}
+	hignLenth = 512 - lenth - lowLenth;
 	for(i = 0; i < 512; i++) {
 		buff[i] = *((uint8_t *)sectorAddr + i);
 	}
@@ -344,8 +348,16 @@ void IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，
     {
         //printf("\nerror\n");
     }
-	IAP_WriteMultiByte(sectorAddr, &buff[0], lowLenth, IAP_CHECK_AREA);
-	IAP_WriteMultiByte(sectorAddr + lowLenth + lenth, &buff[lowLenth + lenth], hignLenth, IAP_CHECK_AREA);
+	if(FLSTS_flagCount >= g_flashStatusCount) {
+		return 0;
+	}
+	if(IAP_WriteMultiByte(sectorAddr, &buff[0], lowLenth, IAP_CHECK_AREA) != 1) {
+		return 0;
+	}
+	if(IAP_WriteMultiByte(sectorAddr + lowLenth + lenth, &buff[lowLenth + lenth], hignLenth, IAP_CHECK_AREA) != 1) {
+		return 0;
+	}
+	return 1;
 }
 
 uint8_t IAP_Erase_ALL(uint8_t area)
@@ -780,20 +792,41 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 				*Ack = ERR_CMD_LEN;
 				break;
 			}
-			if((rBuff[0] + (uint32_t)rBuff[1] * 0x100) != (NextPacketNumber)) {
-				*Ack = ERR_PACKET_NUMBER;
-				break;
-			}
 			if(NextPacketNumber == 1) {
 				g_packetTotalNum = rBuff[2] + rBuff[3] * 0x100; // 获得总包号
 			}
-			if(IAP_WriteMultiByte(BeginAddr,(rBuff+DATA_OFFSET),PACKET_SIZE,temp))
-			{
-				if(g_packetTotalNum != rBuff[2] + rBuff[3] * 0x100) {
-					*Ack = ERR_PACKET_NUMBER;
+			if(g_packetTotalNum != rBuff[2] + rBuff[3] * 0x100) {
+				*Ack = ERR_PACKET_NUMBER;
+				break;
+			}
+			uint32_t receivePacketNum = rBuff[0] + (uint32_t)rBuff[1] * 0x100;
+
+			if(receivePacketNum == NextPacketNumber) {
+
+			} else if(receivePacketNum == (NextPacketNumber - 1)) {	// 说明上一个包没传输成功，主机重发了一个包
+				if(IAP_Erase_Some(BeginAddr - PACKET_SIZE, 512 - (BeginAddr - (BeginAddr & 0xffffffe0))) != 1) {
+					*Ack = ERR_OPERATE;
 					break;
 				}
-				BeginAddr = BeginAddr+PACKET_SIZE;
+				if((BeginAddr - (BeginAddr & 0xffffffe0)) > 512) {
+					if(IAP_Erase_Some((BeginAddr + PACKET_SIZE) & 0xffffffe0, 512) != 1) {
+						*Ack = ERR_OPERATE;
+						break;
+					}
+				}
+				BeginAddr = BeginAddr - PACKET_SIZE;
+				NextPacketNumber--;
+			} else { // 一个包都不正确
+				*Ack = ERR_PACKET_NUMBER;
+				break;
+			}
+
+
+			if(IAP_WriteMultiByte(BeginAddr,(rBuff+DATA_OFFSET),PACKET_SIZE,temp)) //将收到的HEX数据写入到flash内
+			{
+				CmdSendData[0] = NextPacketNumber & 0xff;
+				CmdSendData[1] = (NextPacketNumber & 0xff00) >> 8;
+				BeginAddr = BeginAddr + PACKET_SIZE;
 				NextPacketNumber++;
 				*Ack = ERR_NO;
 			}
@@ -801,9 +834,9 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			{
 				*Ack = ERR_OPERATE;
 			}
-			for(i = 0; i < PACKET_ID_LENTH; i++) {
-				CmdSendData[i] = rBuff[i];
-			}
+			// for(i = 0; i < PACKET_ID_LENTH; i++) {
+			// 	CmdSendData[i] = rBuff[i];
+			// }
 		}break;        
 		case PC_SET_ALL_CHECKSUM: //接受hex文件校验和
         {
