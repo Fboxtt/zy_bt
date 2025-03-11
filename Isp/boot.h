@@ -23,11 +23,13 @@
 #include "cg_macrodriver.h"
 #include "Typedefs.h"
 
-typedef struct
-{
-   BYTE  *pbuf; 
-   WORD  wLen;  
-}TUartData;	 
+
+
+#define IC_TYPE_LENTH					15
+#define IC_TYPE_128KB_NAME				"BAT32G137GH48"
+#define IC_TYPE_256KB_NAME				"BAT32G139GH48"
+
+#define UNIQUE_NUM_LENTH				4
 
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<BOOT版本更新需要修改的参数
 
@@ -42,39 +44,31 @@ typedef struct
 #define vHW			"T12100-V1.1-1OZ"  //BMS24200-H 带加热器
 #define vFW			"V1"				//功能版本号
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>BOOT版本更新需要修改的参数
-
 
 void CmdSendFunc(uint8_t *sBuff, uint32_t lenth); // BOOT专用的串口发送函数
 
+typedef struct
+{
+   BYTE  *pbuf; 
+   WORD  wLen;  
+}TUartData;	 
+
 #endif
 
-#define TIME_UNIT				10 						// 10ms
-#define DELAY_RETURN_COUNT 		(10 / TIME_UNIT)		// 10ms
-#define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
-#define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
-#define YES_CMD_BOOT_WAIT_LIMIT (20000 / TIME_UNIT)	// 1000ms
-#define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 10) // 无操作2分钟触发一次boot关机
 
-#define SHORT_WAIT 0 //开机后在boot总需要停留多久的标志位
-#define LONG_WAIT 1  //在boot中等待20s的标志位
-#define VB_WAIT 2    //无操作，需要关机标志位
 
 
 #define SIMPLE_VER_LENGTH 12
 
-void DownloadProcess(void *p,UCHAR ucComPort);
+
 /*************************通讯协议相关宏定义*******************************/
 //帧格式：帧头+控制码+数据域长度(2Byte)+数据域+校验位(1Byte)+帧尾
 /**************************************************************************/
 
 #define UartBaud				19200		    	 //初始默认波特率
 #define	Fsoc					48000000	    	//主频选择
-#define CommunicationIOInit()	GPIO_SET_MUX_MODE(P23CFG,GPIO_MUX_TXD0);GPIO_SET_MUX_MODE(P24CFG,GPIO_MUX_RXD0)//通讯IO设置
-//**********************UART通讯接口**********************************
 extern uint8_t UartReceFlag;		  			//UART0接收完一帧标志位
 extern uint32_t CmmuReadNumber;
-//*********************************************************************
 void UartInit(uint32_t baud);
 void UartSendOneByte(uint8_t input_data);
 
@@ -84,10 +78,6 @@ typedef enum {
     UART2,
 }uartId;
 
-extern uint32_t g_bootWaitTime;
-extern uint32_t g_bootWaitTimeLimit;
-extern uint32_t g_vbOffWaitTime;
-extern uint8_t g_waitFlag;
 
 #define CommunicationCommandHeader   0X68		//命令帧头
 #define CommunicationCommandEnd		 0x16		//命令帧尾
@@ -113,34 +103,29 @@ extern commu_length_t CmmuLength;		                //接收数据长度
 extern commu_data_t CommuData[ReceiveLength1];	//通讯接收缓存
 extern commu_data_t CmdSendData[SendLength1];  //发送缓存
 extern commu_length_t CmmuSendLength;		            //接收数据长度
-void CommuSendCMD(commu_cmd_t Command,commu_cmd_t dataLen,commu_data_t* Data, commu_data_t Ack);
-uint8_t AnalysisData(uint8_t *pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, volatile uint8_t* pAck);
-void ClearCommu(void);
+
 void UartReceData(uartId id);
-
-/*communication_protocol.h*/
-/*communication_protocol.h*/
-/*communication_protocol.h*/
+void CommuSendCMD(commu_cmd_t Command,commu_cmd_t dataLen,commu_data_t* Data, commu_data_t Ack);
 
 
-#define SEND_ADDRESS 0x01
-#define SEND_BMS_TYPE 0x01
-#define SEND_SHAKE_1 0x55
-#define SEND_SHAKE_2 0xAA
-extern volatile uint8_t ACK;
+#define TIME_UNIT				10 						// 10ms
+#define DELAY_RETURN_COUNT 		(10 / TIME_UNIT)		// 10ms
+#define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
+#define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
+#define YES_CMD_BOOT_WAIT_LIMIT (20000 / TIME_UNIT)		// 1000ms
+#define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 10) // 无操作2分钟触发一次boot关机
+
+#define SHORT_WAIT 0 //开机后在boot总需要停留多久的标志位
+#define LONG_WAIT 1  //在boot中等待20s的标志位
+#define VB_WAIT 2    //无操作，需要关机标志位
+
+extern uint32_t g_bootWaitTime;
+extern uint32_t g_bootWaitTimeLimit;
+extern uint32_t g_vbOffWaitTime;
+extern uint8_t g_waitFlag;
+extern uint32_t g_uartWaitTime;
 
 
-#define BIT7 0x80
-#define BIT6 0x40
-#define BIT5 0x20
-#define BIT4 0x10
-#define BIT3 0x08
-#define BIT2 0x04
-#define BIT1 0x02
-#define BIT0 0x01
-
-/* boot core.h*/
-/* boot core.h*/
 /* boot core.h*/
 /* 依据芯片特性设计合适的数据类型 */
 #define boot_bool_t 	uint8_t         	//bool型数据类型
@@ -151,32 +136,18 @@ extern volatile uint8_t ACK;
 #define boot_flag_t 	uint8_t    	        //外部标志类型 
 
 #define PC_GET_READ_FLASH_ENABLE						//使能后允许执行读FLASH操作
-//#define ENCRYPT_ENABLE						    //使能通讯加密，使能后会对接收的更新数据进行解密操作	
-//#define ENCRYPT_UID_ENABLE					    //使能UID加密功能，使能后会在跳转至APP前进行一次UID解密判断，若不一致就拒绝跳转到APP工作
-//#define FLASH_BUFF_ENABLE						//Flash缓存功能开关，使能后会在FLASH区域开辟一个代码缓存区用于存储传输到来的新代码数据
 
 typedef enum {
 	TYPE_128KB,
 	TYPE_256KB,
 } IC_TYPE_ENUM;
 
-#define IC_TYPE_LENTH					15
 
-#define IC_TYPE_128KB_NAME				"BAT32G137GH48"
-#define IC_TYPE_256KB_NAME				"BAT32G139GH48"
-
-#define UNIQUE_NUM_LENTH				4
-
-//私有协议新增内容
-#define TYPE_FAIL 0xDE//主机命令类型错误
-#define CHECK_FAIL 0xDF //校验错误
 
 
 //主站发送来的控制码类型 私有协议修改内容
-#ifndef BMS_APP_DEVICE
-#define PC_GET_VER			0x16		// 获取APP的版本号
-
-#endif
+#define NO_CMD						0x00		//表示无命令
+#define PC_GET_VER_BOOT				0x16		// 获取APP的版本号
 
 #define PC_GET_INF					0x71		// 获取BT版本号，APP版本号，BUFFER版本号，BACKUP版本号，芯片型号，芯片可写区域
 #define PC_GET_BT_INF				0x72		// 获取BT详细版本号
@@ -188,80 +159,54 @@ typedef enum {
 #define PC_GET_READ_FLASH           0x79        // 读FLASH指定地址
 #define BMS_RESET					0x7A        // 软复位
 #define BMS_MCU_OPEN				0x7B		// 向主机表示开机了
+#define PC_SET_DOWNLOAD_BACKUP		0x7C		// 下载备份
+#define PC_SET_RESTORE_BACKUP		0x7D		// 将备份恢复到APP中
 
-#define PC_SET_DOWNLOAD_BACKUP			0x7C		// 下载备份
-#define PC_SET_RESTORE_BACKUP			0x7D		// 将备份恢复到APP中
+#define ERR_NO                  	0x00        // 无异常
+#define ERR_CMD_LEN             	0x02        // 从机接收到的包长度和命令长度不对
+#define ERR_CMD_ID             	 	0x04        // 没有命令
+#define ERR_CHKSUM               	0x06        // 主机某个包校验和错误
+#define ERR_OPERATE             	0x07        // 未能完成主机要求的操作
+#define ERR_SHAKEHAND				0x20 		// 握手次数错误
+#define ERR_PACKET_NUMBER       	0x21        // 主机包的序号跳错误
+#define ERR_MEM_NOT_ENOUGH      	0x22        // 主机hex文件过大无法写入
+#define ERR_ALL_CHECK				0x23		// 总包校验和错误
+#define ERR_REMAP			    	0x24		// 重映射错误
+#define ERR_AREA_BLANK				0x25		// 区域内数据为0
+#define ERR_AREA_NOT_WRITABLE		0x26		// 区域不可写
+#define ERR_DOWNLOAD_DONE			0x27		// 烧录已完成，请重新开始
+#define ERR_ERASE					0x28		// 擦除错误
+#define ERR_NO_SHAKE_SUCCESS		0x29		// 握手成功
 
-#define ERR_NO                  0x00        // 无异常
-#define ERR_CMD_LEN             0x02        // 从机接收到的包长度和命令长度不对
-#define ERR_CMD_ID              0x04        // 没有命令
-#define ERR_CHKSUM               0x06        // 主机某个包校验和错误
-#define ERR_OPERATE             0x07        // 未能完成主机要求的操作
-#define ERR_SHAKEHAND			0x20 		// 握手次数错误
-#define ERR_PACKET_NUMBER       0x21        // 主机包的序号跳错误
-#define ERR_MEM_NOT_ENOUGH      0x22        // 主机hex文件过大无法写入
-#define ERR_ALL_CHECK			0x23		// 总包校验和错误
-#define ERR_REMAP			    0x24		// 重映射错误
-#define ERR_AREA_BLANK			0x25		// 区域内数据为0
-#define ERR_AREA_NOT_WRITABLE	0x26		// 区域不可写
-#define ERR_DOWNLOAD_DONE		0x27		// 烧录已完成，请重新开始
-#define ERR_ERASE				0x28		// 擦除错误
-
-
-
-#define ERR_NO_SHAKE_SUCCESS	0x29		// 握手成功
-
-
-
-//从站回应控制码类型
-#define DEAL_SUCCESS 			0X9F		//回应操作成功
-#define DEAL_FAIL				0xDF		//回应操作失败
-#define	RETURN_IC_INF			0xA3		//回应芯片型号
-#define	RETURN_BOOT_CODE_INF	0XA4		//回应BOOT程序版本号
-#define RETURN_FLASH            0xA5        //回应读出的FLASH信息
-//错误类型
-// #define	ERROR_CHECK_FAIL		0x01		//表示通讯校验失败
-// #define	ERROR_BURN_FAIL			0x02		//表示烧写校验错误
-// #define	ERROR_CMD_FAIL			0x04		//表示命令错误
-//空闲
-#define NO_CMD					0x00		//表示无命令
-
-#define  RETURN_FLASH_APROM     0x00		//选择APROM
-#define  RETURN_FLASH_DATA      0x01		//选择DATA Flash
-#define  RETURN_FLASH_LDROM     0x02		//选择APROM
-#define  RETURN_FLASH_XDATA     0x03		//选择XDATA
-#define  RETURN_FLASH_SFR       0x04		//选择SFR
-#define  RETURN_FLASH_RAM	    0x05		//选择RAM
-#define  RETURN_FLASH_UID       0x06		//选择UID
-
-
-#define BOOT_BOOL_TRUE     1
-#define BOOT_BOOL_FALSE    0
 #define BOOT_ENABLE        1
 #define BOOT_DISABLE       0
 
+/*communication_protocol.h*/
 
-extern uint8_t IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth);
-extern void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr);
+#define SEND_ADDRESS 				0x01
+#define SEND_BMS_TYPE 				0x01
+#define SEND_SHAKE_1 				0x55
+#define SEND_SHAKE_2 				0xAA
+extern volatile uint8_t ACK;
 
-/*     此处为通讯相关接口，需要在通讯协议文件中定义此部分内容      */
-// #define CommunicationLength1    (64+2+8)
-extern boot_length_t CmmuLength;		             //接收数据长度
-extern boot_data_t CommuData[ReceiveLength1];	 	//通讯接收缓存
-extern boot_data_t CmdSendData[SendLength1];		//发送缓存
-extern boot_length_t CmmuSendLength;		         //接收数据长度
-extern uint32_t NewBaud;							 //新波特率存储													
-extern uint8_t CurrState;							 //存储当前芯片的状态,0:BOOT模式  1:APP运行态     2:代码缓存就绪态
-extern boot_bool_t ResetFlag;
-extern void BootCheckReset(void);		//检测是否有复位信号
-extern void CheckAndEnterApp(void);
-extern void AppRestore(void);
-extern uint8_t CheckUID(void);
-void BootInit(void);
 void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack);
+void ClearCommu(void);
+void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,commu_cmd_t dataLen, commu_data_t Ack);
+uint8_t AnalysisData(uint8_t *pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, volatile uint8_t* pAck);
+extern commu_data_t CmdSendAll[SendLength1];	//发送缓存
 
 
-uint8_t AppCheckSumCheck(void);
+
+typedef union { // 确认区域是否可写的标志位
+	uint8_t value;
+	struct {
+		uint8_t appArea:1;
+		uint8_t bufferArea:1;
+		uint8_t backupArea:1;
+	}bit;
+}WritableFlag;
+
+#define ONE_DISASSEMBLE_COUNT 7 // 判断一次FLSTS的值需要7个汇编指令
 
 #define APP_VER_OFFSET			0xD0
 
@@ -287,10 +232,6 @@ uint8_t AppCheckSumCheck(void);
 #define DATA_SIZE				0x500							// 程序状态标志DATA的大小
 
 #define ONE_PAGE_SIZE           512                 			// 一页的长度
-
-
-
-
 
 #define IAP_CHECK_AREA			APROM_AREA			// 标志所处区域
 #define	IAP_CHECK_NUMBER		0XAA,0X55,0X55,0XAA // 表示APP代码区程序正常的数字码，最大14Byte
@@ -329,7 +270,16 @@ uint8_t AppCheckSumCheck(void);
 #define APROM_BUFF_AREA			0x69				//APP缓存区
 #define APROM_BACKUP_AREA		0x5A				//备份区
 
-extern uint8_t IAP_IapLength;	        //用于IAP操作数据长度缓存
+uint8_t AppCheckSumCheck(void);
+extern uint8_t IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth);
+extern void uint32ValWrite(uint32_t packetTotalNum, uint32_t addr);
+uint8_t CheckSumCheck(int area);
+void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area);
+
+extern WritableFlag g_flashWritableFlag;
+#define ReadInt(x) *(uint32_t*)(x)
+
+
 
 extern uint8_t IAP_WriteMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint32_t len,uint8_t area);//写多字节IAP操作
 extern void IAP_ReadMultiByte(uint32_t IAP_IapAddr,uint8_t * buff,uint16_t len,uint8_t area); //读多字节IAP操作
@@ -337,62 +287,28 @@ extern uint8_t IAP_ReadOneByte(uint32_t IAP_IapAddr,uint8_t area);  //读单字�
 extern void MCU_Reset(void);			 		                    //复位启动								
 extern uint8_t IAP_Erase_ALL(uint8_t area);						    //将目标区域全擦
 extern uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area);   //擦除一个块（512B）
-extern void IAP_FlagWrite(uint8_t flag);
-extern uint8_t IAP_CheckAPP(void);
-extern void IAP_ReadEncUID(uint8_t* buff);
 extern uint8_t IAP_Remap(void);//将缓存区的代码装载如运行区
 extern uint8_t IAP_WriteOneByte(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,uint8_t area); //写单字节IAP操作
-
-extern void BootWaitTimeInit(void);
 extern void BootProcess(void);
-extern void ReplyEnterBoot(void);
 MD_STATUS UART1_Init(uint32_t freq, uint32_t baud);
 
-
-
 extern void ADC_Config(void);
-//extern uint16_t ADC_GetChnValue(adc_channel_t Chn);
 extern void GPIO_Config(void);
 extern void Ext_INT_Config(void);
 extern void Clock_Config(void);
 extern void TimeTick_Config(void);
 extern void RTC_Config(void);
 extern void RTC_GetDateAndTime(void *p);
-//extern void RTC_SetDateAndTime(MDate *pDate);
 extern void WDT_feed(void);
 extern void ADC_ClearChnValue(char ADCx);
-
 extern void TimingDelay_Decrement(void);
-
-
 extern void TIM_Config(void);
-
 extern void PORT_Init(PORT_TypeDef PORTx,PIN_TypeDef PINx,PIN_ModeDef MODEx);
-
 extern void system_tick_init(void);
-
-uint8_t CheckSumCheck(int area);
-void CheckSumWrite(uint32_t totalNum, uint32_t chkSum, int area);
-
 uint8_t CheckAreaWritable(uint32_t addr);
 
-#define ONE_DISASSEMBLE_COUNT 7 // 判断一次FLSTS的值需要7个汇编指令
 
-typedef union { // 确认区域是否可写的标志位
-	uint8_t value;
-	struct {
-		uint8_t appArea:1;
-		uint8_t bufferArea:1;
-		uint8_t backupArea:1;
-	}bit;
-}WritableFlag;
 
-extern uint32_t g_uartWaitTime;
-extern WritableFlag g_flashWritableFlag;
-#define ReadInt(x) *(uint32_t*)(x)
-void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,commu_cmd_t dataLen, commu_data_t Ack);
-
-extern commu_data_t CmdSendAll[SendLength1];	//发送缓存
 
 // 表示烧录状态宏定义
 typedef enum {
@@ -406,4 +322,11 @@ typedef enum {
 }DOWNLOAD_STATUS;
 
 extern WORD CalCRC (BYTE *ptr,int count);
+
+extern boot_bool_t ResetFlag;
+extern void BootCheckReset(void);		//检测是否有复位信号
+extern void CheckAndEnterApp(void);
+extern void AppRestore(void);
+void BootInit(void);
+void DownloadProcess(void *p,UCHAR ucComPort);
 #endif

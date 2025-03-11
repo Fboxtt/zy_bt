@@ -666,7 +666,6 @@ void GetVer(uint32_t addr, int lenth)
 // 命令执行函数
 void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
-    // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
 	TVER* hexVer = 0x0;
 	int i = 0;
     CmmuSendLength = 0;	
@@ -687,7 +686,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 	}
     switch(cmd)//根据命令执行相应的动作
     {
-		case PC_GET_VER:
+		case PC_GET_VER_BOOT:
 		{
 			hexVer = (TVER*)(APP_VER_ADDR); //使用TVER结构体而不是TVER，节省空间发送
 			if(g_flashWritableFlag.bit.appArea == 1) {
