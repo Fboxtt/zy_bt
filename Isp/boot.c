@@ -53,7 +53,6 @@ int g_flashStatusCount = 0; // 保证读写FLASH时不会卡死
 
 uint8_t g_BkpFlag = 0;								//代表备份区的校验状态
 uint8_t ResetFlag = 0;								//表示复位条件达成
-uint8_t CurrState = 0;								//当前芯片的状态
 uint32_t ReadFlashLength = 0;                       //读Flash的长度        
 uint32_t ReadFlashAddr = 0;							//读Flash的起始地址
 
@@ -63,7 +62,6 @@ uint32_t CheckSum = 0;
 
 const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
-uint32_t NewBaud = UartBaud;						//存储新波特率的变量
 extern commu_data_t CmdSendData[SendLength1];
 uint32_t NextPacketNumber = 0;
 uint32_t AllPacketNumber = 0;
@@ -575,12 +573,6 @@ uint8_t CheckSumCheck(int area)
 	}
 }
 
-// 开机时向主机发送命令
-void ReplyEnterBoot(void)
-{
-	CmmuSendLength = 0;
-//	CommuSendCMD(result_cmd,CmmuSendLength,CmdSendData); // 回应上位机
-}
 
 
 // 恢复APP
