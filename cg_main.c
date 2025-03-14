@@ -200,7 +200,7 @@ void SysTick_Handler(void)
 {
 	WDT->WDTE = 0xAC;
 	P71FlushCount++;
-	if(P71FlushCount / 10 % 2 == 1) {
+	if(P71FlushCount  % 2 == 1) {
 		PORT->P7 |= _02_Pn1_OUTPUT_1;
 	} else {
 		PORT->P7 &= (~_02_Pn1_OUTPUT_1);
@@ -420,16 +420,13 @@ int main(void)
 					fillbackFunc(CmdSendAll, NULL, CmdSendData[4] | 0x80, 0, 0x01);
 					CmdSendFunc(CmdSendAll, 9);
 				}
-				ClearCommu();
+			} else if (CmmuReadNumber >= 8){
+				g_tUartData.pbuf = CommuData;
+				g_tUartData.wLen = CmmuReadNumber;
+				DownloadProcess(&g_tUartData,0);
 			}
+			ClearCommu();
 			g_uartWaitTime = 0;
-		}
-		if(UartReceFlag)
-		{
-			UartReceFlag = 0;
-			g_tUartData.pbuf = CommuData;
-			g_tUartData.wLen = CmmuLength;
-			DownloadProcess(&g_tUartData,0);
 		}
     }
 

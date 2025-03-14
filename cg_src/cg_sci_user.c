@@ -14,22 +14,12 @@ Includes
 
 void UartReceData(uartId id)
 {
-	if(!UartReceFlag)
-	{		
-		if(id == UART1) {
-			CommuData[CmmuReadNumber] = SCI0->RXD1;
-		}
-		CmmuReadNumber++;
-		g_uartWaitTime = 0;
-
-		if(CmmuReadNumber >= 3) {
-			if(CmmuReadNumber>=(3 + CommuData[1] * 0x100 + CommuData[2] + 1)) //CmmuReadNumber
-			{
-				
-				CmmuLength = 3 + CommuData[1] * 0x100 + CommuData[2] + 1;
-				UartReceFlag = 1;
-			}
-		}
-
+	if(CmmuReadNumber >= ReceiveLength1) {
+		CmmuReadNumber = 0;
 	}
+	if(id == UART1) {
+		CommuData[CmmuReadNumber] = SCI0->RXD1;
+	}
+	CmmuReadNumber++;
+	g_uartWaitTime = 0;
 }
