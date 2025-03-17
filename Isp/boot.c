@@ -658,6 +658,8 @@ void GetVer(uint32_t addr, int lenth)
 // 命令执行函数
 void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 {
+	uint32_t receivePacketNum = 0;
+    // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
 	TVER* hexVer = 0x0;
 	int i = 0;
     CmmuSendLength = 0;	
@@ -790,7 +792,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 				*Ack = ERR_PACKET_NUMBER;
 				break;
 			}
-			uint32_t receivePacketNum = rBuff[0] + (uint32_t)rBuff[1] * 0x100;
+			receivePacketNum = rBuff[0] + (uint32_t)rBuff[1] * 0x100;
 
 			if(receivePacketNum == NextPacketNumber) {
 
