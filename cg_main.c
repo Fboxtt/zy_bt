@@ -133,8 +133,8 @@ void GPIO_Config(void)
 // 	PORT_Init(PIN_CEN.emGPIOx,		PIN_CEN.emPin,		PIN_CEN.emMode);
 // 	C_OFF;
 	
-	// PORT_Init(PIN_GREEN.emGPIOx,	PIN_GREEN.emPin,	PIN_GREEN.emMode);
-	// GREEN_OFF;
+	PORT_Init(PIN_GREEN.emGPIOx,	PIN_GREEN.emPin,	PIN_GREEN.emMode);
+	GREEN_OFF;
 	
 	PORT_Init(PIN_RED.emGPIOx,		PIN_RED.emPin,		PIN_RED.emMode);
 	RED_ON;
@@ -263,16 +263,16 @@ void CheckSwitch(void)
 	if (!IS_SWITCH_PUSH)		//非高电平，等于按下按键
 	{
 		if(Switch_Count == 0) {
-			// toggle();
 		}
 		NO_Siwtch_Count = 0;
 		Switch_Count++;
 		if(Switch_Count > 20)
 		{
 			RED_OFF;
-			// toggle();
+			GREEN_OFF;
 		}
 	} else {
+
 		NO_Siwtch_Count++;
 		if(NO_Siwtch_Count > 5) {
 			Switch_Count = 0;
@@ -283,6 +283,15 @@ void CheckSwitch(void)
 			g_bWholeSysShutdown = 1;	
 			// Switch_Count = 52;
 			// SetBmsEventAct(xEVENT_MANNULA_DOWN,TRUE);
+		} else {
+			P71FlushCount++;
+			if(P71FlushCount / 200 % 2 == 0) {
+				RED_ON;
+				GREEN_OFF;
+			} else {
+				GREEN_ON;
+				RED_OFF;
+			}
 		}
 	}
 
