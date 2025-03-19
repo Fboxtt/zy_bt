@@ -23,18 +23,6 @@
 #include "Typedefs.h"
 
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<BootLoader中需要修改的参数
-
-#define vMAIN		1 //主版本号
-#define vMINOR		2 //次版本号
-#define vFIX		0 //修复版本号
-
-#define vYEAR		2024 //版本生成年
-#define vMONTH		12   //版本生成月
-#define vDAY		9    //版本生成日
-
-#define vHW			"T12100-V1.1-1OZ"  //BMS24200-H 带加热器
-#define vFW			"V1"				//功能版本号
-
 typedef struct
 {
    BYTE  *pbuf; 
@@ -45,7 +33,16 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth); // BOOT专用的串口发送�
 
 #endif
 
+#define vbtMAIN		1 //主版本号
+#define vbtMINOR	3 //次版本号
+#define vbtFIX		0 //修复版本号
+
+#define vbtYEAR		2025 //版本生成年
+#define vbtMONTH	3   //版本生成月
+#define vbtDAY		19    //版本生成日
+
 #define IC_TYPE_LENTH					15
+#define IC_TYPE_CURRENT					IC_TYPE_128KB_NAME
 #define IC_TYPE_128KB_NAME				"BAT32G137GH48"
 #define IC_TYPE_256KB_NAME				"BAT32G139GH48"
 
@@ -213,7 +210,9 @@ typedef union { // 确认区域是否可写的标志位
 #define APP_ADDR                0X3000							// APP的起始位置
 #define APP_SIZE                (58 * 1024)						// APP代码最大长度
 #define APP_VER_ADDR			(APP_ADDR + APP_VER_OFFSET) 	// 存储app版本号的地址
-#define APP_UNIQUE_ADDR			(APP_VER_ADDR + 0x100)
+#define APP_UNIQUE_ADDR			(APP_VER_ADDR + 0x100)			// 唯一码长度4字节
+#define APP_IC_NAME_ADDR		(APP_UNIQUE_ADDR + 4)			// 芯片名称长度16字节
+#define APP_BOOT_VER_ADDR		(APP_IC_NAME_ADDR + 16)			// bt版本号长度80字节
 
 
 #define APP_BUFF_ADDR           (APP_ADDR + APP_SIZE)		        // APP缓存区的起始位置

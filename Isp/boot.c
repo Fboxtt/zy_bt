@@ -27,18 +27,27 @@ DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
 #ifdef BMS_BT_DEVICE
 // 预设版本号
 const TVER btVersion __attribute((at(BOOT_VER_ADDR)))= {
-	vMAIN,
-	vMINOR,
-	vFIX,
-	vYEAR,
-	vMONTH,
-	vDAY,
-	vHW,
-	vFW,
+	vbtMAIN,
+	vbtMINOR,
+	vbtFIX,
+	vbtYEAR,
+	vbtMONTH,
+	vbtDAY,
 };
 
+#else
 
+const uint8_t g_icName_inAPP[16]  __attribute((at(APP_IC_NAME_ADDR))) = IC_TYPE_CURRENT;
 
+// 预设版本号
+const TVER g_btVersion_inAPP __attribute((at(APP_BOOT_VER_ADDR))) = {
+	vbtMAIN,
+	vbtMINOR,
+	vbtFIX,
+	vbtYEAR,
+	vbtMONTH,
+	vbtDAY,
+};
 #endif
 
 uint8_t* g_sendArray;
@@ -60,12 +69,11 @@ uint32_t g_packetTotalNum = 0;						//烧录文件数据包的数量
 
 uint32_t CheckSum = 0;
 
-const uint8_t Boot_Inf_Buff[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME;//版本号存储
 boot_addr_t BeginAddr = APP_ADDR;				    //起始地址存储
 extern commu_data_t CmdSendData[SendLength1];
 uint32_t NextPacketNumber = 0;
 uint32_t AllPacketNumber = 0;
-const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_128KB_NAME; // 芯片型号存储
+const uint8_t IC_INF_BUFF[IC_TYPE_LENTH] = IC_TYPE_CURRENT; // 芯片型号存储
 
 
 WritableFlag g_flashWritableFlag = {3};
