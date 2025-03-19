@@ -158,6 +158,11 @@ uint8_t AnalysisData(uint8_t* pBuff, uint32_t wholeLen,uint32_t* noPackNumLen, v
 	cmd = pBuff[4];
 
 	*pAck = ERR_NO;
+		//握手字错误
+	if (pBuff[5] != SEND_SHAKE_1 || pBuff[6] != SEND_SHAKE_2)
+	{
+		return ERR_HANDLE;								
+	}
 	//计算单板类型到数据位的校验和
 	for(i=1; i < calLen + 3; i++)
 	{
@@ -311,19 +316,19 @@ uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
 uint8_t IAP_Erase_Some(uint32_t IAP_IapAddr, uint32_t lenth)// 擦除并记录部分数据，充分利用空间
 {
 	int FLSTS_flagCount = 0;
-	uint8_t buff[512] = {0};
+	uint8_t buff[ONE_PAGE_SIZE] = {0};
 	uint32_t sectorAddr = IAP_IapAddr & 0xfffffe00;
 	uint32_t lowLenth = IAP_IapAddr - sectorAddr;
 	uint32_t hignLenth = 0;
 	int i = 0;
-	if(lenth > 512) {
+	if(lenth > ONE_PAGE_SIZE) {
 		return 0;
 	}
-	if(lenth + lowLenth > 512) {
-		lenth = 512 - lowLenth;
+	if(lenth + lowLenth > ONE_PAGE_SIZE) {
+		lenth = ONE_PAGE_SIZE - lowLenth;
 	}
-	hignLenth = 512 - lenth - lowLenth;
-	for(i = 0; i < 512; i++) {
+	hignLenth = ONE_PAGE_SIZE - lenth - lowLenth;
+	for(i = 0; i < ONE_PAGE_SIZE; i++) {
 		buff[i] = *((uint8_t *)sectorAddr + i);
 	}
 
@@ -662,9 +667,10 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
 	TVER* hexVer = 0x0;
 	int i = 0;
+	static uint8_t downLoadInteCount = 0;
     CmmuSendLength = 0;	
 	*Ack = ERR_NO;
-	
+
 	switch(cmd)
 	{
 		case PC_SHAKE_ENTER_BOOTMODE:
@@ -673,10 +679,24 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 		{
 			// 如果下载HEX中出现握手指令，则需要重新握手
 			if(g_shakehandFlag == BUFFER_FLAG || g_shakehandFlag == BACKUP_FLAG) {
+				downLoadInteCount++;
+			} else {
+				downLoadInteCount = 0;
+				break;
+			}
+			if(downLoadInteCount >= 2) {
 				g_shakehandFlag = 0;
 				g_downLoadStatus =  NO_DOWNLOADING;
+				downLoadInteCount = 0;
+				*Ack = ERR_OPERATE;
+				return;
 			}
-		}break;
+			*Ack = ERR_HANDLE;
+			return;
+		}
+		default:
+			downLoadInteCount = 0;
+			break;
 	}
     switch(cmd)//根据命令执行相应的动作
     {
@@ -797,12 +817,12 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			if(receivePacketNum == NextPacketNumber) {
 
 			} else if(receivePacketNum == (NextPacketNumber - 1)) {	// 说明上一个包没传输成功，主机重发了一个包
-				if(IAP_Erase_Some(BeginAddr - PACKET_SIZE, 512 - (BeginAddr - (BeginAddr & 0xffffffe0))) != 1) {
+				if(IAP_Erase_Some(BeginAddr - PACKET_SIZE, ONE_PAGE_SIZE - (BeginAddr - (BeginAddr & 0xffffffe0))) != 1) {
 					*Ack = ERR_OPERATE;
 					break;
 				}
 				if((BeginAddr - (BeginAddr & 0xffffffe0)) > 512) {
-					if(IAP_Erase_Some((BeginAddr + PACKET_SIZE) & 0xffffffe0, 512) != 1) {
+					if(IAP_Erase_Some((BeginAddr + PACKET_SIZE) & 0xffffffe0, ONE_PAGE_SIZE) != 1) {
 						*Ack = ERR_OPERATE;
 						break;
 					}
@@ -929,9 +949,9 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 uint8_t CheckAreaWritable(uint32_t addr)
 {
 	uint8_t ok = 0;
-	uint8_t CheckFlashBuff[512] = {0};
+	uint8_t CheckFlashBuff[ONE_PAGE_SIZE] = {0};
 	int i = 0;
-	for(i = 0; i < 512; i++)
+	for(i = 0; i < ONE_PAGE_SIZE; i++)
 	{
 		CheckFlashBuff[i] = IAP_ReadOneByte(addr + i,IAP_CHECK_AREA);
 	}
@@ -940,7 +960,7 @@ uint8_t CheckAreaWritable(uint32_t addr)
 
 	if(ok == 1) {
 		IAP_Erase_512B(addr & 0xffffff00,IAP_CHECK_AREA);
-		for(i=0;i<512;i++)
+		for(i=0;i<ONE_PAGE_SIZE;i++)
 		{
 			IAP_WriteOneByte_Check(addr + i, CheckFlashBuff[i], IAP_CHECK_AREA);
 		}
@@ -976,10 +996,13 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	rBuff 		= 	((TUartData *)(p))->pbuf;
 	wholeDataLen	=	((TUartData *)(p))->wLen;
 
+	
 	cmd = AnalysisData(rBuff, wholeDataLen, &unitDataLen,&Ack);  // 分析从中断函数总获取的数据包， 返回cmd
-
 	if(Ack == ERR_NO) {
 		BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
+	} else if (Ack == ERR_HANDLE) {
+		ClearCommu();
+		return;
 	}
 #ifndef BMS_APP_DEVICE
 	if(Ack != ERR_CMD_ID && (g_waitFlag == SHORT_WAIT || g_waitFlag == LONG_WAIT)) {

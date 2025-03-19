@@ -80,7 +80,7 @@ typedef enum {
 #define PACKET_ID_LENTH            2
 #define RECEIVE_PACKET_LENTH        (PACKET_ID_LENTH+PACKET_ID_LENTH)
 #define DATA_OFFSET					(RECEIVE_PACKET_LENTH)
-#define PACKET_SIZE                 500
+#define PACKET_SIZE                 372
 #define MAX_PACK_NUM				(80 * 1024)
 #define ReceiveLength1              (PACKET_SIZE+RECEIVE_PACKET_LENTH+8)  //帧数据 + 包号 + 总包号 + 其他通讯内容
 #define TYPE_TO_SHAKE_LENTH         4
@@ -136,7 +136,8 @@ typedef enum {
 } IC_TYPE_ENUM;
 
 
-
+#define HANDLE0						0x55				
+#define HANDLE1						0xAA	
 
 //主站发送来的控制码类型 私有协议修改内容
 #define NO_CMD						0x00		//表示无命令
@@ -158,6 +159,7 @@ typedef enum {
 #define ERR_NO                  	0x00        // 无异常
 #define ERR_CMD_LEN             	0x02        // 从机接收到的包长度和命令长度不对
 #define ERR_CMD_ID             	 	0x04        // 没有命令
+#define ERR_HANDLE					0x05		// 握手字错误
 #define ERR_CHKSUM               	0x06        // 主机某个包校验和错误
 #define ERR_OPERATE             	0x07        // 未能完成主机要求的操作
 #define ERR_SHAKEHAND				0x20 		// 握手次数错误
