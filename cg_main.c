@@ -198,16 +198,17 @@ void HardFault_Handler()
 
 void SysTick_Handler(void)
 {
-	WDT->WDTE = 0xAC;
 	P71FlushCount++;
-	if(P71FlushCount  % 2 == 1) {
+	if(P71FlushCount  % 2 == 0) {
 		PORT->P7 |= _02_Pn1_OUTPUT_1;
 	} else {
 		PORT->P7 &= (~_02_Pn1_OUTPUT_1);
 	}
 //	toggle();
 	// g_ticks--;
-	g_uartWaitTime++;
+	if(CmmuReadNumber != 0) {
+		g_uartWaitTime++;
+	}
 	g_bootWaitTime++;
 	// g_vbOffWaitTime++;
 	g_boot100MsCount++;
@@ -259,7 +260,7 @@ void CheckSwitch(void)
 {
 	static BYTE	Switch_Count = 0;
 	static BYTE NO_Siwtch_Count = 0;
-
+	static BYTE LED_CHANGE_COUNT = 0;
 	if (!IS_SWITCH_PUSH)		//非高电平，等于按下按键
 	{
 		if(Switch_Count == 0) {
@@ -284,8 +285,8 @@ void CheckSwitch(void)
 			// Switch_Count = 52;
 			// SetBmsEventAct(xEVENT_MANNULA_DOWN,TRUE);
 		} else {
-			P71FlushCount++;
-			if(P71FlushCount / 200 % 2 == 0) {
+			LED_CHANGE_COUNT++;
+			if(LED_CHANGE_COUNT / 200 % 2 == 0) {
 				RED_ON;
 				GREEN_OFF;
 			} else {
@@ -397,6 +398,7 @@ int main(void)
 
     while (1U)
     {
+		WDT->WDTE = 0xAC;
 		if(g_boot100MsCount / TICK_100MS_COUNT > 0) {
 			g_boot100MsCount = 0;
 			CheckSwitch();
