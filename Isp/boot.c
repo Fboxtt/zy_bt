@@ -667,37 +667,9 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
     // boot_cmd_t cmd_buff = BOOT_BOOL_FALSE;//命令执行结果缓存
 	TVER* hexVer = 0x0;
 	int i = 0;
-	static uint8_t downLoadInteCount = 0;
     CmmuSendLength = 0;	
 	*Ack = ERR_NO;
 
-	switch(cmd)
-	{
-		case PC_SHAKE_ENTER_BOOTMODE:
-		case PC_SET_DOWNLOAD_BUFFER:
-		case PC_SET_DOWNLOAD_BACKUP:
-		{
-			// 如果下载HEX中出现握手指令，则需要重新握手
-			if(g_shakehandFlag == BUFFER_FLAG || g_shakehandFlag == BACKUP_FLAG) {
-				downLoadInteCount++;
-			} else {
-				downLoadInteCount = 0;
-				break;
-			}
-			if(downLoadInteCount >= 2) {
-				g_shakehandFlag = 0;
-				g_downLoadStatus =  NO_DOWNLOADING;
-				downLoadInteCount = 0;
-				*Ack = ERR_OPERATE;
-				return;
-			}
-			*Ack = ERR_HANDLE;
-			return;
-		}
-		default:
-			downLoadInteCount = 0;
-			break;
-	}
     switch(cmd)//根据命令执行相应的动作
     {
 		case PC_GET_VER_BOOT:
@@ -752,8 +724,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
         {
 			CmdSendData[0] = 0x1;
 			CmmuSendLength++;
-			SetShakehandFlag(BUFFER_CMD);
-			if(g_shakehandFlag != BUFFER_FLAG) {
+			if(g_shakehandFlag != BUFFER_FLAG >> 4) {
 				*Ack = ERR_NO;
 				break;
 			}
@@ -762,6 +733,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 				break;
 			}
 			BeginAddr = APP_BUFF_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+			SetShakehandFlag(BUFFER_CMD);
 			g_downLoadStatus = DOWNLOADING_BUFF;
 			NextPacketNumber = 1;
 			CmdSendData[0] = 0x0;
@@ -771,8 +743,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
         {
 			CmdSendData[0] = 0x1;
 			CmmuSendLength++;
-			SetShakehandFlag(BACKUP_CMD);
-			if(g_shakehandFlag != BACKUP_FLAG) {
+			if(g_shakehandFlag != BACKUP_FLAG >> 4) {
 				*Ack = ERR_NO;
 				break;
 			}
@@ -785,6 +756,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 				break;
 			}
 			BeginAddr = BACKUP_ADDR; // 地址修改成缓冲区地址为writeflash做准备
+			SetShakehandFlag(BACKUP_CMD);
 			g_downLoadStatus = DOWNLOADING_BKP;
 			NextPacketNumber = 1;
 			CmdSendData[0] = 0x0;
@@ -797,7 +769,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			CmdSendData[1] = 0x00;
 			CmmuSendLength = PACKET_ID_LENTH;
 
-			if(g_shakehandFlag != BUFFER_FLAG && g_shakehandFlag != BACKUP_FLAG) {
+			if(g_downLoadStatus != DOWNLOADING_BUFF && g_downLoadStatus != DOWNLOADING_BKP) {
 				*Ack = ERR_SHAKEHAND;
 				break;
 			}
@@ -841,6 +813,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 				CmdSendData[1] = (NextPacketNumber & 0xff00) >> 8;
 				BeginAddr = BeginAddr + PACKET_SIZE;
 				NextPacketNumber++;
+				g_shakehandFlag = 0;
 				*Ack = ERR_NO;
 			}
 			else
@@ -981,6 +954,7 @@ void DownloadStop(void)
 		CheckSumWrite(0xffffffff, 0xffffffff, APROM_BACKUP_AREA);
 		uint32ValWrite(0x0, BACKUP_RESTORE_ADDRESS);
 	}
+	g_downLoadStatus = NO_DOWNLOADING;
 	// 清除握手标志位, 如果没有g_downLoadStatus说明正在握手，也需要清除握手标志位
 	g_shakehandFlag = 0x0;
 
@@ -1000,7 +974,8 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	cmd = AnalysisData(rBuff, wholeDataLen, &unitDataLen,&Ack);  // 分析从中断函数总获取的数据包， 返回cmd
 	if(Ack == ERR_NO) {
 		BootCmdRun(&rBuff[7], unitDataLen, cmd, &Ack);  // 根据cmd运行响应函数
-	} else if (Ack == ERR_HANDLE) {
+	}
+	if (Ack == ERR_HANDLE) {
 		ClearCommu();
 		return;
 	}
