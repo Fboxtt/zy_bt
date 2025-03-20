@@ -41,6 +41,8 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth); // BOOT专用的串口发送�
 #define vbtMONTH	3   //版本生成月
 #define vbtDAY		19    //版本生成日
 
+#define SIMPLE_VER_LENGTH 12
+
 #define IC_TYPE_LENTH					15
 #define IC_TYPE_CURRENT					IC_TYPE_128KB_NAME
 #define IC_TYPE_128KB_NAME				"BAT32G137GH48"
@@ -48,7 +50,6 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth); // BOOT专用的串口发送�
 
 #define UNIQUE_NUM_LENTH				4
 
-#define SIMPLE_VER_LENGTH 12
 
 
 /*************************通讯协议相关宏定义*******************************/

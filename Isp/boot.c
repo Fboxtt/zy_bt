@@ -291,7 +291,7 @@ uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,ui
 }
 
 uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
-{	
+{
 	int FLSTS_flagCount = 0;
 	WDT->WDTE = 0xACU; // 擦除前先喂狗，防止时间不够造成复位
 	__disable_irq(); // 关闭所有中断，防止擦除不成功
@@ -711,7 +711,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			GetVer((uint32_t)IC_INF_BUFF, 			IC_TYPE_LENTH);
 			GetVer((uint32_t)(&g_flashWritableFlag),sizeof(g_flashWritableFlag));
 			GetVer((uint32_t)&pcValue, 				sizeof(pcValue));
-			if(*(uint16_t*)EEPROM_ADDR_UNIQUE_NUM_CRC != CalCRC((BYTE*)EEPROM_ADDR_UNIQUE_NUM,4)) {
+			if(*(uint16_t*)EEPROM_ADDR_UNIQUE_NUM_CRC != CalCRC((BYTE*)EEPROM_ADDR_UNIQUE_NUM, UNIQUE_NUM_LENTH)) {
 				GetVer((uint32_t)&uniqueNumNoInit,				sizeof(uniqueNumNoInit));
 			} else {
 				GetVer(EEPROM_ADDR_UNIQUE_NUM,		sizeof(uniqueNumNoInit));
