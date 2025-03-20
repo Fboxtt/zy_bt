@@ -394,7 +394,7 @@ int main(void)
 	HardDriveInit();
     BootInit();
 	toggle_Init();
-	CmdSendFunc(openBootCmd, 9);
+	CmdSendFunc(openBootCmd, sizeof(openBootCmd));
 
     while (1U)
     {

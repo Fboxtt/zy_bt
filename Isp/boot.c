@@ -291,8 +291,10 @@ uint8_t IAP_WriteOneByte_Check(uint32_t IAP_IapAddr,uint8_t Write_IAP_IapData,ui
 }
 
 uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
-{
+{	
 	int FLSTS_flagCount = 0;
+	WDT->WDTE = 0xACU; // 擦除前先喂狗，防止时间不够造成复位
+	__disable_irq(); // 关闭所有中断，防止擦除不成功
     FMC->FLERMD = 0x10;
     FMC->FLPROT = 0xF1;
     FMC->FLOPMD1 = 0x55;
@@ -313,6 +315,7 @@ uint8_t IAP_Erase_512B(uint32_t IAP_IapAddr,uint8_t area)//擦除一个块（512B）
     {
         //printf("\nerror\n");
     }
+	__enable_irq();
 	if(FLSTS_flagCount >= g_flashStatusCount) {
 		return 0;
 	}
