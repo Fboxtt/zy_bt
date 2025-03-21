@@ -31,6 +31,10 @@ typedef struct
 
 void CmdSendFunc(uint8_t *sBuff, uint32_t lenth); // BOOT专用的串口发送函数
 
+#define	FE_LI_BMS				0x01							
+#define	BOARD_TYPE				FE_LI_BMS
+
+
 #endif
 
 #define vbtMAIN		1 //主版本号

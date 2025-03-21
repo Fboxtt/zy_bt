@@ -35,6 +35,8 @@ const TVER btVersion __attribute((at(BOOT_VER_ADDR)))= {
 	vbtDAY,
 };
 
+uint8_t g_ucSelfAddr = 0x00;
+
 #else
 
 const uint8_t g_icName_inAPP[16]  __attribute((at(APP_IC_NAME_ADDR))) = IC_TYPE_CURRENT;
@@ -205,10 +207,10 @@ void fillbackFunc(commu_data_t* pBuff, commu_data_t* Data,commu_cmd_t Command,co
 	uint8_t i;
 	uint8_t check_sum = 0;
 
-	pBuff[0] = SEND_ADDRESS;	//发送帧头
+	pBuff[0] = g_ucSelfAddr;	//发送帧头
 	pBuff[1] = (dataLen + 5) >> 8;		 				 		//发送数据域长度高8位
 	pBuff[2] = dataLen + 5;		 			 	//发送数据域长度低8位
-	pBuff[3] = SEND_BMS_TYPE;					//发送单板类型码
+	pBuff[3] = BOARD_TYPE;					//发送单板类型码
 	pBuff[4] = Command;					 	//发送控制码
 	pBuff[5] = SEND_SHAKE_1;					//握手字1
 	pBuff[6] = SEND_SHAKE_2;					//握手字1
