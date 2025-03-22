@@ -260,7 +260,7 @@ void CheckSwitch(void)
 {
 	static BYTE	Switch_Count = 0;
 	static BYTE NO_Siwtch_Count = 0;
-	static BYTE LED_CHANGE_COUNT = 0;
+	static uint16_t LED_CHANGE_COUNT = 0;
 	if (!IS_SWITCH_PUSH)		//非高电平，等于按下按键
 	{
 		if(Switch_Count == 0) {
@@ -286,7 +286,7 @@ void CheckSwitch(void)
 			// SetBmsEventAct(xEVENT_MANNULA_DOWN,TRUE);
 		} else {
 			LED_CHANGE_COUNT++;
-			if(LED_CHANGE_COUNT / 200 % 2 == 0) {
+			if(LED_CHANGE_COUNT / 20 % 2 == 0) {
 				RED_ON;
 				GREEN_OFF;
 			} else {

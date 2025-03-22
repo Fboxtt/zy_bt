@@ -600,11 +600,12 @@ void AppRestore()
 	if(ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF) {
 		if(IAP_Remap() == 1) {
 			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_AREA);
-			if(CheckSumCheck(APROM_AREA) == 1)
+			if(CheckSumCheck(APROM_AREA) == 0) // 小bug，应当是0
 			{
 				IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
 				// *Ack =  ERR_NO; //回应退出了Bootloader
 			} else {
+				IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
 				CheckAndEnterApp();
 				// *Ack =  ERR_ALL_CHECK;
 			}
@@ -616,11 +617,12 @@ void AppRestore()
 		if(IAP_BkpRemap() == 1) {
 			// 从备份区中读取校验和数据，并写入到APP区域中
 			CheckSumWrite(PacketTotalNumRead(BACKUP_TOTAL_NUM_ADRESS), All_CheckSum_Read(BACKUP_CHECKSUM_ADRESS), APROM_AREA);
-			if(CheckSumCheck(APROM_AREA) == 1)
+			if(CheckSumCheck(APROM_AREA) == 0) // 小bug，应当是0
 			{
 				IAP_Erase_Some(BACKUP_RESTORE_ADDRESS, 4); // 成功恢复数据后才会清楚标志位，但是如果清楚不成功可能造成反复进入，所以需要APP中不复位
 				// *Ack =  ERR_NO; //回应退出了Bootloader
 			} else {
+				IAP_Erase_Some(BUFFER_RESTORE_ADDRESS, 4);
 				CheckAndEnterApp();
 				// *Ack =  ERR_ALL_CHECK;
 			}
