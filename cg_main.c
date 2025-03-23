@@ -210,7 +210,7 @@ void SysTick_Handler(void)
 		g_uartWaitTime++;
 	}
 	g_bootWaitTime++;
-	// g_vbOffWaitTime++;
+	g_vbOffWaitTime++;
 	g_boot100MsCount++;
 }
 
@@ -410,17 +410,16 @@ int main(void)
 				}
 			} else if(g_waitFlag == LONG_WAIT) {
 				if(g_bootWaitTime > YES_CMD_BOOT_WAIT_LIMIT) {
+					g_vbOffWaitTime = 0; // 收到烧录命令会清空关机等待时间
 					g_bootWaitTime = 0;
 					CheckAndEnterApp();
 					g_waitFlag = SHORT_WAIT;
 				}
-			} else if(g_waitFlag == VB_WAIT) {
-				if(g_bootWaitTime > VB_OFF_WAIT_TIME) {
-					g_bootWaitTime = 0;
-					RED_OFF;
-					VB_OFF;
-					g_waitFlag = SHORT_WAIT;
-				}
+			}
+			if(g_vbOffWaitTime > VB_OFF_WAIT_TIME) {
+				g_vbOffWaitTime = 0;
+				RED_OFF;
+				VB_OFF;
 			}
 		}
 		if(g_uartWaitTime > DELAY_RETURN_COUNT) {
