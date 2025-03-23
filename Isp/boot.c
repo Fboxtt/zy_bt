@@ -1021,6 +1021,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	// 下面这个if保证在bt中如果无法清除BUFFER_RESTORE_ADDRESS标志位，不会进入死循环
 		if(g_downLoadStatus == DOWNLOADED_BUFF || g_downLoadStatus == DOWNLOADED_BKP) {
 #ifdef BMS_APP_DEVICE
+			DataRecord();
 			SetDelayTask((void(*)(void*))MCU_Reset, NULL, 1000);
 #else
 			// ResetFlag = 1;

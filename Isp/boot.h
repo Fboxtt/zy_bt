@@ -108,7 +108,7 @@ void CommuSendCMD(commu_cmd_t Command,commu_cmd_t dataLen,commu_data_t* Data, co
 #define TICK_100MS_COUNT		(100 / TIME_UNIT)		// 100ms
 #define NO_CMD_BOOT_WAIT_LIMIT  (1000 / TIME_UNIT)		// 1000ms
 #define YES_CMD_BOOT_WAIT_LIMIT (20000 / TIME_UNIT)		// 1000ms
-#define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 10) // 无操作2分钟触发一次boot关机
+#define VB_OFF_WAIT_TIME		(1000 / TIME_UNIT * 60 * 60 * 2) // 无操作120分钟触发一次boot关机
 
 #define SHORT_WAIT 0 //开机后在boot总需要停留多久的标志位
 #define LONG_WAIT 1  //在boot中等待20s的标志位
@@ -180,7 +180,6 @@ typedef enum {
 
 /*communication_protocol.h*/
 
-#define SEND_ADDRESS 				0x01
 #define SEND_BMS_TYPE 				0x01
 #define SEND_SHAKE_1 				0x55
 #define SEND_SHAKE_2 				0xAA
