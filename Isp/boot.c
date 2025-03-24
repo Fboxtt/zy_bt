@@ -1023,6 +1023,8 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 		if(g_downLoadStatus == DOWNLOADED_BUFF || g_downLoadStatus == DOWNLOADED_BKP) {
 #ifdef BMS_APP_DEVICE
 			DataRecord();
+			g_bMasterCtrl_CHG_Off = TRUE;
+			g_bMasterCtrl_DIS_Off = TRUE;
 			SetDelayTask((void(*)(void*))MCU_Reset, NULL, 1000);
 #else
 			// ResetFlag = 1;
