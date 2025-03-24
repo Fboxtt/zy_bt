@@ -263,8 +263,6 @@ void CheckSwitch(void)
 	static uint16_t LED_CHANGE_COUNT = 0;
 	if (!IS_SWITCH_PUSH)		//非高电平，等于按下按键
 	{
-		if(Switch_Count == 0) {
-		}
 		NO_Siwtch_Count = 0;
 		Switch_Count++;
 		if(Switch_Count > 20)
@@ -275,15 +273,14 @@ void CheckSwitch(void)
 	} else {
 
 		NO_Siwtch_Count++;
-		if(NO_Siwtch_Count > 5) {
+		if(NO_Siwtch_Count > 5) { // 解决按键电压波动的问题，过滤掉低于500ms的非按下波形
 			Switch_Count = 0;
 			NO_Siwtch_Count = 0;
 		}
 		if(Switch_Count > 20)
 		{
-			g_bWholeSysShutdown = 1;	
-			// Switch_Count = 52;
-			// SetBmsEventAct(xEVENT_MANNULA_DOWN,TRUE);
+			g_bWholeSysShutdown = 1;
+			VB_OFF;	//系统关机
 		} else {
 			LED_CHANGE_COUNT++;
 			if(LED_CHANGE_COUNT / 20 % 2 == 0) {
@@ -294,14 +291,6 @@ void CheckSwitch(void)
 				RED_OFF;
 			}
 		}
-	}
-
-	//系统关机
-	if(g_bWholeSysShutdown)
-	{
-//		g_stSBS.ulFaultStatus |= FAULT_SWITCH_OFF;	
-		g_bWholeSysShutdown = 0;
-		VB_OFF;
 	}
 }
 
@@ -341,6 +330,10 @@ void IAPEnterApp()
 	__set_MSP(*(__IO uint32_t*) APP_ADDR);
 
 	((void (*)()) (*(volatile unsigned long *)(APP_ADDR+0x04)))();//to APP
+	__NOP();
+	__NOP();
+	__NOP();
+	__NOP();
     NVIC_SystemReset();					//如果无法进入APP则复位
 }
 #endif
