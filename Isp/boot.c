@@ -740,7 +740,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			CmdSendData[0] = 0x1;
 			CmmuSendLength++;
 			if(g_shakehandFlag != BUFFER_FLAG >> 4) {
-				*Ack = ERR_NO;
+				*Ack = ERR_SHAKEHAND;
 				break;
 			}
 			if(IAP_Erase_ALL(APROM_BUFF_AREA) == 0) {
@@ -759,7 +759,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
 			CmdSendData[0] = 0x1;
 			CmmuSendLength++;
 			if(g_shakehandFlag != BACKUP_FLAG >> 4) {
-				*Ack = ERR_NO;
+				*Ack = ERR_SHAKEHAND;
 				break;
 			}
 			if(BACKUP_ADDR < (88 * 1024) || BACKUP_SIZE > MAX_PACK_NUM) { // 备份地址不能小于88KB，不能影响缓冲区和app区域
@@ -998,6 +998,7 @@ void DownloadProcess(void *p,UCHAR ucComPort)
 	if(Ack != ERR_CMD_ID && (g_waitFlag == SHORT_WAIT || g_waitFlag == LONG_WAIT)) {
 			g_waitFlag = LONG_WAIT;
 			g_bootWaitTime = 0;
+			g_vbOffWaitTime = 0;
 	}
 #endif
     
