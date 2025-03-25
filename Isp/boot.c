@@ -19,7 +19,7 @@ commu_length_t CmmuSendLength;		    //发送数据长度
 
 commu_data_t CmdSendAll[SendLength1];	//发送缓存
 
-
+uint8_t g_debugDownload_flag = 1;
 
 
 DOWNLOAD_STATUS g_downLoadStatus = NO_DOWNLOADING;
@@ -591,6 +591,21 @@ uint8_t CheckSumCheck(int area)
 	}
 }
 
+// 计算flash内存储的校验和是否没有值，
+uint8_t CheckSumCheckFF(void)
+{
+	getCheckPara(APROM_AREA);
+
+	if(ReadInt(numAddr) != 0xffffffff) {
+		return 0;
+	}
+
+	if(ReadInt(checkAddr) != 0xffffffff) {
+		return 0;
+	}
+	return 1; // 可以写入，所以返回正确
+}
+
 
 
 // 恢复APP
@@ -629,7 +644,49 @@ void AppRestore()
 		} else {
 			// *Ack =  ERR_REMAP;
 		}
-	} 
+	} else { // app区域不为零， 校验和为0， 情况下才能这样使用, 一次开机只能使用一次
+		if(CheckSumCheckFF() != 1) {
+			return;
+		}
+		if(ReadInt(0x0) >> 28 != 0x2) {
+			return;
+		}
+		// test
+		// if(g_debugDownload_flag  != 1) {
+		// 	return;
+		// } else {
+		// 	g_debugDownload_flag = 0;
+		// }
+
+		uint32_t debughexSize = 0;
+		uint32_t debugpackctSize = 0;
+		uint8_t isappHaveHex = 0;
+		uint16_t debugCheckSum = 0;
+		uint16_t overFlowHexSize = 0;
+		for(uint32_t i = 1; i < APP_SIZE + 1; i++) {
+			if(IAP_ReadOneByte(APP_BUFF_ADDR - i,0) != 0xff) {
+				debughexSize = APP_SIZE - i + 1;
+				isappHaveHex = 1;
+				break;
+			}
+		}
+		if(debughexSize < 10 * 1024) {
+			return;
+		}
+		if(isappHaveHex == 1) {
+			debugpackctSize = debughexSize / PACKET_SIZE;
+			if(debughexSize % PACKET_SIZE != 0)  {
+				overFlowHexSize = PACKET_SIZE - (debughexSize % PACKET_SIZE);
+				debugpackctSize += 1; // 多余数据再补上一个包，并且还要加上这些字节的校验和
+			} 
+			for(uint32_t i = 0; i < debughexSize + overFlowHexSize; i++) {
+				debugCheckSum += IAP_ReadOneByte(i + APP_ADDR,0);
+			}
+		}
+		CheckSumWrite(debugpackctSize, debugCheckSum, APROM_AREA);
+		CheckAndEnterApp();
+		IAP_Erase_Some(0x2e00, 12); //test
+	}
 
 	#endif
 }
