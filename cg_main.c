@@ -227,9 +227,11 @@ void toggle(void)
 {
 	// PORT->P7 = _04_Pn2_OUTPUT_1 | _02_Pn1_OUTPUT_1;
 	// PORT->P7 = _00_Pn2_OUTPUT_0 | _00_Pn1_OUTPUT_0;
+	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
     PORT->P7 |= _02_Pn1_OUTPUT_1;
 	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
 	PORT->P7 |= _02_Pn1_OUTPUT_1;
+	PORT->P7 &= (~_02_Pn1_OUTPUT_1);
 }
 
 void Clock_Config(void)
@@ -249,8 +251,10 @@ void Clock_Config(void)
 void HardDriveInit(void)
 {
 	Clock_Config();		//OK
-	system_tick_init();
 	GPIO_Config();		//OK
+	toggle_Init();
+	toggle();
+	system_tick_init();
 	UART1_Init(SystemCoreClock, UartBaud);
 }
 
@@ -386,7 +390,7 @@ int main(void)
 	
 	HardDriveInit();
     BootInit();
-	toggle_Init();
+	
 	CmdSendFunc(openBootCmd, sizeof(openBootCmd));
 
     while (1U)
