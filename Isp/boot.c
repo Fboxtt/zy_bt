@@ -612,6 +612,12 @@ uint8_t CheckSumCheckFF(void)
 void AppRestore()
 {
 	#ifdef BMS_BT_DEVICE
+	uint32_t debughexSize = 0;
+	uint32_t debugpackctSize = 0;
+	uint8_t isappHaveHex = 0;
+	uint16_t debugCheckSum = 0;
+	uint16_t overFlowHexSize = 0;
+
 	if(ReadInt(BUFFER_RESTORE_ADDRESS) == RESTORE_BUFF) {
 		if(IAP_Remap() == 1) {
 			CheckSumWrite(PacketTotalNumRead(BUFFER_TOTAL_NUM_ADRESS), All_CheckSum_Read(BUFFER_CHECKSUM_ADRESS), APROM_AREA);
@@ -652,17 +658,12 @@ void AppRestore()
 			return;
 		}
 		// test
-		// if(g_debugDownload_flag  != 1) {
-		// 	return;
-		// } else {
-		// 	g_debugDownload_flag = 0;
-		// }
+		if(g_debugDownload_flag  != 1) {
+			return;
+		} else {
+			g_debugDownload_flag = 0;
+		}
 
-		uint32_t debughexSize = 0;
-		uint32_t debugpackctSize = 0;
-		uint8_t isappHaveHex = 0;
-		uint16_t debugCheckSum = 0;
-		uint16_t overFlowHexSize = 0;
 		for(uint32_t i = 1; i < APP_SIZE + 1; i++) {
 			if(IAP_ReadOneByte(APP_BUFF_ADDR - i,0) != 0xff) {
 				debughexSize = APP_SIZE - i + 1;
@@ -685,7 +686,7 @@ void AppRestore()
 		}
 		CheckSumWrite(debugpackctSize, debugCheckSum, APROM_AREA);
 		CheckAndEnterApp();
-		IAP_Erase_Some(0x2e00, 12); //test
+		// IAP_Erase_Some(0x2e00, 12); //test
 	}
 
 	#endif
