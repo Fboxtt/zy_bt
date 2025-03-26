@@ -650,13 +650,13 @@ void AppRestore()
 		} else {
 			// *Ack =  ERR_REMAP;
 		}
-	} else { // app区域不为零， 校验和为0， 情况下才能这样使用, 一次开机只能使用一次
+	} else { // app区域不为零， 校验和为0xffffffff情况下才能这样使用, 一次开机只能使用一次
 		if(CheckSumCheckFF() != 1) {
 			return;
 		}
-		if(ReadInt(0x0) >> 28 != 0x2) {
-			return;
-		}
+		// if(ReadInt(APP_ADDR) >> 24 != 0x20) {
+		// 	return;
+		// }
 		// test
 		if(g_debugDownload_flag  != 1) {
 			return;
