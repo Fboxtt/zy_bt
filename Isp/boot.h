@@ -38,12 +38,12 @@ void CmdSendFunc(uint8_t *sBuff, uint32_t lenth); // BOOT专用的串口发送�
 #endif
 
 #define vbtMAIN		1 //主版本号
-#define vbtMINOR	0 //次版本号
+#define vbtMINOR	1 //次版本号
 #define vbtFIX		0 //修复版本号
 
 #define vbtYEAR		2025 //版本生成年
-#define vbtMONTH	3   //版本生成月
-#define vbtDAY		19    //版本生成日
+#define vbtMONTH	4   //版本生成月
+#define vbtDAY		2    //版本生成日
 
 #define SIMPLE_VER_LENGTH 12
 

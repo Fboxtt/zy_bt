@@ -797,7 +797,7 @@ void BootCmdRun(uint8_t *rBuff, uint32_t dataLen, boot_cmd_t cmd, uint8_t *Ack)
         {
 			CmdSendData[0] = 0x1;
 			CmmuSendLength++;
-			if(g_shakehandFlag != BUFFER_FLAG >> 4) {
+			if((g_shakehandFlag & 0x0FFF) != BUFFER_FLAG >> 4) {
 				*Ack = ERR_SHAKEHAND;
 				break;
 			}
